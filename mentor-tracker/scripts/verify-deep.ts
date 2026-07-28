@@ -31,6 +31,34 @@ function bar(share: number, width = 20): string {
   return "█".repeat(n) + "░".repeat(width - n);
 }
 
+type StackLike = {
+  label: string;
+  kind: "code" | "support";
+  files: number;
+  additions: number;
+  deletions: number;
+  share: number;
+};
+
+/** Mirrors the UI's grouping: code is the headline, config/docs is context. */
+function printStack(entries: StackLike[], indent = "    ") {
+  for (const kind of ["code", "support"] as const) {
+    const rows = entries.filter((e) => e.kind === kind);
+    if (rows.length === 0) continue;
+    const top = Math.max(...rows.map((r) => r.share), 0.0001);
+    console.log(
+      `${indent}${kind === "code" ? "— code —" : "— config & docs (not counted as stack) —"}`,
+    );
+    for (const e of rows) {
+      console.log(
+        `${indent}${e.label.padEnd(20)} ${bar(e.share / top)} ${String(
+          Math.round(e.share * 100),
+        ).padStart(3)}%  (${e.files} file${e.files === 1 ? "" : "s"}, +${e.additions}/-${e.deletions})`,
+      );
+    }
+  }
+}
+
 async function main() {
   console.log(
     `verify-deep · user=${user} · repo=${repo} · token=${hasToken ? "present" : "ABSENT"}`,
@@ -95,7 +123,7 @@ async function main() {
       const pct = Math.max(1, Math.round((r.rank / r.totalContributors) * 100));
       console.log(`  → renders as "#${r.rank} of ${r.totalContributors} · top ${pct}%"`);
     }
-    console.log(`  rest budget left  : ${budget.rest}`);
+    console.log(`  rate buckets      : ${JSON.stringify(budget.snapshot())}`);
   } catch (e) {
     console.log(`  FAILED: ${(e as Error).message}`);
   }
@@ -129,13 +157,7 @@ async function main() {
         console.log(
           `  scanned ${s.prsScanned} merged PRs → ${s.filesSeen} files (truncated=${s.truncated})`,
         );
-        for (const e of s.entries.slice(0, 10)) {
-          console.log(
-            `    ${e.label.padEnd(20)} ${bar(e.share)} ${String(
-              Math.round(e.share * 100),
-            ).padStart(3)}%  (${e.files} files, +${e.additions}/-${e.deletions})`,
-          );
-        }
+        printStack(s.entries);
       }
     } catch (e) {
       console.log(`  FAILED: ${(e as Error).message}`);
@@ -178,11 +200,7 @@ async function main() {
     }
     if (p.stack?.entries.length) {
       console.log("\n  stack (real PR files):");
-      for (const e of p.stack.entries.slice(0, 8)) {
-        console.log(
-          `    ${e.label.padEnd(20)} ${bar(e.share)} ${String(Math.round(e.share * 100)).padStart(3)}%`,
-        );
-      }
+      printStack(p.stack.entries);
     }
   } catch (e) {
     if (e instanceof MissingTokenError) {

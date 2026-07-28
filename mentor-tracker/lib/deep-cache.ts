@@ -69,6 +69,9 @@ function toStackEntries(raw: Prisma.JsonValue): StackEntry[] {
     out.push({
       label: o.label,
       ext: typeof o.ext === "string" ? o.ext : "",
+      // Rows written before `kind` existed default to "code" so an older cached
+      // scan still renders; the next refresh backfills the real value.
+      kind: o.kind === "support" ? "support" : "code",
       files: typeof o.files === "number" ? o.files : 0,
       additions: typeof o.additions === "number" ? o.additions : 0,
       deletions: typeof o.deletions === "number" ? o.deletions : 0,

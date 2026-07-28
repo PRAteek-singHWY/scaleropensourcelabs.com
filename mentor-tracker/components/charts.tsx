@@ -194,37 +194,20 @@ export function OutcomeBar({
 // own hue would add a 9-way color problem while communicating nothing the label
 // doesn't already say.
 
-export function StackBars({
-  entries,
-  max = 8,
-}: {
-  entries: {
-    label: string;
-    files: number;
-    additions: number;
-    deletions: number;
-    share: number;
-  }[];
-  max?: number;
-}) {
-  if (entries.length === 0) {
-    return <div className="text-sm text-muted">No classifiable files yet.</div>;
-  }
+type StackRow = {
+  label: string;
+  kind: "code" | "support";
+  files: number;
+  additions: number;
+  deletions: number;
+  share: number;
+};
 
-  const shown = entries.slice(0, max);
-  // Never invent a 9th hue — the tail folds into a single "Other" row.
-  const tail = entries.slice(max);
-  const rows = [...shown];
-  if (tail.length > 0) {
-    rows.push({
-      label: `Other (${tail.length} more)`,
-      files: tail.reduce((n, e) => n + e.files, 0),
-      additions: tail.reduce((n, e) => n + e.additions, 0),
-      deletions: tail.reduce((n, e) => n + e.deletions, 0),
-      share: tail.reduce((n, e) => n + e.share, 0),
-    });
-  }
-
+function StackRowBars({ rows }: { rows: StackRow[] }) {
+  // Bars are normalized within their own group, so the longest row in each group
+  // fills the track. The percentage label stays share-of-everything, so the two
+  // groups remain comparable to each other. Code uses the accent hue and support
+  // the de-emphasis gray — emphasis, not a second categorical scale.
   const top = Math.max(...rows.map((r) => r.share), 0.0001);
 
   return (
@@ -243,7 +226,7 @@ export function StackBars({
               style={{
                 width: `${(r.share / top) * 100}%`,
                 minWidth: r.share > 0 ? 4 : 0,
-                backgroundColor: C.blue,
+                backgroundColor: r.kind === "code" ? C.blue : C.axis,
               }}
             />
           </div>
@@ -255,6 +238,65 @@ export function StackBars({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function fold(entries: StackRow[], max: number): StackRow[] {
+  if (entries.length <= max) return entries;
+  const head = entries.slice(0, max);
+  const tail = entries.slice(max);
+  return [
+    ...head,
+    {
+      label: `Other (${tail.length} more)`,
+      kind: head[0]?.kind ?? "code",
+      files: tail.reduce((n, e) => n + e.files, 0),
+      additions: tail.reduce((n, e) => n + e.additions, 0),
+      deletions: tail.reduce((n, e) => n + e.deletions, 0),
+      share: tail.reduce((n, e) => n + e.share, 0),
+    },
+  ];
+}
+
+export function StackBars({
+  entries,
+  max = 8,
+}: {
+  entries: StackRow[];
+  max?: number;
+}) {
+  if (entries.length === 0) {
+    return <div className="text-sm text-muted">No classifiable files yet.</div>;
+  }
+
+  const code = fold(
+    entries.filter((e) => e.kind === "code"),
+    max,
+  );
+  const support = fold(
+    entries.filter((e) => e.kind === "support"),
+    4,
+  );
+
+  return (
+    <div className="space-y-5">
+      {code.length > 0 ? (
+        <StackRowBars rows={code} />
+      ) : (
+        <div className="text-sm text-muted">
+          No code files in the scanned PRs — only config and docs.
+        </div>
+      )}
+
+      {support.length > 0 && (
+        <div>
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            Config &amp; docs
+          </div>
+          <StackRowBars rows={support} />
+        </div>
+      )}
     </div>
   );
 }

@@ -32,10 +32,12 @@ const rankSortValue = (r: RepoContribution): number =>
 function RankCell({ r }: { r: RepoContribution }) {
   if (r.rankStatus === "ranked" && r.rank !== null) {
     const total = r.totalContributors;
+    // A percentile is meaningless when they're the only contributor — "#1 of 1 ·
+    // top 100%" reads as an achievement on a solo repo. Needs a real cohort.
     const pct =
-      total && total > 0 ? Math.max(1, Math.round((r.rank / total) * 100)) : null;
-    // Top 3 in any repo is worth surfacing at a glance.
-    const strong = r.rank <= 3;
+      total && total > 1 ? Math.max(1, Math.round((r.rank / total) * 100)) : null;
+    // Top 3 of a real cohort is worth surfacing; being sole author isn't a rank.
+    const strong = r.rank <= 3 && (total ?? 0) > 1;
     return (
       <div className="leading-tight">
         <span
@@ -49,10 +51,14 @@ function RankCell({ r }: { r: RepoContribution }) {
             {r.contributorsExact ? "" : "+"}
           </span>
         )}
-        {pct !== null && (
+        {pct !== null ? (
           <div className="text-[10px] text-muted">
             top {pct}%{r.contributorsExact ? "" : " (approx)"}
           </div>
+        ) : (
+          total === 1 && (
+            <div className="text-[10px] text-muted">sole contributor</div>
+          )
         )}
       </div>
     );

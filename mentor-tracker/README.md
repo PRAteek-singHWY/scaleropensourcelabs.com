@@ -69,6 +69,19 @@ The auth + data layer was exercised end-to-end against a real Postgres instance:
 | Lead B deletes Lead A's mentor | 404, Lead A's data untouched (ownership) |
 | Data location | rows in Postgres `Mentor`/`Mentee` tables; nothing in `localStorage` |
 
+The contribution drill-down was verified against the live GitHub API with
+`scripts/verify-deep.ts` (see [below](#verifying-it)):
+
+| Test | Result |
+| --- | --- |
+| Contributor rank on a repo the user doesn't own | `OWASP/OpenCRE` → **#2 of 40** (exact), 60 commits |
+| Per-repo issue/PR counts, same repo | 4 issues, 74 PRs, 46 merged, 14 closed, 14 open, 4 reviews |
+| Repo discovery beyond owned repos | 30 public repos contributed to |
+| Rank when genuinely absent | `vercel/next.js` → `unranked`, 425 contributors (exact) |
+| Tech stack from merged PRs | 20 PRs → 103 files; Python leads on code, JSON isolated as config |
+| Extension classification + noise filter | lockfiles, `dist/`, `node_modules/`, `*.pb.go`, binaries all dropped (6/6) |
+| `Link: rel="last"` parsing | 85 pages parsed correctly; absent header → null |
+
 ## Local development
 
 **1. Create a GitHub OAuth App** (this is your login) at
@@ -205,8 +218,24 @@ by lines added. Lock files, `dist/`, `node_modules/`, generated `*.pb.go`, minif
 bundles and binary assets are filtered out — otherwise one regenerated
 `package-lock.json` would drown every real edit.
 
+Languages are then split into **code** and **config & docs**, because lines-added
+weighting otherwise lets data files win outright. A real measured example: 8 JSON
+files (+6776 lines) outweighed 57 Python files (+4072). JSON, YAML, TOML, plain
+config, docs and unrecognized extensions group separately so the headline stack
+reflects code. Shell, Docker, Terraform and SQL count as code — they're real work.
+
 It is a **recent sample** (20 PRs), not a career summary, and it only sees merged
 PRs — unmerged work and direct pushes don't appear.
+
+### Rate limits
+
+GitHub meters `core` (5000/hr), `search` (30/min) and `graphql` (5000 points/hr)
+in **separate** buckets and names the bucket in `x-ratelimit-resource`. The
+fetcher tracks them independently and each call site checks the bucket it actually
+spends. Collapsing them into one counter is a live bug, not a theoretical one: a
+search response reporting `remaining: 27` overwrote the core budget, and every
+following core request concluded it was nearly out of quota and skipped itself —
+the tech-stack scan silently returned zero files.
 
 ### Cost and caching
 

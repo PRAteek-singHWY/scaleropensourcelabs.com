@@ -42,8 +42,10 @@ const RANK_PAGES = 5;
 const STACK_PR_BUDGET = 20;
 /** Max concurrent in-flight GitHub requests. Keeps us off the abuse limiter. */
 const CONCURRENCY = 6;
-/** Below this many remaining REST calls we skip optional work. */
-const REST_FLOOR = 300;
+/** Below this many remaining "core" REST calls we skip optional work. */
+const CORE_FLOOR = 300;
+/** Search is a 30/min bucket, so its reserve has to be tiny to be usable. */
+const SEARCH_FLOOR = 2;
 
 export const RANK_WINDOW = RANK_PAGES * 100;
 
@@ -93,13 +95,23 @@ export type RankStatus =
   /** Couldn't finish checking (rate limit, or GitHub declined the list). */
   | "unresolved";
 
+/**
+ * Whether a language counts as the engineering stack or as the scaffolding
+ * around it. Without this split a single large JSON fixture or lockfile-adjacent
+ * data blob outweighs every line of real code — in testing, JSON came out at 59%
+ * of one profile, which answers "what does this person write" with "config".
+ * Both groups are kept and shown; only the headline is computed from code.
+ */
+export type StackKind = "code" | "support";
+
 export type StackEntry = {
   label: string; // "TypeScript"
   ext: string; // ".ts"
+  kind: StackKind;
   files: number;
   additions: number;
   deletions: number;
-  share: number; // 0..1 of additions across all entries
+  share: number; // 0..1 of additions across ALL entries (both kinds)
 };
 
 export type StackProfile = {
@@ -148,17 +160,47 @@ export class MissingTokenError extends Error {
 
 // ---- Request plumbing ------------------------------------------------------
 
-/** Remaining-call budget, read from response headers as we go. */
+/**
+ * Remaining-call budget, read from response headers as we go.
+ *
+ * GitHub meters each resource in its OWN bucket — `core` is 5000/hr, `search` is
+ * 30/min, `graphql` is 5000 points/hr — and reports which one a response came
+ * from via `x-ratelimit-resource`. Tracking a single number would let one search
+ * response (remaining: 27) overwrite the core budget and make every following
+ * core request believe it was nearly out of quota, silently skipping work. So
+ * buckets are kept apart and each call site checks the bucket it actually spends.
+ */
 class Budget {
-  rest = Infinity;
-  graphql = Infinity;
+  private buckets = new Map<string, number>();
 
-  noteRest(h: Headers) {
-    const r = h.get("x-ratelimit-remaining");
-    if (r !== null) this.rest = Number(r);
+  note(h: Headers) {
+    const remaining = h.get("x-ratelimit-remaining");
+    if (remaining === null) return;
+    const resource = h.get("x-ratelimit-resource") ?? "core";
+    this.buckets.set(resource, Number(remaining));
   }
-  restOk(cost = 1) {
-    return this.rest - cost > REST_FLOOR;
+
+  noteGraphql(remaining: number) {
+    this.buckets.set("graphql", remaining);
+  }
+
+  /** Infinity until we've actually seen a header for that bucket. */
+  remaining(resource: string): number {
+    return this.buckets.get(resource) ?? Infinity;
+  }
+
+  /** Room for a normal REST call (repos, pulls, contributors). */
+  coreOk(cost = 1): boolean {
+    return this.remaining("core") - cost > CORE_FLOOR;
+  }
+
+  /** Room for a Search API call. */
+  searchOk(cost = 1): boolean {
+    return this.remaining("search") - cost > SEARCH_FLOOR;
+  }
+
+  snapshot(): Record<string, number> {
+    return Object.fromEntries(this.buckets);
   }
 }
 
@@ -170,7 +212,7 @@ async function restRaw(
     headers: githubHeaders(),
     cache: "no-store",
   });
-  budget.noteRest(res.headers);
+  budget.note(res.headers);
   const body = res.status === 204 ? null : await res.json().catch(() => null);
   return { res, body };
 }
@@ -214,8 +256,9 @@ async function graphql<T>(
       .join("; ");
     throw new Error(`GitHub GraphQL ${res.status}${detail ? `: ${detail}` : ""}`);
   }
+  // GraphQL reports its own point budget in the response body, not the headers.
   const remaining = json.data?.rateLimit?.remaining;
-  if (typeof remaining === "number") budget.graphql = remaining;
+  if (typeof remaining === "number") budget.noteGraphql(remaining);
 
   return json as GraphQLResult<T>;
 }
@@ -556,7 +599,7 @@ async function fetchRank(
   let incomplete = false;
 
   const later = await mapLimit(wanted, 3, async (page) => {
-    if (!budget.restOk()) {
+    if (!budget.coreOk()) {
       incomplete = true;
       return null;
     }
@@ -701,22 +744,42 @@ const NOISE_RE = new RegExp(
   "i",
 );
 
-function classify(filename: string): { ext: string; label: string } | null {
+// Labels that describe scaffolding rather than the engineering stack. Everything
+// not listed here — including Shell, Docker, Terraform and SQL, which are real
+// work — counts as code.
+const SUPPORT_LABELS = new Set([
+  "JSON",
+  "YAML / config",
+  "TOML / config",
+  "Config",
+  "Docs",
+  "Data",
+  "Other",
+]);
+
+function kindFor(label: string): StackKind {
+  return SUPPORT_LABELS.has(label) ? "support" : "code";
+}
+
+function classify(
+  filename: string,
+): { ext: string; label: string; kind: StackKind } | null {
   if (NOISE_RE.test(filename)) return null;
 
   const base = filename.split("/").pop() ?? filename;
   const lower = base.toLowerCase();
 
   // Extensionless but recognizable by name.
-  if (lower.startsWith("dockerfile")) return { ext: "Dockerfile", label: "Docker" };
-  if (lower === "makefile") return { ext: "Makefile", label: "Make" };
+  if (lower.startsWith("dockerfile"))
+    return { ext: "Dockerfile", label: "Docker", kind: "code" };
+  if (lower === "makefile") return { ext: "Makefile", label: "Make", kind: "code" };
 
   const dot = lower.lastIndexOf(".");
   if (dot <= 0 || dot === lower.length - 1) return null;
   const ext = lower.slice(dot + 1);
   const label = EXT_LABELS[ext];
-  if (!label) return { ext: `.${ext}`, label: "Other" };
-  return { ext: `.${ext}`, label };
+  if (!label) return { ext: `.${ext}`, label: "Other", kind: "support" };
+  return { ext: `.${ext}`, label, kind: kindFor(label) };
 }
 
 type PRFile = { filename: string; additions: number; deletions: number };
@@ -734,6 +797,8 @@ async function fetchStack(
 ): Promise<StackProfile | null> {
   type SearchItem = { repository_url: string; number: number };
   let items: SearchItem[] = [];
+  // One search call (search bucket), then one call per PR (core bucket).
+  if (!budget.searchOk()) return null;
   try {
     const r = await rest<{ total_count: number; items: SearchItem[] }>(
       `/search/issues?q=${encodeURIComponent(
@@ -758,7 +823,7 @@ async function fetchStack(
 
   let truncated = false;
   const perPR = await mapLimit(refs, CONCURRENCY, async (ref) => {
-    if (!budget.restOk()) {
+    if (!budget.coreOk()) {
       truncated = true;
       return null;
     }
@@ -785,6 +850,7 @@ async function fetchStack(
         ({
           label: c.label,
           ext: c.ext,
+          kind: c.kind,
           files: 0,
           additions: 0,
           deletions: 0,
@@ -813,6 +879,7 @@ async function fetchAllTimeTotals(
   budget: Budget,
 ): Promise<{ totalPRs: number; totalMergedPRs: number; totalIssues: number }> {
   const one = async (q: string): Promise<number> => {
+    if (!budget.searchOk()) return 0;
     const r = await rest<{ total_count: number }>(
       `/search/issues?q=${encodeURIComponent(q)}&per_page=1`,
       budget,
