@@ -69,7 +69,9 @@ export type MenteeSnapshot = {
 
 export const USERNAME_RE = /^[A-Za-z0-9-]{1,39}$/;
 
-function headers(): HeadersInit {
+// Exported so lib/github-deep.ts reuses exactly the same auth/UA setup — one
+// place to change the token handling.
+export function githubHeaders(): Record<string, string> {
   const h: Record<string, string> = {
     Accept: "application/vnd.github+json",
     "X-GitHub-Api-Version": "2022-11-28",
@@ -78,6 +80,10 @@ function headers(): HeadersInit {
   const token = process.env.GITHUB_TOKEN;
   if (token) h.Authorization = `Bearer ${token}`;
   return h;
+}
+
+function headers(): HeadersInit {
+  return githubHeaders();
 }
 
 async function gh<T>(path: string): Promise<T> {

@@ -95,3 +95,114 @@ model Mentee {
 
   @@index([mentorId])
 }
+
+// ---- Deep contribution profile cache ----
+//
+// The drill-down view costs ~50-70 GitHub API calls per mentee (GraphQL repo
+// discovery + batched search counts + a contributor-rank call per repo + a
+// merged-PR file scan). That is far too expensive to run per page view, so the
+// whole profile is cached here and refreshed on a TTL (see lib/github-deep.ts).
+//
+// Keyed by GitHub login, NOT by mentee id: two leads tracking the same username
+// share one cache entry. Nothing here is private — it is all public GitHub data
+// — so sharing it across tenants leaks nothing. Ownership is still enforced at
+// the API route, which refuses to look up a username that isn't one of the
+// calling lead's mentees.
+
+model ContribProfile {
+  id       String @id @default(cuid())
+  username String @unique // GitHub login, lowercased
+
+  // Profile fields, denormalized for a single-query render.
+  displayName String?
+  avatarUrl   String?
+  profileUrl  String?
+  followers   Int     @default(0)
+  publicRepos Int     @default(0)
+
+  // Windowed contribution totals (GraphQL contributionsCollection is capped at
+  // a one-year range per query, so these cover `windowDays` back from fetchedAt).
+  windowDays      Int @default(365)
+  commitsInWindow Int @default(0)
+  prsInWindow     Int @default(0)
+  issuesInWindow  Int @default(0)
+  reviewsInWindow Int @default(0)
+
+  // All-time totals from the Search API (exact, not windowed).
+  totalPRs       Int @default(0)
+  totalMergedPRs Int @default(0)
+  totalIssues    Int @default(0)
+
+  /// Public repos contributed to, before the REPO_LIMIT truncation — lets the UI
+  /// say "showing 20 of 63" instead of implying 20 is the whole story.
+  reposContributedTo Int @default(0)
+
+  // Set when the fetch degraded (rate limit, partial GraphQL errors). The UI
+  // shows the data with a "partial" marker instead of failing outright.
+  partial Boolean @default(false)
+  note    String?
+
+  fetchedAt DateTime      @default(now())
+  repos     RepoContrib[]
+  stackScan StackScan?
+
+  @@index([fetchedAt])
+}
+
+model RepoContrib {
+  id        String @id @default(cuid())
+  profileId String
+  /// Preserves the fetch-time ordering (most of the user's activity first), so a
+  /// cached read renders in the same order as a fresh one.
+  position  Int    @default(0)
+
+  nameWithOwner   String // "owner/repo"
+  url             String
+  description     String?
+  stars           Int     @default(0)
+  primaryLanguage String?
+  isOwnRepo       Boolean @default(false)
+  isFork          Boolean @default(false)
+
+  // This user's contribution to this repo.
+  commits      Int @default(0) // all-time, default branch (contributors endpoint)
+  issuesOpened Int @default(0)
+  issuesClosed Int @default(0)
+  prsOpened    Int @default(0)
+  prsMerged    Int @default(0)
+  prsOpen      Int @default(0)
+  prsClosed    Int @default(0) // closed without merging
+  reviews      Int @default(0)
+
+  // Contributor rank by commit count on the default branch. rankStatus says why
+  // `rank` is null, which matters: "unranked" (checked, no commits) and
+  // "unresolved" (ran out of API budget before finishing) are opposite claims.
+  // See the RankStatus union in lib/github-deep.ts.
+  //   "ranked" | "unranked" | "outside-window" | "unresolved"
+  rank              Int?
+  rankStatus        String  @default("unresolved")
+  totalContributors Int?
+  contributorsExact Boolean @default(false) // false → totalContributors is a lower bound
+
+  lastActivityAt DateTime?
+
+  profile ContribProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, nameWithOwner])
+  @@index([profileId])
+}
+
+// Tech stack derived from the actual files changed in the user's merged PRs —
+// their real diff surface, not the host repo's language breakdown.
+model StackScan {
+  id         String   @id @default(cuid())
+  profileId  String   @unique
+  prsScanned Int      @default(0)
+  filesSeen  Int      @default(0)
+  // [{ label, ext, files, additions, deletions, share }] — see StackEntry.
+  entries    Json
+  truncated  Boolean  @default(false) // true → hit the PR scan budget
+  scannedAt  DateTime @default(now())
+
+  profile ContribProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { MenteeSnapshot } from "@/lib/github";
 import type { Mentee } from "@/lib/storage";
 import { StatTile, CommitBars, OutcomeBar, C } from "@/components/charts";
@@ -19,7 +20,7 @@ function rel(iso: string): string {
 }
 
 function stateDot(state: string): string {
-  return state === "open" ? "bg-[#10b981]" : "bg-[#a855f7]";
+  return state === "open" ? "bg-[#10a37a]" : "bg-[#a855f7]";
 }
 
 export default function MenteeCard({
@@ -222,10 +223,12 @@ export default function MenteeCard({
             )}
           </div>
 
-          {/* Active repos */}
-          <div className="mt-auto">
+          {/* Own repos. These are the repos the mentee OWNS — the full set of
+              repos they contribute to, including other people's, lives on the
+              drill-down page below. */}
+          <div>
             <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
-              Active repos
+              Own repos
             </div>
             {snap.activeRepos.length ? (
               <div className="flex flex-wrap gap-1.5">
@@ -246,6 +249,14 @@ export default function MenteeCard({
               <div className="text-sm text-muted">No public repos.</div>
             )}
           </div>
+
+          <Link
+            href={`/mentee/${mentee.id}`}
+            className="mt-auto flex items-center justify-center gap-1.5 rounded-lg border border-edge bg-ink/50 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-pink/50 hover:text-pink"
+          >
+            Contribution breakdown &amp; rank
+            <span aria-hidden>→</span>
+          </Link>
         </div>
       )}
     </div>

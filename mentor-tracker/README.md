@@ -10,13 +10,20 @@ days, and active repos.
   list in `ALLOWED_LOGINS` can ever create a session. Everyone else is rejected
   even after a valid GitHub login. If the allowlist is empty, **nobody** gets in
   (fail closed).
-- **Mentees never log in.** Their public data is read via GitHub REST API v3. No
-  OAuth, no permissions, ever.
+- **Mentees never log in.** Their public data is read via the GitHub REST v3 and
+  GraphQL v4 APIs, public-only queries. No OAuth, no permissions, ever.
 - **Full activity analytics per mentee** — commits (30-day bar chart + streak),
   pull requests (open / merged / closed with merge rate), issues (open / closed),
   community engagement (threads commented on), followers, stars, and active repos.
   Plus a **program overview**: aggregate totals across the cohort and a commits
   leaderboard. Charts are dependency-free inline SVG, validated for the dark surface.
+- **Per-repo contribution drill-down + contributor rank** (`/mentee/:id`) — for
+  every public repo a mentee contributes to, *including repos they don't own*:
+  their **rank among that repo's contributors**, commits, issues opened/closed,
+  PRs opened/merged/closed/open, review count and merge rate. Plus the **tech
+  stack they actually write**, measured from the files changed in their merged
+  PRs. See [Contribution drill-down](#contribution-drill-down) for what each
+  number means and where it's approximate.
 - **Hierarchy:** Lead → Mentors → Mentees (name, email, GitHub username).
 - **Persistence = Postgres via Prisma.** Every mentor is owned by a lead; every
   mentee belongs to a mentor. Each lead sees only their own data (multi-tenant).
@@ -91,7 +98,8 @@ Fill in `.env.local`:
 ```
 DATABASE_URL=postgresql://…  # pooled connection string
 DIRECT_URL=postgresql://…    # direct connection (same as DATABASE_URL if no pooler)
-GITHUB_TOKEN=                # optional PAT (no scopes) for 5000 req/hr instead of 60
+GITHUB_TOKEN=                # PAT, no scopes. REQUIRED for the drill-down (GraphQL);
+                             #   also lifts REST 60 → 5000 req/hr
 GITHUB_OAUTH_ID=             # OAuth App Client ID
 GITHUB_OAUTH_SECRET=         # OAuth App Client Secret
 ALLOWED_LOGINS=you           # YOUR github username (comma-separate for more leads)
@@ -105,7 +113,7 @@ NEXTAUTH_URL=http://localhost:3000
 **4. Create the tables, then run:**
 
 ```bash
-npm run db:push          # creates the Postgres tables from prisma/schema.prisma
+npm run db:push          # creates/updates the Postgres tables from prisma/schema.prisma
 npm run dev              # http://localhost:3000  → redirects to /login
 ```
 
@@ -122,7 +130,7 @@ are cached 5 minutes at the edge
 3. Go to [vercel.com/new](https://vercel.com/new) → import the repo → accept defaults.
 4. Project Settings → Environment Variables → add **all** of:
    - `DATABASE_URL`, `DIRECT_URL` — your managed Postgres connection strings
-   - `GITHUB_TOKEN` — classic PAT with **no scopes** (public data is enough), optional but recommended
+   - `GITHUB_TOKEN` — classic PAT with **no scopes** (public data is enough). Required for the contribution drill-down
    - `GITHUB_OAUTH_ID`, `GITHUB_OAUTH_SECRET` — from the production OAuth App
    - `ALLOWED_LOGINS` — your GitHub username(s)
    - `NEXTAUTH_SECRET` — `openssl rand -base64 32`
@@ -151,6 +159,95 @@ are cached 5 minutes at the edge
 - Commit streak = consecutive UTC days (ending today, today may be empty) with at
   least one `PushEvent`.
 
+## Contribution drill-down
+
+Click **Contribution breakdown & rank** on any mentee card to open `/mentee/:id`.
+
+**Requires `GITHUB_TOKEN`.** Repo discovery uses GitHub's GraphQL API, which
+rejects unauthenticated requests. A classic PAT with **no scopes** is enough. If
+the token is missing the page says so explicitly instead of rendering empty.
+
+### What each number means
+
+| Column | Source | Exact? |
+| --- | --- | --- |
+| Repos contributed to | GraphQL `repositoriesContributedTo` (public only, includes repos they don't own) | exact |
+| Rank | `/repos/:o/:r/contributors`, which GitHub returns pre-sorted by commit count | exact when shown as `#N` |
+| Contributors total | `Link: rel="last"` page count on the same response | exact only without a trailing `+` |
+| Commits | the `contributions` field on their contributor entry (all-time, default branch) | exact |
+| Issues / PRs opened, merged, closed, open | scoped Search API counts (`repo:o/r author:u is:pr is:merged`, …) | exact |
+| Closed-unmerged PRs | `opened − merged − open` | exact |
+| Reviews | `repo:o/r reviewed-by:u` | exact |
+| Commits / reviews in the KPI row | GraphQL `contributionsCollection` | exact, but **last 365 days only** — GitHub caps that API at a one-year window per query |
+| Tech stack | file names from their last 20 merged PRs, sized by lines added | a sample, not all-time |
+
+### Rank has four states, and they are not interchangeable
+
+Rank counts **commits on the default branch**, so a real contributor can legitimately
+have no rank. The UI distinguishes:
+
+| Shown | Means |
+| --- | --- |
+| `#7 of 143 · top 5%` | ranked — 7th by commits |
+| `>500` | has commits, but sits outside the contributor window GitHub exposes |
+| `no commits` | checked the whole list — their work here is issues, reviews, or PRs merged to another branch. Commits authored under an email not linked to their GitHub account also don't count |
+| `unknown` | **we couldn't finish checking** (rate limit, or GitHub declined an oversized contributor list) |
+
+The last two look identical in raw data and mean opposite things, so they are
+never merged. `unknown` is never rendered as zero.
+
+### Tech stack: why merged-PR files and not repo languages
+
+`/repos/:o/:r/languages` describes *the repo*, not your mentee. One Python script
+contributed to a JavaScript monorepo would read as JavaScript. So the scan opens
+their most recent merged PRs and counts the files they actually changed, weighted
+by lines added. Lock files, `dist/`, `node_modules/`, generated `*.pb.go`, minified
+bundles and binary assets are filtered out — otherwise one regenerated
+`package-lock.json` would drown every real edit.
+
+It is a **recent sample** (20 PRs), not a career summary, and it only sees merged
+PRs — unmerged work and direct pushes don't appear.
+
+### Cost and caching
+
+A cold profile is roughly 50-70 API requests:
+
+| Requests | What |
+| --- | --- |
+| 1 GraphQL | repo discovery + windowed contribution totals |
+| ~4 GraphQL | per-repo issue/PR counts — 5 repos × 6 aliased searches per call |
+| 1-5 REST per repo | contributor rank (1 call unless the repo is huge) |
+| ~21 REST | merged-PR file scan |
+
+So it never runs on a page render. Results are cached in Postgres
+(`ContribProfile` / `RepoContrib` / `StackScan`) for `DEEP_PROFILE_TTL_HOURS`
+(default 12), keyed by GitHub login. **Refresh** forces a refetch. If a refetch
+fails, the previous copy is served with a visible stale notice rather than an
+error page. A rate-limit floor keeps the fetcher from draining the hourly budget:
+when it trips, the affected sections are marked partial instead of silently
+reporting zeros.
+
+Only the top 20 repos by the mentee's own activity are enriched; the page states
+`showing 20 of N` rather than implying 20 is everything.
+
+### Authorization
+
+`GET /api/mentee/:username/deep` checks the session **and** that the username
+belongs to a mentee under one of the calling lead's mentors. Without that second
+check the route would be an open, expensive GitHub-scraping proxy for anyone with
+a login.
+
+### Verifying it
+
+```bash
+npx tsx scripts/verify-deep.ts <github-username> [owner/repo]
+```
+
+Exercises each stage against the live API and prints what came back — extension
+classification and noise filtering, `Link` header parsing, contributor rank, the
+search counts, the stack scan, and a full end-to-end profile. The REST stages run
+without a token (at 60 req/hr); the GraphQL stages need `GITHUB_TOKEN`.
+
 ## Data model
 
 See `prisma/schema.prisma`. Alongside the standard NextAuth adapter tables
@@ -158,6 +255,12 @@ See `prisma/schema.prisma`. Alongside the standard NextAuth adapter tables
 
 - `Mentor` — `{ id, userId (owner), name, github?, mentees[] }`
 - `Mentee` — `{ id, mentorId, name, email, github }`
+- `ContribProfile` — cached deep profile, keyed by GitHub login. Two leads
+  tracking the same username share one entry; it holds only public GitHub data,
+  so sharing it across tenants leaks nothing.
+- `RepoContrib` — one row per enriched repo (rank, commits, issue/PR counts).
+  `position` preserves fetch order so a cached read renders like a fresh one.
+- `StackScan` — the merged-PR file breakdown, one row per profile.
 
 `onDelete: Cascade` means deleting a lead removes their mentors, and deleting a
 mentor removes its mentees. Add a new column, run `npm run db:push`, done.

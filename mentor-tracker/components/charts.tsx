@@ -8,7 +8,13 @@ import type { DayCount } from "@/lib/github";
 export const C = {
   blue: "#3b82f6",
   pink: "#ec4899",
-  open: "#10b981", // emerald — open
+  // Reserved status trio. Validated as a set against the dark panel surface
+  // (#12121f) with scripts/validate_palette.js — all six checks pass:
+  // lightness band L 0.48-0.67, chroma floor, CVD separation (worst adjacent
+  // pair ΔE 21.6 deutan / 17.0 tritan), normal-vision floor, contrast >= 3:1.
+  // `open` is #10a37a rather than emerald-500 #10b981 because the latter sits at
+  // L 0.696, just outside the dark-mode band. Always shipped with a text label.
+  open: "#10a37a", // emerald — open
   merged: "#a855f7", // purple — merged
   closed: "#f43f5e", // rose — closed (unmerged)
   grid: "#242438",
@@ -36,7 +42,7 @@ export function StatTile({
         : accent === "pink"
           ? "text-pink"
           : accent === "open"
-            ? "text-[#10b981]"
+            ? "text-[#10a37a]"
             : accent === "merged"
               ? "text-[#a855f7]"
               : "text-[#f43f5e]";
@@ -176,6 +182,115 @@ export function OutcomeBar({
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+// ---- Tech-stack bars ------------------------------------------------------
+//
+// The job here is magnitude comparison across labelled categories, so this is a
+// single-hue bar chart with direct labels — NOT a categorical palette. Language
+// identity comes from the text label next to each bar; giving each language its
+// own hue would add a 9-way color problem while communicating nothing the label
+// doesn't already say.
+
+export function StackBars({
+  entries,
+  max = 8,
+}: {
+  entries: {
+    label: string;
+    files: number;
+    additions: number;
+    deletions: number;
+    share: number;
+  }[];
+  max?: number;
+}) {
+  if (entries.length === 0) {
+    return <div className="text-sm text-muted">No classifiable files yet.</div>;
+  }
+
+  const shown = entries.slice(0, max);
+  // Never invent a 9th hue — the tail folds into a single "Other" row.
+  const tail = entries.slice(max);
+  const rows = [...shown];
+  if (tail.length > 0) {
+    rows.push({
+      label: `Other (${tail.length} more)`,
+      files: tail.reduce((n, e) => n + e.files, 0),
+      additions: tail.reduce((n, e) => n + e.additions, 0),
+      deletions: tail.reduce((n, e) => n + e.deletions, 0),
+      share: tail.reduce((n, e) => n + e.share, 0),
+    });
+  }
+
+  const top = Math.max(...rows.map((r) => r.share), 0.0001);
+
+  return (
+    <div className="space-y-2">
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center gap-3">
+          <div className="w-36 shrink-0 truncate text-right text-xs text-slate-300">
+            {r.label}
+          </div>
+          <div
+            className="relative h-4 flex-1 overflow-hidden rounded-full bg-ink/60"
+            title={`${r.label}: ${r.files} file${r.files === 1 ? "" : "s"}, +${r.additions} / -${r.deletions}`}
+          >
+            <div
+              className="absolute inset-y-0 left-0 rounded-full"
+              style={{
+                width: `${(r.share / top) * 100}%`,
+                minWidth: r.share > 0 ? 4 : 0,
+                backgroundColor: C.blue,
+              }}
+            />
+          </div>
+          <div className="w-10 shrink-0 text-right text-xs font-semibold text-slate-200">
+            {Math.round(r.share * 100)}%
+          </div>
+          <div className="w-24 shrink-0 text-right text-[11px] text-muted">
+            {r.files} file{r.files === 1 ? "" : "s"} · +{r.additions}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- Compact PR outcome bar for a table row -------------------------------
+// Status colors, always beside their counts. One shared legend lives above the
+// table, so identity is never carried by color alone.
+
+export function MiniOutcome({
+  merged,
+  open,
+  closed,
+}: {
+  merged: number;
+  open: number;
+  closed: number;
+}) {
+  const total = merged + open + closed;
+  if (total === 0) return <span className="text-xs text-muted">—</span>;
+  const segs = [
+    { v: merged, c: C.merged, label: "merged" },
+    { v: open, c: C.open, label: "open" },
+    { v: closed, c: C.closed, label: "closed" },
+  ].filter((s) => s.v > 0);
+
+  return (
+    <div
+      className="flex h-2 w-full min-w-[52px] gap-[2px] overflow-hidden rounded-full"
+      title={`${merged} merged · ${open} open · ${closed} closed`}
+    >
+      {segs.map((s) => (
+        <div
+          key={s.label}
+          style={{ width: `${(s.v / total) * 100}%`, backgroundColor: s.c }}
+        />
+      ))}
     </div>
   );
 }
