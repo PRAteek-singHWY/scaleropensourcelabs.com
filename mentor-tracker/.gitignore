@@ -1,0 +1,19 @@
+# dependencies
+node_modules
+
+# next.js build output
+.next
+out
+next-env.d.ts
+
+# env — never commit secrets (DB URL, OAuth secret, NEXTAUTH_SECRET, PAT)
+.env
+.env.local
+.env.*.local
+.env.production
+
+# misc
+.DS_Store
+*.log
+.vercel
+tsconfig.tsbuildinfo

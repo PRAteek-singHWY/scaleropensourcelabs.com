@@ -1,0 +1,97 @@
+// Postgres schema. Scalable, multi-lead by design: every Mentor is owned by a
+// User (a lead), and every Mentee belongs to a Mentor. A lead can only ever see
+// their own data — enforced in the API layer via the session user id.
+//
+// The User/Account/Session/VerificationToken models are the standard NextAuth
+// (Auth.js) adapter schema. See:
+// https://authjs.dev/reference/adapter/prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Pooled connections (PgBouncer/Neon/Supabase) for the app at runtime; a
+  // direct connection for migrations. Both fall back to DATABASE_URL locally.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---- NextAuth models ----
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  login         String? // GitHub login, cached for display + allowlist checks
+  accounts      Account[]
+  sessions      Session[]
+  mentors       Mentor[]
+  createdAt     DateTime  @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---- App models ----
+
+model Mentor {
+  id        String   @id @default(cuid())
+  userId    String // owning lead
+  name      String
+  github    String?
+  mentees   Mentee[]
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Mentee {
+  id        String   @id @default(cuid())
+  mentorId  String
+  name      String
+  email     String
+  github    String
+  createdAt DateTime @default(now())
+
+  mentor Mentor @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@index([mentorId])
+}
