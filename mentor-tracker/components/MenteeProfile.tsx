@@ -66,7 +66,7 @@ export default function MenteeProfile({ mentee }: { mentee: MenteeInfo }) {
     <div className="mx-auto max-w-6xl px-6 py-8">
       {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-2 text-xs text-muted">
-        <Link href="/" className="transition hover:text-pink">
+        <Link href="/admin" className="transition hover:text-pink">
           Dashboard
         </Link>
         <span>/</span>

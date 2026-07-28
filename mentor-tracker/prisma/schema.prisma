@@ -96,6 +96,65 @@ model Mentee {
   @@index([mentorId])
 }
 
+// ---- Public club membership ----
+//
+// A Member is a club member who has asked to appear on the PUBLIC leaderboard at
+// the site root. This is deliberately a separate model from Mentee:
+//
+//   Mentee  = a private record in a lead's mentorship program. Has an email.
+//             Never rendered publicly.
+//   Member  = a public, self-service, consented identity. Joins to
+//             ContribProfile via `github` to get contribution stats.
+//
+// Keeping them apart is the whole point. The public leaderboard cannot leak a
+// mentee's email address because it does not read the Mentee table at all.
+//
+// Consent is given by the account owner, not by an admin: /join requires signing
+// in with GitHub, so the person granting consent has proved they control the
+// account being published. An admin can then approve, but cannot manufacture
+// consent for someone who never granted it.
+
+enum MemberStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Member {
+  id String @id @default(cuid())
+
+  /// GitHub login, always lowercased. Unique, and the join key to
+  /// ContribProfile.username, which is lowercased for the same reason.
+  github String @unique
+
+  // ---- PUBLIC fields. Safe to render to anyone. ----
+  displayName String
+  batch       String? // e.g. "2027"
+  bio         String? // short, member-authored
+  role        String? // e.g. "Core", "Contributor" — club role, not an auth role
+
+  // ---- PRIVATE fields. Must never appear in a public response. ----
+  // Public queries use PUBLIC_MEMBER_SELECT (lib/public.ts), which does not list
+  // these columns at all, so they are not merely filtered after the fact — they
+  // are never read out of Postgres on a public code path.
+  email String?
+
+  /// True only when the account owner explicitly ticked the consent box. Without
+  /// it the member never appears publicly regardless of status.
+  publicConsent Boolean   @default(false)
+  consentedAt   DateTime?
+
+  status     MemberStatus @default(PENDING)
+  approvedAt DateTime?
+  /// The admin's GitHub login, for an audit trail on who published whom.
+  approvedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, publicConsent])
+}
+
 // ---- Deep contribution profile cache ----
 //
 // The drill-down view costs ~50-70 GitHub API calls per mentee (GraphQL repo
@@ -127,6 +186,11 @@ model ContribProfile {
   prsInWindow     Int @default(0)
   issuesInWindow  Int @default(0)
   reviewsInWindow Int @default(0)
+
+  /// Daily contribution counts, oldest first: [{ date, count }]. Summed across
+  /// published members to draw the public site's aggregate club grid.
+  dailyContributions         Json?
+  totalContributionsInWindow Int   @default(0)
 
   // All-time totals from the Search API (exact, not windowed).
   totalPRs       Int @default(0)

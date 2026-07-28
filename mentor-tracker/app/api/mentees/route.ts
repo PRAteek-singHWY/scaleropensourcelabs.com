@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { currentUserId } from "@/lib/session";
+import { requireAdminId } from "@/lib/session";
 import { USERNAME_RE } from "@/lib/github";
 
 export const runtime = "nodejs";
@@ -9,8 +9,9 @@ export const dynamic = "force-dynamic";
 // POST /api/mentees { mentorId, name, email, github } → create a mentee under a
 // mentor this lead owns.
 export async function POST(req: Request) {
-  const userId = await currentUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await requireAdminId();
+  if (!userId)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   const mentorId = typeof body?.mentorId === "string" ? body.mentorId : "";

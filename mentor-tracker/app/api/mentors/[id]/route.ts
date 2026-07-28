@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { currentUserId } from "@/lib/session";
+import { requireAdminId } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,8 +12,9 @@ export async function DELETE(
   _req: Request,
   { params }: { params: { id: string } },
 ) {
-  const userId = await currentUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await requireAdminId();
+  if (!userId)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const result = await prisma.mentor.deleteMany({
     where: { id: params.id, userId },

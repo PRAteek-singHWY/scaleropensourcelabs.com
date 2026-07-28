@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { currentUserId } from "@/lib/session";
+import { requireAdminId } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // GET /api/mentors → this lead's mentors, each with their mentees.
 export async function GET() {
-  const userId = await currentUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await requireAdminId();
+  if (!userId)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const mentors = await prisma.mentor.findMany({
     where: { userId },
@@ -21,8 +22,9 @@ export async function GET() {
 
 // POST /api/mentors { name, github? } → create a mentor owned by this lead.
 export async function POST(req: Request) {
-  const userId = await currentUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = await requireAdminId();
+  if (!userId)
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";

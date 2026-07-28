@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { currentUserId } from "@/lib/session";
+import { requireAdminId } from "@/lib/session";
 import { USERNAME_RE } from "@/lib/github";
 import { MissingTokenError } from "@/lib/github-deep";
 import { loadDeepProfile } from "@/lib/deep-cache";
@@ -24,9 +24,9 @@ export async function GET(
   req: Request,
   { params }: { params: { username: string } },
 ) {
-  const userId = await currentUserId();
+  const userId = await requireAdminId();
   if (!userId)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const username = params.username;
   if (!USERNAME_RE.test(username))

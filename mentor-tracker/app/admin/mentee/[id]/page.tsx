@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { currentUserId } from "@/lib/session";
+import { requireAdminId } from "@/lib/session";
 import MenteeProfile from "@/components/MenteeProfile";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export default async function MenteePage({
 }: {
   params: { id: string };
 }) {
-  const userId = await currentUserId();
+  const userId = await requireAdminId();
   if (!userId) notFound();
 
   const mentee = await prisma.mentee.findFirst({

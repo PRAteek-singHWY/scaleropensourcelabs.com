@@ -17,6 +17,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   getDeepProfile,
+  type DayContribution,
   type DeepProfile,
   type RankStatus,
   type RepoContribution,
@@ -81,6 +82,19 @@ function toStackEntries(raw: Prisma.JsonValue): StackEntry[] {
   return out;
 }
 
+/** Json column → DayContribution[], tolerant of rows written before the column existed. */
+function toDailyContributions(raw: Prisma.JsonValue): DayContribution[] {
+  if (!Array.isArray(raw)) return [];
+  const out: DayContribution[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null || Array.isArray(item)) continue;
+    const o = item as Record<string, unknown>;
+    if (typeof o.date !== "string") continue;
+    out.push({ date: o.date, count: typeof o.count === "number" ? o.count : 0 });
+  }
+  return out;
+}
+
 function rowToProfile(row: ProfileRow): DeepProfile {
   const repos: RepoContribution[] = [...row.repos]
     .sort((a, b) => a.position - b.position)
@@ -128,6 +142,8 @@ function rowToProfile(row: ProfileRow): DeepProfile {
     prsInWindow: row.prsInWindow,
     issuesInWindow: row.issuesInWindow,
     reviewsInWindow: row.reviewsInWindow,
+    dailyContributions: toDailyContributions(row.dailyContributions),
+    totalContributionsInWindow: row.totalContributionsInWindow,
     totalPRs: row.totalPRs,
     totalMergedPRs: row.totalMergedPRs,
     totalIssues: row.totalIssues,
@@ -138,6 +154,19 @@ function rowToProfile(row: ProfileRow): DeepProfile {
     note: row.note,
     fetchedAt: row.fetchedAt.toISOString(),
   };
+}
+
+/**
+ * Same mapping, exported for the public leaderboard.
+ *
+ * Safe to publish: every field on ContribProfile/RepoContrib/StackScan is derived
+ * from public GitHub data — repo names, star counts, PR totals, contributor ranks.
+ * There is no contact information anywhere in these tables. The caller still
+ * narrows this down to PublicContribStats (lib/public.ts) before it reaches a
+ * page, so publishing is an explicit choice per field rather than a default.
+ */
+export function rowToDeepProfileForPublic(row: ProfileRow): DeepProfile {
+  return rowToProfile(row);
 }
 
 async function persist(username: string, p: DeepProfile): Promise<void> {
@@ -152,6 +181,8 @@ async function persist(username: string, p: DeepProfile): Promise<void> {
     prsInWindow: p.prsInWindow,
     issuesInWindow: p.issuesInWindow,
     reviewsInWindow: p.reviewsInWindow,
+    dailyContributions: p.dailyContributions as unknown as Prisma.InputJsonValue,
+    totalContributionsInWindow: p.totalContributionsInWindow,
     totalPRs: p.totalPRs,
     totalMergedPRs: p.totalMergedPRs,
     totalIssues: p.totalIssues,

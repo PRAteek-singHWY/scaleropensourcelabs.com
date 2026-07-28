@@ -11,12 +11,26 @@ body {
   height: 100%;
 }
 
+/* Base is the public site's surface. The dashboard re-skins itself in
+   app/admin/layout.tsx, so the two zones don't have to share a look. */
 body {
-  @apply bg-ink text-slate-100 antialiased;
+  @apply bg-site-bg font-sans text-site-ink antialiased;
+}
+
+/* The admin dashboard's original ambient gradient, scoped to that zone. */
+.admin-surface {
+  @apply bg-ink text-slate-100;
   background-image:
     radial-gradient(60rem 60rem at 100% -10%, rgba(59, 130, 246, 0.12), transparent 60%),
     radial-gradient(50rem 50rem at -10% 110%, rgba(236, 72, 153, 0.12), transparent 55%);
   background-attachment: fixed;
+}
+
+/* Visible keyboard focus everywhere, not just where we remembered to add it. */
+:focus-visible {
+  outline: 2px solid #7c5cff;
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Thin, on-theme scrollbars */
@@ -31,4 +45,34 @@ body {
 *::-webkit-scrollbar-thumb {
   background: #2a2a42;
   border-radius: 9999px;
+}
+
+/* Display type is set tight and wide — the one place the site raises its voice. */
+.display-xl {
+  @apply font-display font-extrabold tracking-tightest;
+  font-size: clamp(2.5rem, 7vw, 5.25rem);
+  line-height: 0.94;
+}
+
+.display-lg {
+  @apply font-display font-bold tracking-tightest;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  line-height: 1;
+}
+
+/* Small uppercase mono label. Used for field labels and section eyebrows, where
+   it reads as instrumentation rather than decoration. */
+.eyebrow {
+  @apply font-mono text-[11px] uppercase tracking-[0.18em] text-site-dim;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

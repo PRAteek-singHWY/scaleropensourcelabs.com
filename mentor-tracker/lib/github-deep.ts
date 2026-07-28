@@ -104,6 +104,9 @@ export type RankStatus =
  */
 export type StackKind = "code" | "support";
 
+/** One day of the contribution calendar. */
+export type DayContribution = { date: string; count: number };
+
 export type StackEntry = {
   label: string; // "TypeScript"
   ext: string; // ".ts"
@@ -134,6 +137,13 @@ export type DeepProfile = {
   prsInWindow: number;
   issuesInWindow: number;
   reviewsInWindow: number;
+
+  /**
+   * Daily contribution counts across the window, oldest first. Powers the public
+   * site's aggregate club grid, which sums these across all published members.
+   */
+  dailyContributions: DayContribution[];
+  totalContributionsInWindow: number;
 
   totalPRs: number;
   totalMergedPRs: number;
@@ -314,6 +324,17 @@ const DISCOVERY_QUERY = /* GraphQL */ `
             totalCount
           }
         }
+        # Daily series for the public site's aggregate contribution grid. Cheap —
+        # it rides along on a query we already make.
+        contributionCalendar {
+          totalContributions
+          weeks {
+            contributionDays {
+              date
+              contributionCount
+            }
+          }
+        }
       }
       repositoriesContributedTo(
         first: 100
@@ -365,6 +386,12 @@ type DiscoveryData = {
         repository: { nameWithOwner: string };
         contributions: { totalCount: number };
       }[];
+      contributionCalendar: {
+        totalContributions: number;
+        weeks: {
+          contributionDays: { date: string; contributionCount: number }[];
+        }[];
+      };
     };
     repositoriesContributedTo: {
       totalCount: number;
@@ -1032,6 +1059,11 @@ export async function getDeepProfile(
     prsInWindow: cc.totalPullRequestContributions,
     issuesInWindow: cc.totalIssueContributions,
     reviewsInWindow: cc.totalPullRequestReviewContributions,
+
+    dailyContributions: (cc.contributionCalendar?.weeks ?? []).flatMap((w) =>
+      w.contributionDays.map((d) => ({ date: d.date, count: d.contributionCount })),
+    ),
+    totalContributionsInWindow: cc.contributionCalendar?.totalContributions ?? 0,
 
     ...totals,
 
