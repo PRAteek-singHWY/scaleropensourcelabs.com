@@ -133,18 +133,36 @@ model Member {
   bio         String? // short, member-authored
   role        String? // e.g. "Core", "Contributor" — club role, not an auth role
 
+  // GSoC targeting. Public, because knowing who is aiming at which organisation
+  // is useful to other members and to mentors looking for someone to pair with.
+  gsocInterested Boolean @default(false)
+  gsocPref1      String? // organisation name, e.g. "CNCF"
+  gsocPref2      String?
+
   // ---- PRIVATE fields. Must never appear in a public response. ----
   // Public queries use PUBLIC_MEMBER_SELECT (lib/public.ts), which does not list
   // these columns at all, so they are not merely filtered after the fact — they
   // are never read out of Postgres on a public code path.
   email String?
 
+  /// Whether they want the inactivity nudge. Opt-OUT, and only ever acted on when
+  /// an email address exists — we ask for the address on the join form and state
+  /// there exactly what it is used for.
+  notifyInactive Boolean   @default(true)
+  /// Last nudge sent, so a quiet member is not mailed every time the job runs.
+  lastNudgedAt   DateTime?
+
   /// True only when the account owner explicitly ticked the consent box. Without
   /// it the member never appears publicly regardless of status.
   publicConsent Boolean   @default(false)
   consentedAt   DateTime?
 
-  status     MemberStatus @default(PENDING)
+  /// Defaults to APPROVED: joining publishes immediately, with organisers
+  /// moderating afterwards rather than gating the queue. That is safe here because
+  /// the public leaderboard only shows the top few by merged pull requests, so a
+  /// junk signup is not publicly visible without real accepted work behind it.
+  /// Organisers set this back to PENDING to take someone down.
+  status     MemberStatus @default(APPROVED)
   approvedAt DateTime?
   /// The admin's GitHub login, for an audit trail on who published whom.
   approvedBy String?
@@ -192,6 +210,11 @@ model ContribProfile {
   dailyContributions         Json?
   totalContributionsInWindow Int   @default(0)
 
+  /// Date of their most recent public contribution, derived from the series above
+  /// when the profile is written. Stored rather than computed so the danger-zone
+  /// query is an indexed filter instead of parsing every member's JSON.
+  lastContributionAt DateTime?
+
   // All-time totals from the Search API (exact, not windowed).
   totalPRs       Int @default(0)
   totalMergedPRs Int @default(0)
@@ -211,6 +234,81 @@ model ContribProfile {
   stackScan StackScan?
 
   @@index([fetchedAt])
+  @@index([lastContributionAt])
+}
+
+// ---- Open source calendar ----
+//
+// GSoC milestones, Hacktoberfest, conference CFP deadlines, club meetups. Public
+// and admin-authored, so there is no user input to sanitise and no consent
+// question — nothing here describes a person.
+
+enum EventKind {
+  GSOC
+  HACKTOBERFEST
+  CFP
+  MEETUP
+  DEADLINE
+  OTHER
+}
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  kind        EventKind @default(OTHER)
+  startsAt    DateTime
+  /// Null for a single moment in time (a deadline) rather than a span.
+  endsAt      DateTime?
+  url         String?
+  /// Unpublished events are drafts, visible only in /admin.
+  isPublished Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isPublished, startsAt])
+}
+
+// ---- GSoC organisations and their project ideas ----
+//
+// A browsable board so members can pick a target organisation months before
+// applications open, which is when the work that gets someone selected actually
+// happens. Admin-curated: organisations publish ideas in wildly different formats,
+// so an automated importer would be brittle and wrong more often than useful.
+
+model GsocOrg {
+  id           String  @id @default(cuid())
+  name         String  @unique
+  slug         String  @unique
+  description  String?
+  /// Comma-separated technologies, e.g. "Go, Kubernetes, gRPC".
+  technologies String?
+  /// Most recent GSoC year this organisation participated in.
+  lastYear     Int?
+  url          String?
+  ideasUrl     String?
+  /// Difficulty of getting selected, as judged by club organisers.
+  difficulty   String? // "approachable" | "competitive" | "very competitive"
+
+  ideas     GsocIdea[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model GsocIdea {
+  id          String  @id @default(cuid())
+  orgId       String
+  title       String
+  description String?
+  skills      String?
+  size        String? // "90 hours" | "175 hours" | "350 hours"
+  url         String?
+
+  org       GsocOrg  @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([orgId])
 }
 
 model RepoContrib {

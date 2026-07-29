@@ -169,6 +169,19 @@ export function rowToDeepProfileForPublic(row: ProfileRow): DeepProfile {
   return rowToProfile(row);
 }
 
+/**
+ * The most recent day with any contribution, or null if the whole window is empty.
+ * Derived on write so the danger-zone query can filter on an indexed column rather
+ * than parsing every member's JSON series on every page load.
+ */
+function lastContributionDate(days: DayContribution[]): Date | null {
+  let latest: string | null = null;
+  for (const d of days) {
+    if (d.count > 0 && (latest === null || d.date > latest)) latest = d.date;
+  }
+  return latest ? new Date(`${latest}T00:00:00.000Z`) : null;
+}
+
 async function persist(username: string, p: DeepProfile): Promise<void> {
   const scalars = {
     displayName: p.displayName,
@@ -183,6 +196,7 @@ async function persist(username: string, p: DeepProfile): Promise<void> {
     reviewsInWindow: p.reviewsInWindow,
     dailyContributions: p.dailyContributions as unknown as Prisma.InputJsonValue,
     totalContributionsInWindow: p.totalContributionsInWindow,
+    lastContributionAt: lastContributionDate(p.dailyContributions),
     totalPRs: p.totalPRs,
     totalMergedPRs: p.totalMergedPRs,
     totalIssues: p.totalIssues,

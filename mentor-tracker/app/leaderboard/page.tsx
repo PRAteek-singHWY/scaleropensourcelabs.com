@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { SiteNav, SiteFooter } from "@/components/site/SiteChrome";
 import RankBadge from "@/components/site/RankBadge";
-import { loadLeaderboard } from "@/lib/leaderboard";
+import MyStanding from "@/components/site/MyStanding";
+import {
+  loadPublicLeaderboard,
+  PUBLIC_LEADERBOARD_LIMIT,
+} from "@/lib/leaderboard";
 
 export const revalidate = 3600;
 export const metadata = {
@@ -11,7 +15,9 @@ export const metadata = {
 };
 
 export default async function LeaderboardPage() {
-  const board = await loadLeaderboard();
+  // Only the public top N. Positions below the cutoff are never sent to the
+  // browser at all, so they cannot leak through the page source either.
+  const { top: board, totalMembers } = await loadPublicLeaderboard();
 
   return (
     <>
@@ -24,6 +30,16 @@ export default async function LeaderboardPage() {
           somebody else has to agree to. Commits and opened PRs are counted too, but
           they measure effort rather than accepted work.
         </p>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-site-dim">
+          This board shows the top {PUBLIC_LEADERBOARD_LIMIT} of{" "}
+          {totalMembers || "our"} member{totalMembers === 1 ? "" : "s"}. Positions
+          below that are deliberately not published — members can see their own
+          standing when signed in.
+        </p>
+
+        <div className="mt-8">
+          <MyStanding />
+        </div>
 
         {board.length === 0 ? (
           <div className="mt-12 rounded-2xl border border-dashed border-site-line px-6 py-16 text-center">

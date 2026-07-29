@@ -98,6 +98,71 @@ export async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
   );
 }
 
+/**
+ * How many members the PUBLIC leaderboard shows.
+ *
+ * The cutoff does two jobs. It keeps the public board a highlight reel rather than
+ * a ranking of every student from best to worst — nobody consented to being
+ * publicly listed as 47th. And because joining now publishes immediately, it is
+ * also the spam control: appearing publicly requires out-ranking ten people on
+ * merged pull requests, which a junk signup cannot do.
+ */
+export const PUBLIC_LEADERBOARD_LIMIT = 10;
+
+/** The public top N. Everything below the cutoff is simply not returned. */
+export async function loadPublicLeaderboard(): Promise<{
+  top: LeaderboardEntry[];
+  totalMembers: number;
+}> {
+  const board = await loadLeaderboard();
+  return {
+    top: board.slice(0, PUBLIC_LEADERBOARD_LIMIT),
+    // A count is fine to publish — it says how big the club is, not who is where.
+    totalMembers: board.length,
+  };
+}
+
+export type MemberStanding = {
+  rank: number;
+  totalMembers: number;
+  /** True when they're already visible on the public board. */
+  isPublic: boolean;
+  /** Merged PRs needed to reach the public cutoff, or null if already there. */
+  mergedPRsToPublic: number | null;
+  entry: LeaderboardEntry;
+};
+
+/**
+ * A signed-in member's own position, shown only to them.
+ *
+ * This is the feedback loop the public cutoff would otherwise remove: without it a
+ * member outside the top ten has no idea whether they are 11th or 60th, and a
+ * leaderboard you cannot locate yourself on does not motivate anyone. Returning the
+ * gap to the cutoff turns it into a target rather than a verdict.
+ */
+export async function loadMemberStanding(
+  github: string,
+): Promise<MemberStanding | null> {
+  const board = await loadLeaderboard();
+  const key = github.toLowerCase();
+  const index = board.findIndex((e) => e.member.github === key);
+  if (index === -1) return null;
+
+  const rank = index + 1;
+  const isPublic = rank <= PUBLIC_LEADERBOARD_LIMIT;
+  const cutoffEntry = board[PUBLIC_LEADERBOARD_LIMIT - 1];
+  const mine = board[index].stats?.totalMergedPRs ?? 0;
+  const needed = cutoffEntry?.stats?.totalMergedPRs ?? 0;
+
+  return {
+    rank,
+    totalMembers: board.length,
+    isPublic,
+    mergedPRsToPublic: isPublic ? null : Math.max(1, needed - mine + 1),
+    entry: board[index],
+  };
+}
+
 /** One member's public profile page, or null if they aren't publishable. */
 export async function loadPublicMember(
   github: string,
