@@ -1,4 +1,5 @@
 import SignInButton from "@/components/SignInButton";
+import { isDemoMode } from "@/lib/demo";
 
 export const metadata = { title: "Sign in · Mentor Tracker" };
 
@@ -6,8 +7,9 @@ export const metadata = { title: "Sign in · Mentor Tracker" };
 export default function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; callbackUrl?: string };
 }) {
+  const demo = isDemoMode();
   const denied =
     searchParams?.error === "AccessDenied" ||
     searchParams?.error === "Callback";
@@ -57,7 +59,10 @@ export default function LoginPage({
           )}
 
           <div className="mt-6">
-            <SignInButton />
+            <SignInButton
+              demo={demo}
+              callbackUrl={searchParams?.callbackUrl ?? "/admin"}
+            />
           </div>
 
           <p className="mt-6 text-center text-[11px] leading-relaxed text-muted">

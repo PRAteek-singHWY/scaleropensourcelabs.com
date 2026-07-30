@@ -30,8 +30,10 @@
 
 import type { NextAuthOptions } from "next-auth";
 import GitHubProvider from "next-auth/providers/github";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
+import { authSecret, demoAdminLogin, DEMO_USER, isDemoMode } from "@/lib/demo";
 
 export type Role = "admin" | "member";
 
@@ -53,14 +55,53 @@ export function roleForLogin(login: string | null | undefined): Role {
   return allowedLogins().includes(l) ? "admin" : "member";
 }
 
+/**
+ * Demo sign-in. Present ONLY in demo mode, which never activates implicitly in
+ * production (see lib/demo.ts) — so this cannot appear on a real deployment
+ * unless somebody explicitly sets DEMO_MODE=1, and even then the UI shouts about
+ * it.
+ *
+ * It exists so the app can be demonstrated and developed without a GitHub OAuth
+ * app: one button, no password, signing in as the seeded organiser so the seeded
+ * mentors and mentees are actually owned by the session.
+ *
+ * There is NO authentication here. That is the point, and it is why the gate on
+ * it is the strictest thing in the codebase.
+ */
+function demoProvider() {
+  return CredentialsProvider({
+    id: "demo",
+    name: "Demo organiser",
+    credentials: {},
+    async authorize() {
+      const login = demoAdminLogin();
+      // Reuse the seeded lead (same email constant) so /admin shows the seeded
+      // mentors and mentees rather than an empty dashboard owned by a new user.
+      const user = await prisma.user.upsert({
+        where: { email: DEMO_USER.email },
+        create: { email: DEMO_USER.email, name: DEMO_USER.name, login },
+        update: { login },
+        select: { id: true, name: true, email: true },
+      });
+      return { id: user.id, name: user.name, email: user.email, login };
+    },
+  });
+}
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
-  providers: [
-    GitHubProvider({
-      clientId: process.env.GITHUB_OAUTH_ID ?? "",
-      clientSecret: process.env.GITHUB_OAUTH_SECRET ?? "",
-    }),
-  ],
+  // The Prisma adapter and a credentials provider don't mix — the adapter has no
+  // concept of a credentials session. JWT sessions (set below) make it work, so
+  // the adapter is only attached when real OAuth is in play.
+  ...(isDemoMode() ? {} : { adapter: PrismaAdapter(prisma) }),
+  secret: authSecret(),
+  providers: isDemoMode()
+    ? [demoProvider()]
+    : [
+        GitHubProvider({
+          clientId: process.env.GITHUB_OAUTH_ID ?? "",
+          clientSecret: process.env.GITHUB_OAUTH_SECRET ?? "",
+        }),
+      ],
   // JWT sessions keep middleware (getToken) working and avoid a DB read on every
   // request; the token is encrypted, so it never exposes data to the client.
   session: { strategy: "jwt" },
@@ -71,7 +112,8 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     // Any valid GitHub account may hold a session — see the note above. This is
     // NOT an authorization decision; authorization is the `role` claim below.
-    async signIn({ profile }) {
+    async signIn({ account, profile }) {
+      if (account?.provider === "demo") return isDemoMode();
       const login = (profile as { login?: string } | undefined)?.login;
       return Boolean(login);
     },
@@ -79,7 +121,11 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, profile }) {
       if (user?.id) token.uid = user.id;
 
-      const login = (profile as { login?: string } | undefined)?.login;
+      // OAuth carries the login on `profile`; the demo provider returns it on
+      // `user`. Either way the login is what the role is derived from.
+      const login =
+        (profile as { login?: string } | undefined)?.login ??
+        (user as { login?: string } | undefined)?.login;
       if (login) {
         token.login = login;
         // Best-effort cache of the GitHub login for display.

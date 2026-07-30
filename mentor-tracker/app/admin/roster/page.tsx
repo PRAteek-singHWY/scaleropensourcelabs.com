@@ -37,10 +37,15 @@ export default async function RosterPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-100">Club roster</h1>
+          {/* One denominator per sentence. `clubTotal` counts every approved
+              member; `board.length` counts only those who consented to a public
+              listing, so 5 active + 1 quiet out of "5 members" would not add up. */}
           <p className="mt-1 text-sm text-muted">
-            {board.length} member{board.length === 1 ? "" : "s"} ·{" "}
-            {danger.activeCount} active · {danger.quiet.length} quiet ·{" "}
-            {danger.awaitingData.length} awaiting data
+            {danger.clubTotal} in the club · {danger.activeCount} active ·{" "}
+            {danger.quiet.length} quiet · {danger.awaitingData.length} awaiting data
+          </p>
+          <p className="mt-0.5 text-xs text-muted/80">
+            {board.length} of them consented to appear publicly.
           </p>
         </div>
         <Link
@@ -144,7 +149,7 @@ export default async function RosterPage() {
                         <span title="This member opted out of nudge emails.">
                           opted out
                         </span>
-                      ) : !m.email ? (
+                      ) : !m.hasEmail ? (
                         <span title="No email address on file, so the nudge cannot be sent.">
                           no address
                         </span>

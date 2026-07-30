@@ -27,8 +27,14 @@ export type QuietMember = {
   github: string;
   displayName: string;
   batch: string | null;
-  /** Private. Only ever included for organiser views and the mailer. */
+  /** Private. Null unless the caller passed includeEmail. */
   email: string | null;
+  /**
+   * Whether an address exists at all — distinct from `email` being null because
+   * the caller didn't ask for it. Without this the UI cannot tell "no address on
+   * file" from "we never looked", and would report the second as the first.
+   */
+  hasEmail: boolean;
   notifyInactive: boolean;
   lastNudgedAt: string | null;
   lastContributionAt: string | null;
@@ -44,6 +50,13 @@ export type DangerZone = {
   /** Joined but never fetched. Not inactive; simply unknown. */
   awaitingData: { id: string; github: string; displayName: string }[];
   activeCount: number;
+  /**
+   * Everyone this covers: every APPROVED member, whether or not they consented to
+   * a public listing. Deliberately NOT the same population as the leaderboard,
+   * which is consent-gated — organisers track the whole club, not just the members
+   * who opted into publicity. Callers must not mix the two counts in one sentence.
+   */
+  clubTotal: number;
 };
 
 function daysBetween(then: Date, now: Date): number {
@@ -72,13 +85,22 @@ export async function loadDangerZone(
       batch: true,
       notifyInactive: true,
       lastNudgedAt: true,
-      ...(opts.includeEmail ? { email: true } : {}),
+      // Read regardless, reduced to a boolean below unless the caller opted in.
+      // Knowing whether an address exists is not itself contact information, and
+      // the alternative is a UI that cannot distinguish "none" from "not checked".
+      email: true,
     },
     orderBy: { displayName: "asc" },
   });
 
   if (members.length === 0) {
-    return { thresholdDays, quiet: [], awaitingData: [], activeCount: 0 };
+    return {
+      thresholdDays,
+      quiet: [],
+      awaitingData: [],
+      activeCount: 0,
+      clubTotal: 0,
+    };
   }
 
   const profiles = await prisma.contribProfile.findMany({
@@ -118,7 +140,8 @@ export async function loadDangerZone(
       github: m.github,
       displayName: m.displayName,
       batch: m.batch,
-      email: "email" in m ? ((m as { email: string | null }).email ?? null) : null,
+      email: opts.includeEmail ? (m.email ?? null) : null,
+      hasEmail: m.email !== null && m.email !== "",
       notifyInactive: m.notifyInactive,
       lastNudgedAt: m.lastNudgedAt ? m.lastNudgedAt.toISOString() : null,
       lastContributionAt: last ? last.toISOString() : null,
@@ -133,5 +156,11 @@ export async function loadDangerZone(
     return (b.daysSinceActivity ?? 0) - (a.daysSinceActivity ?? 0);
   });
 
-  return { thresholdDays, quiet, awaitingData, activeCount };
+  return {
+    thresholdDays,
+    quiet,
+    awaitingData,
+    activeCount,
+    clubTotal: members.length,
+  };
 }

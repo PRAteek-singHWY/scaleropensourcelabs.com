@@ -14,14 +14,34 @@
 // production deploy (say, a missing DATABASE_URL) must never silently turn into a
 // publicly writable app with authentication disabled.
 
-/** The fixed identity every demo sign-in produces. */
+/**
+ * The fixed identity every demo sign-in produces. The seed script imports this
+ * too — when they were separate constants they drifted, the provider created a
+ * second user whose login wasn't allowlisted, and the demo organiser silently
+ * signed in as a member with no dashboard access.
+ */
 export const DEMO_USER = {
-  id: "demo-lead",
   name: "Demo Lead",
   login: "demo-lead",
-  email: "demo@example.invalid",
-  image: "https://github.com/github.png",
+  email: "demo-lead@example.invalid",
 } as const;
+
+/**
+ * The GitHub login the demo organiser signs in as.
+ *
+ * It deliberately borrows the FIRST entry of ALLOWED_LOGINS rather than
+ * special-casing the role check. Admin is granted by exactly one rule — being on
+ * the allowlist — and the demo has to satisfy that rule like anything else. If the
+ * allowlist is empty the demo user falls back to a login that is NOT on it, so
+ * they sign in as a member and the dashboard stays shut. Fail closed, even here.
+ */
+export function demoAdminLogin(): string {
+  const first = (process.env.ALLOWED_LOGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)[0];
+  return first ?? DEMO_USER.login;
+}
 
 /**
  * Whether demo mode is active.

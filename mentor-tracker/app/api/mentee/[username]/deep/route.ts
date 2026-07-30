@@ -4,6 +4,8 @@ import { requireAdminId } from "@/lib/session";
 import { USERNAME_RE } from "@/lib/github";
 import { MissingTokenError } from "@/lib/github-deep";
 import { loadDeepProfile } from "@/lib/deep-cache";
+import { isDemoMode } from "@/lib/demo";
+import { demoDeepProfile } from "@/lib/demo-data";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +51,20 @@ export async function GET(
 
   const forceRefresh =
     new URL(req.url).searchParams.get("refresh") === "1";
+
+  // Demo mode never touches GitHub — the seeded logins don't exist there, and the
+  // real fetcher needs a token the demo deliberately doesn't require.
+  if (isDemoMode()) {
+    return NextResponse.json(
+      {
+        profile: demoDeepProfile(username),
+        cached: false,
+        staleReason: null,
+        ttlHours: 12,
+      },
+      { status: 200, headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
 
   try {
     const result = await loadDeepProfile(username, { forceRefresh });

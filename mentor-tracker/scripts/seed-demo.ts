@@ -16,6 +16,10 @@ import {
   demoDeepProfile,
   type DemoMenteeSeed,
 } from "../lib/demo-data";
+// Shared with the demo sign-in provider on purpose — when the seed and the
+// provider each had their own copy of this identity they drifted, and the demo
+// organiser ended up signing in as a different, non-allowlisted user.
+import { DEMO_USER, demoAdminLogin } from "../lib/demo";
 
 const prisma = new PrismaClient();
 
@@ -40,17 +44,14 @@ async function main() {
   await prisma.gsocOrg.deleteMany();
 
   // ---- The lead (organiser) who owns the mentorship data ----
+  const adminLogin = demoAdminLogin();
   const lead = await prisma.user.upsert({
-    where: { email: "demo-lead@example.invalid" },
-    create: {
-      email: "demo-lead@example.invalid",
-      name: "Demo Lead",
-      login: "PRAteek-singHWY", // matches ALLOWED_LOGINS so this account is admin
-    },
-    update: { login: "PRAteek-singHWY" },
+    where: { email: DEMO_USER.email },
+    create: { email: DEMO_USER.email, name: DEMO_USER.name, login: adminLogin },
+    update: { login: adminLogin },
     select: { id: true },
   });
-  console.log(`Lead: ${lead.id}`);
+  console.log(`Lead: ${lead.id} (login "${adminLogin}" → admin via ALLOWED_LOGINS)`);
 
   const allSeeds: DemoMenteeSeed[] = [];
 
