@@ -38,13 +38,21 @@ import * as THREE from "three";
 /** World units travelled across the full scroll range. */
 const CLIMB = 24;
 /**
- * Rest position. X is offset RIGHT because the headline occupies the left half of
- * the hero — a centred rocket renders behind the type where it can't be seen and
- * competes with it where it can. Y clears the ground-haze gradient; sitting lower
- * put the entire vehicle inside the opaque band at the bottom of the frame.
+ * Rest position: centre column, low in frame, rising up the middle.
+ *
+ * This has moved twice, and both moves were composition errors worth recording.
+ * First it sat dead-centre at mid-height, directly behind the headline — where it
+ * could not be seen. Then it moved right to dodge the type, and the hero gained a
+ * right-hand column (Apple's asymmetric big-word layout), which put the buttons
+ * and the altitude readout straight onto the nose cone.
+ *
+ * The empty region is the LOWER MIDDLE: below the big word on the left, below the
+ * statement on the right, between the two columns. So the vehicle rises through
+ * the gap the layout actually leaves rather than fighting whichever column moved
+ * last. It also reads better — a launch belongs in the centre of the frame.
  */
-const REST_X = 4.6;
-const REST_Y = -1.5;
+const REST_X = 0.4;
+const REST_Y = -3.1;
 const STAR_COUNT = 900;
 
 export default function Ascent({
@@ -230,7 +238,7 @@ export default function Ascent({
 
       rocket.position.y = REST_Y + eased * CLIMB;
       // Drifts toward centre as it climbs, so the exit isn't a vertical slide.
-      rocket.position.x = REST_X - eased * 1.4;
+      rocket.position.x = REST_X + eased * 1.1;
       rocket.rotation.z = -0.06 + Math.sin(p * Math.PI) * 0.12;
       rocket.rotation.y = t * 0.25;
 

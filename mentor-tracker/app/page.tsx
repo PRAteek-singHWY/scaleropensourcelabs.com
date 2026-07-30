@@ -1,5 +1,8 @@
 import Hero from "@/components/hero/Hero";
 import Duo from "@/components/Duo";
+import Nav from "@/components/Nav";
+import Carousel from "@/components/Carousel";
+import Eyebrow from "@/components/Eyebrow";
 import { PATH, PROJECTS, TRACKS, LINKS, totals } from "@/content/club";
 
 // Fully static. No database, no auth, no API routes — the site is HTML plus one
@@ -15,6 +18,7 @@ export default function Home() {
 
   return (
     <>
+      <Nav />
       <Hero />
 
       <main>
@@ -64,72 +68,80 @@ export default function Home() {
           </div>
 
           {projects.length === 0 ? (
-            <div className="mt-12 rounded-2xl border border-dashed border-seam px-8 py-16 text-center">
+            <div className="mt-12 rounded-[18px] border border-dashed border-seam px-8 py-16 text-center">
               <p className="text-display-md font-semibold">Nothing published yet.</p>
               <p className="measure mx-auto mt-4 text-body text-haze">
-                This section fills in as members land work upstream. Each entry
-                carries a link to the merged pull request.
+                This fills in as members land work upstream. Each card carries a link
+                to the merged pull request.
               </p>
             </div>
           ) : (
-            <ul className="mt-14 divide-y divide-seam border-y border-seam">
+            <Carousel label="Upstream contributions" className="mt-14">
               {projects.map((p) => (
-                <li key={p.repo} className="group py-10 sm:py-12">
-                  <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
-                    <div>
+                <article
+                  key={p.repo}
+                  data-card
+                  /* 18px radius, measured off Apple's cards. */
+                  className="flex w-[19rem] shrink-0 snap-start flex-col rounded-[18px] border border-seam bg-hull p-7 sm:w-[23rem]"
+                >
+                  {p.tag ? (
+                    <Eyebrow tone={p.tag.tone}>{p.tag.label}</Eyebrow>
+                  ) : (
+                    <Eyebrow>Contribution</Eyebrow>
+                  )}
+
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group mt-3 inline-flex items-baseline gap-2 font-mono text-body-lg text-rime transition-colors duration-300 ease-glide hover:text-plasma"
+                  >
+                    {p.repo}
+                    <span
+                      aria-hidden
+                      className="text-dust transition-transform duration-300 ease-glide group-hover:translate-x-1"
+                    >
+                      ↗
+                    </span>
+                  </a>
+
+                  <p className="mt-4 text-sm leading-relaxed text-haze">{p.what}</p>
+                  <p className="mt-4 text-sm leading-relaxed text-rime">{p.did}</p>
+
+                  {/* The proof, given the weight it deserves, pinned to the base
+                      so cards of differing text length still align. */}
+                  {p.proof && (
+                    <div className="mt-auto pt-8">
+                      <Eyebrow>{p.proof.label}</Eyebrow>
+                      <p className="mt-2 font-mono text-display-md font-medium tabular-nums text-plasma">
+                        {p.proof.value}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="mt-6 flex flex-wrap items-center gap-x-4 border-t border-seam pt-4 font-mono text-xs text-dust">
+                    {p.memberUrl ? (
                       <a
-                        href={p.url}
+                        href={p.memberUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-baseline gap-3 font-mono text-body-lg text-rime transition-colors duration-300 ease-glide hover:text-plasma"
+                        className="text-haze transition-colors hover:text-plasma"
                       >
-                        {p.repo}
-                        <span
-                          aria-hidden
-                          className="translate-y-[-1px] text-dust transition-transform duration-300 ease-glide group-hover:translate-x-1 group-hover:text-plasma"
-                        >
-                          ↗
-                        </span>
+                        {p.member}
                       </a>
-
-                      <p className="measure mt-4 text-body text-haze">{p.what}</p>
-                      <p className="measure mt-5 text-body text-rime">{p.did}</p>
-
-                      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs text-dust">
-                        {p.memberUrl ? (
-                          <a
-                            href={p.memberUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-haze transition-colors hover:text-plasma"
-                          >
-                            {p.member}
-                          </a>
-                        ) : (
-                          <span className="text-haze">{p.member}</span>
-                        )}
-                        {p.language && <span>{p.language}</span>}
-                      </div>
-                    </div>
-
-                    {/* The proof, given the weight it deserves. */}
-                    {p.proof && (
-                      <div className="lg:pl-12 lg:text-right">
-                        <p className="label">{p.proof.label}</p>
-                        <p className="mt-3 font-mono text-display-md font-medium tabular-nums text-plasma">
-                          {p.proof.value}
-                        </p>
-                      </div>
+                    ) : (
+                      <span className="text-haze">{p.member}</span>
                     )}
+                    {p.language && <span>{p.language}</span>}
                   </div>
-                </li>
+                </article>
               ))}
-            </ul>
+            </Carousel>
           )}
         </section>
 
         {/* ---- Tracks ------------------------------------------------------ */}
-        <section className="section pt-28 sm:pt-40">
+        <section id="tracks" className="section pt-28 sm:pt-40">
           <p className="label">Three tracks</p>
           <Duo
             className="mt-6 text-display-lg font-semibold"
@@ -155,7 +167,7 @@ export default function Home() {
         </section>
 
         {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
-        <section className="section pt-28 sm:pt-40">
+        <section id="path" className="section pt-28 sm:pt-40">
           <p className="label">How a first contribution actually goes</p>
           <Duo
             className="mt-6 max-w-3xl text-display-lg font-semibold text-balance"

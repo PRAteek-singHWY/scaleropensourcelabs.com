@@ -24,6 +24,11 @@ export type Project = {
   /** Optional hard proof: a rank, a count. Only when verified. */
   proof?: { label: string; value: string };
   language?: string;
+  /**
+   * Card state tag. "security" claims the site's single signal colour, so it is
+   * reserved for coordinated-disclosure work rather than applied for emphasis.
+   */
+  tag?: { label: string; tone: "merged" | "security" | "neutral" };
   /** Set false for entries still being written, so they don't render. */
   published: boolean;
 };
@@ -45,6 +50,7 @@ export const PROJECTS: Project[] = [
     memberUrl: "https://github.com/PRAteek-singHWY",
     proof: { label: "Contributor rank", value: "#2 / 40" },
     language: "Python",
+    tag: { label: "46 merged", tone: "merged" },
     published: true,
   },
 

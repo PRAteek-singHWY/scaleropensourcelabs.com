@@ -151,55 +151,64 @@ export default function Hero() {
         {/* Ground haze, so the vehicle reads as leaving something. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-void via-void/60 to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-void via-void/50 to-transparent"
         />
 
-        {/* ---- Copy ---- */}
-        <div className="section relative z-10">
-          <div className="max-w-2xl">
-            <p className="label animate-rise">Scaler School of Technology</p>
-
-            {/* No forced line breaks: they fought the fluid scale and produced a
-                five-line block that overflowed short viewports. A max-width does
-                the same job and survives every screen size. */}
-            <h1 className="mt-5 max-w-[22ch] text-display-xl font-semibold text-balance animate-rise">
-              We put student names in the{" "}
-              <span className="text-plasma">commit log.</span>
-            </h1>
-
-            <p className="measure mt-6 text-body-lg text-haze animate-rise">
-              Scaler Open Source Club. Members contribute to the projects the world
-              already runs on — and everything we claim is a link you can open.
-            </p>
-
-            {/* Altitude readout. Mono, tabular, changes as the vehicle climbs. */}
-            <div
-              className="mt-10 flex items-center gap-4"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              <span className="font-mono text-label uppercase text-plasma tabular-nums">
-                {current.altitude}
-              </span>
-              <span className="h-px w-8 bg-seam" aria-hidden />
-              <span className="font-mono text-sm text-haze transition-opacity duration-500 ease-glide">
-                {current.line}
-              </span>
+        {/* ---- Copy ----
+            Apple's store hero is asymmetric: one enormous word on the left, a
+            short right-aligned statement opposite, and nothing in between. The
+            confidence comes from the imbalance and the empty middle. Copied here
+            structurally — the big word states the subject, the statement opposite
+            makes the claim. */}
+        <div className="section relative z-10 w-full">
+          <div className="grid gap-10 lg:grid-cols-[auto_1fr] lg:items-start lg:gap-20">
+            <div>
+              <p className="label animate-rise">Scaler School of Technology</p>
+              <h1 className="mt-4 text-display-xl font-semibold animate-rise">
+                Open
+                <br />
+                <span className="text-plasma">Source</span>
+              </h1>
             </div>
 
-            <div className="mt-9 flex flex-wrap items-center gap-3">
-              <a
-                href="#projects"
-                className="rounded-full bg-rime px-6 py-3 text-sm font-semibold text-void transition duration-300 ease-glide hover:bg-plasma"
+            <div className="animate-rise lg:pt-14 lg:text-right">
+              <p className="measure text-body-lg text-rime lg:ml-auto">
+                We put student names in the commit log.
+              </p>
+              <p className="measure mt-4 text-body text-haze lg:ml-auto">
+                Members contribute to the projects the world already runs on. Every
+                claim on this page is a link you can open.
+              </p>
+
+              {/* Altitude readout — mono, tabular, advances as the vehicle climbs. */}
+              <div
+                className="mt-8 flex items-center gap-4 lg:justify-end"
+                aria-live="polite"
+                aria-atomic="true"
               >
-                See what we shipped
-              </a>
-              <a
-                href="#join"
-                className="rounded-full border border-seam px-6 py-3 text-sm font-semibold text-rime transition duration-300 ease-glide hover:border-plasma/60"
-              >
-                Join the club
-              </a>
+                <span className="font-mono text-label uppercase tabular-nums text-plasma">
+                  {current.altitude}
+                </span>
+                <span className="h-px w-8 bg-seam" aria-hidden />
+                <span className="font-mono text-sm text-haze transition-opacity duration-500 ease-glide">
+                  {current.line}
+                </span>
+              </div>
+
+              <div className="mt-9 flex flex-wrap items-center gap-3 lg:justify-end">
+                <a
+                  href="#projects"
+                  className="rounded-full bg-rime px-6 py-3 text-sm font-semibold text-void transition duration-300 ease-glide hover:bg-plasma"
+                >
+                  See what we shipped
+                </a>
+                <a
+                  href="#join"
+                  className="rounded-full border border-seam px-6 py-3 text-sm font-semibold text-rime transition duration-300 ease-glide hover:border-plasma/60"
+                >
+                  Join the club
+                </a>
+              </div>
             </div>
           </div>
         </div>
