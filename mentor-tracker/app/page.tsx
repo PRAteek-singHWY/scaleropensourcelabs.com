@@ -3,6 +3,7 @@ import { SiteNav, SiteFooter } from "@/components/site/SiteChrome";
 import ContributionGrid from "@/components/site/ContributionGrid";
 import RankBadge from "@/components/site/RankBadge";
 import { loadClubGrid, loadClubTotals, loadLeaderboard } from "@/lib/leaderboard";
+import { qualifiesForPublicPage } from "@/lib/public";
 
 // Public landing page. Server-rendered from the Postgres cache — no GitHub calls,
 // no client-side fetching, so it is fast and indexable.
@@ -22,7 +23,11 @@ export default async function HomePage({
     loadLeaderboard(),
   ]);
 
-  const top = board.filter((e) => e.stats?.bestRank).slice(0, 5);
+  // Needs a rank to be worth showing AND a reachable page to link to. A repo rank
+  // comes from commits, which doesn't by itself imply a merged PR, so both apply.
+  const top = board
+    .filter((e) => e.stats?.bestRank && qualifiesForPublicPage(e.stats))
+    .slice(0, 5);
   const hasData = grid.days.length > 0;
 
   return (

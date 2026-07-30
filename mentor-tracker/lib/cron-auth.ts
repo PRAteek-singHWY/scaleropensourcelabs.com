@@ -14,20 +14,20 @@
 // Actions cron, or `curl` from a laptop all work the same way, so switching hosts
 // doesn't mean rewriting this.
 
-import { timingSafeEqual } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 
-/** Constant-time string compare that doesn't leak length through early return. */
+/**
+ * Constant-time compare of two secrets of any length.
+ *
+ * `timingSafeEqual` throws when the buffers differ in length, so a naive guard
+ * returns early and leaks the secret's length. Hashing both sides to a fixed
+ * 32 bytes first removes the problem entirely: every comparison is over the same
+ * number of bytes regardless of input, so neither length nor content is
+ * observable in the timing.
+ */
 function secretsMatch(provided: string, expected: string): boolean {
-  const a = Buffer.from(provided, "utf8");
-  const b = Buffer.from(expected, "utf8");
-  // timingSafeEqual throws on length mismatch, which would itself be a timing
-  // signal, so hash-free equalisation: compare same-length buffers and AND in the
-  // length check.
-  if (a.length !== b.length) {
-    // Still do a comparison of equal-length buffers so the work is constant.
-    timingSafeEqual(a, a);
-    return false;
-  }
+  const a = createHash("sha256").update(provided, "utf8").digest();
+  const b = createHash("sha256").update(expected, "utf8").digest();
   return timingSafeEqual(a, b);
 }
 

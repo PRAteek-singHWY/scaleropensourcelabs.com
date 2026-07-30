@@ -13,13 +13,13 @@
 //      member with no cached profile yet renders with stats: null and a "pending"
 //      label, which is honest and cheap.
 //
-// The refresh job that keeps those cached profiles warm is the piece still to
-// build — see the note at the bottom of this file.
+// lib/refresh.ts keeps those cached profiles warm on a schedule.
 
 import { prisma } from "@/lib/prisma";
 import {
   PUBLIC_MEMBER_SELECT,
   PUBLIC_MEMBER_WHERE,
+  qualifiesForPublicPage,
   rankLeaderboard,
   toPublicMember,
   toPublicStats,
@@ -67,10 +67,36 @@ export async function listPublicMembers(): Promise<PublicMember[]> {
 }
 
 /**
+ * Short in-process memo for the full-club aggregate.
+ *
+ * loadLeaderboard() reads every published member plus every cached profile, its
+ * repo rows and its stack scan. The public pages call it behind ISR so that cost
+ * is amortised — but /api/members/standing calls it per request, from any
+ * signed-in account, with no rate limit. That turns one cheap HTTP request into a
+ * multi-table read, which is a free amplification primitive.
+ *
+ * A few seconds of memoisation removes it. The data changes only when the refresh
+ * job runs, so serving a slightly stale ranking costs nothing real. Each
+ * serverless instance keeps its own copy, which is fine — the point is to collapse
+ * bursts, not to be a shared cache.
+ */
+const BOARD_MEMO_MS = 20_000;
+let boardMemo: { at: number; value: LeaderboardEntry[] } | null = null;
+
+/**
  * The full leaderboard: publishable members joined to their cached contribution
  * stats, ordered by merged PRs.
  */
 export async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
+  if (boardMemo && Date.now() - boardMemo.at < BOARD_MEMO_MS) {
+    return boardMemo.value;
+  }
+  const fresh = await computeLeaderboard();
+  boardMemo = { at: Date.now(), value: fresh };
+  return fresh;
+}
+
+async function computeLeaderboard(): Promise<LeaderboardEntry[]> {
   const members = await listPublicMembers();
   if (members.length === 0) return [];
 
@@ -101,11 +127,13 @@ export async function loadLeaderboard(): Promise<LeaderboardEntry[]> {
 /**
  * How many members the PUBLIC leaderboard shows.
  *
- * The cutoff does two jobs. It keeps the public board a highlight reel rather than
- * a ranking of every student from best to worst — nobody consented to being
- * publicly listed as 47th. And because joining now publishes immediately, it is
- * also the spam control: appearing publicly requires out-ranking ten people on
- * merged pull requests, which a junk signup cannot do.
+ * The cutoff keeps the public board a highlight reel rather than a ranking of every
+ * student from best to worst — nobody consented to being publicly listed as 47th.
+ *
+ * It is NOT, on its own, the abuse control for auto-publish. It governs this table
+ * only; /members/<login> is reachable by direct URL and ignores the cutoff
+ * entirely. The gate that stops someone auto-publishing arbitrary text on the
+ * club's domain is MIN_MERGED_PRS_FOR_PUBLIC_PAGE in lib/public.ts.
  */
 export const PUBLIC_LEADERBOARD_LIMIT = 10;
 
@@ -181,11 +209,18 @@ export async function loadPublicMember(
         where: { username: member.github },
         include: { repos: true, stackScan: true },
       });
+      const stats = profile
+        ? toPublicStats(rowToDeepProfileForPublic(profile))
+        : null;
 
-      return {
-        member,
-        stats: profile ? toPublicStats(rowToDeepProfileForPublic(profile)) : null,
-      };
+      // A member is counted on the leaderboard as soon as they consent, but a
+      // PAGE — self-chosen display name and bio, live on the club's domain —
+      // requires demonstrated accepted work. Membership auto-publishes now, so
+      // without this anybody could put arbitrary text on the official site.
+      // Returning null makes the route 404 rather than render.
+      if (!qualifiesForPublicPage(stats)) return null;
+
+      return { member, stats };
     },
     // A database failure must not 404 a real member's page as if they withdrew —
     // but we also cannot invent one, so null it is, and the error is logged.
@@ -289,10 +324,3 @@ export async function loadClubTotals(): Promise<{
     zero,
   );
 }
-
-// TODO(refresh job): cached profiles are currently only populated when an admin
-// opens a mentee's drill-down. For the public site, a scheduled job should walk
-// publishable members and refresh any profile older than the TTL — a Vercel Cron
-// hitting an authenticated route, spaced to respect the GitHub rate limit. Until
-// that exists, a newly approved member shows stats: null until someone triggers a
-// fetch for them.

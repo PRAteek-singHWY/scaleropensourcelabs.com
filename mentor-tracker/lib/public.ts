@@ -72,6 +72,32 @@ export const PUBLIC_MEMBER_WHERE = {
   publicConsent: true,
 } satisfies Prisma.MemberWhereInput;
 
+/**
+ * Merged pull requests required before a member gets a public profile page.
+ *
+ * This exists because membership now auto-publishes. Consent plus APPROVED is
+ * enough to be counted, but NOT enough to get a page at
+ * /members/<login> carrying a self-chosen display name and bio on the club's
+ * official domain. Without this gate, anyone with a GitHub account could put
+ * arbitrary text live on scaleropensourcelabs.com in under a minute, and the
+ * top-10 leaderboard cutoff would not stop them — that cutoff only governs the
+ * leaderboard table, not direct URLs.
+ *
+ * One merged pull request is the threshold because it cannot be faked: it
+ * requires a maintainer of someone else's project to accept your work. It is also
+ * exactly the milestone the club exists to produce, so the gate reads as an
+ * unlock rather than a restriction.
+ */
+export const MIN_MERGED_PRS_FOR_PUBLIC_PAGE = 1;
+
+/** Whether a member's stats clear the bar for a public profile page. */
+export function qualifiesForPublicPage(
+  stats: PublicContribStats | null,
+): boolean {
+  if (!stats) return false;
+  return stats.totalMergedPRs >= MIN_MERGED_PRS_FOR_PUBLIC_PAGE;
+}
+
 // ---- Public contribution stats ---------------------------------------------
 
 /** The subset of a contribution profile that is safe and useful to publish. */

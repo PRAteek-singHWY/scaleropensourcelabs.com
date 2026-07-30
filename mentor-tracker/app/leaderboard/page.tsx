@@ -6,6 +6,7 @@ import {
   loadPublicLeaderboard,
   PUBLIC_LEADERBOARD_LIMIT,
 } from "@/lib/leaderboard";
+import { qualifiesForPublicPage } from "@/lib/public";
 
 export const revalidate = 3600;
 export const metadata = {
@@ -13,6 +14,24 @@ export const metadata = {
   description:
     "Every Scaler Open Source Club member's contribution record, ordered by pull requests a maintainer merged.",
 };
+
+/** A Link when the target exists, plain markup when it doesn't. */
+function LinkOrText({
+  href,
+  className,
+  children,
+}: {
+  href: string | null;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  if (!href) return <span className={className}>{children}</span>;
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
 
 export default async function LeaderboardPage() {
   // Only the public top N. Positions below the cutoff are never sent to the
@@ -90,14 +109,17 @@ export default async function LeaderboardPage() {
                 {board.map((entry, i) => {
                   const s = entry.stats;
                   const best = s?.bestRank;
+                  // A member is listed as soon as they consent, but their page only
+                  // exists once they have a merged PR — so don't link into a 404.
+                  const hasPage = qualifiesForPublicPage(s);
                   return (
                     <tr
                       key={entry.member.id}
                       className="border-b border-site-line/60 transition last:border-0 hover:bg-site-raise/60"
                     >
                       <td className="px-4 py-4">
-                        <Link
-                          href={`/members/${entry.member.github}`}
+                        <LinkOrText
+                          href={hasPage ? `/members/${entry.member.github}` : null}
                           className="group flex items-center gap-3"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -118,7 +140,7 @@ export default async function LeaderboardPage() {
                               {entry.member.batch ? ` · ${entry.member.batch}` : ""}
                             </span>
                           </span>
-                        </Link>
+                        </LinkOrText>
                       </td>
 
                       <td className="px-4 py-4">
