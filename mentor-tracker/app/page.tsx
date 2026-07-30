@@ -1,267 +1,219 @@
-import Link from "next/link";
-import { SiteNav, SiteFooter } from "@/components/site/SiteChrome";
-import ContributionGrid from "@/components/site/ContributionGrid";
-import RankBadge from "@/components/site/RankBadge";
-import { loadClubGrid, loadClubTotals, loadLeaderboard } from "@/lib/leaderboard";
-import { qualifiesForPublicPage } from "@/lib/public";
+import Hero from "@/components/hero/Hero";
+import { PATH, PROJECTS, TRACKS, LINKS, totals } from "@/content/club";
 
-// Public landing page. Server-rendered from the Postgres cache — no GitHub calls,
-// no client-side fetching, so it is fast and indexable.
+// Fully static. No database, no auth, no API routes — the site is HTML plus one
+// lazily-loaded WebGL scene, so it renders identically anywhere and there is
+// nothing to attack.
 //
-// Revalidate hourly: the underlying contribution data only changes when the
-// refresh job runs, so per-request rendering would buy nothing.
-export const revalidate = 3600;
+// Everything after the hero is deliberately quiet. The 3D moment only reads as
+// premium if what follows it is disciplined; a second spectacle cancels the first.
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: { denied?: string };
-}) {
-  const [grid, totals, board] = await Promise.all([
-    loadClubGrid(),
-    loadClubTotals(),
-    loadLeaderboard(),
-  ]);
-
-  // Needs a rank to be worth showing AND a reachable page to link to. A repo rank
-  // comes from commits, which doesn't by itself imply a merged PR, so both apply.
-  //
-  // Ordered by RANK here, not by merged PRs like the leaderboard. The section is
-  // called "Ranked contributors" and the bold left-hand number is the rank, so the
-  // eye reads that column as the sort key — listing #1, #22, #5, #65 under it looks
-  // like a bug even though it was correctly ordered by something else.
-  const top = board
-    .filter((e) => e.stats?.bestRank && qualifiesForPublicPage(e.stats))
-    .sort((a, b) => {
-      const ra = a.stats?.bestRank;
-      const rb = b.stats?.bestRank;
-      if (!ra || !rb) return 0;
-      if (ra.rank !== rb.rank) return ra.rank - rb.rank;
-      // Same position: the larger contributor pool is the stronger result.
-      return (rb.totalContributors ?? 0) - (ra.totalContributors ?? 0);
-    })
-    .slice(0, 5);
-  const hasData = grid.days.length > 0;
+export default function Home() {
+  const t = totals();
+  const projects = PROJECTS.filter((p) => p.published);
 
   return (
     <>
-      <SiteNav />
+      <Hero />
 
-      {/* Someone signed in without organiser access landed here from middleware. */}
-      {searchParams?.denied === "admin" && (
-        <div className="border-b border-site-amber/25 bg-site-amber/10 px-5 py-2.5 text-center text-sm text-site-amber">
-          That area is for club organisers. Your account is signed in as a member.
-        </div>
-      )}
-
-      <main className="mx-auto max-w-6xl px-5">
-        {/* ---- Hero ---- */}
-        <section className="pt-16 sm:pt-24">
-          <p className="eyebrow">Scaler School of Technology</p>
-          <h1 className="display-xl mt-4 max-w-3xl text-balance">
-            Your first merged pull request is closer than you think.
-          </h1>
-          <p className="mt-6 max-w-xl text-lg leading-relaxed text-site-dim">
-            We pair you with a mentor and a real project. You pick an issue, open a
-            pull request, and a maintainer merges it. Everything on this page is work
-            our members actually landed.
-          </p>
-
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link
-              href="/join"
-              className="rounded-lg bg-site-violet px-5 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-            >
-              Join the club
-            </Link>
-            <Link
-              href="/leaderboard"
-              className="rounded-lg border border-site-line px-5 py-2.5 text-sm font-semibold text-site-ink transition hover:border-site-violet/60"
-            >
-              See what members shipped
-            </Link>
+      <main>
+        {/* ---- Thesis ------------------------------------------------------ */}
+        <section className="section pt-28 sm:pt-40">
+          <p className="label">What this is</p>
+          <h2 className="mt-6 max-w-4xl text-display-lg font-semibold text-balance">
+            A club is easy to start. Getting a stranger to merge your code is not.
+          </h2>
+          <div className="measure mt-8 space-y-5 text-body-lg text-haze">
+            <p>
+              Most student open-source groups measure attendance. We measure pull
+              requests a maintainer accepted, because that is the only number
+              somebody outside the room had to agree to.
+            </p>
+            <p>
+              Everything on this page links to the upstream repository. If a claim
+              here cannot be checked in one click, it should not be here.
+            </p>
           </div>
         </section>
 
-        {/* ---- The grid: the club's collective year ---- */}
-        <section className="mt-16 rounded-2xl border border-site-line bg-site-raise p-6 shadow-site-lift sm:p-8">
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        {/* ---- Projects ---------------------------------------------------- */}
+        <section
+          id="projects"
+          className="section pt-28 sm:pt-40"
+          aria-labelledby="projects-h"
+        >
+          <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
-              <h2 className="font-display text-lg font-bold tracking-tightest text-site-ink">
-                The club&apos;s last twelve months
+              <p className="label">Upstream work</p>
+              <h2 id="projects-h" className="mt-6 text-display-lg font-semibold">
+                Where our code went
               </h2>
-              <p className="mt-1 text-sm text-site-dim">
-                {hasData
-                  ? `Every contribution from ${grid.contributors} member${grid.contributors === 1 ? "" : "s"}, day by day.`
-                  : "One cell per day, once members start contributing."}
-              </p>
             </div>
-            {hasData && (
-              <div className="font-mono text-sm text-site-dim">
-                <span className="font-display text-2xl font-extrabold tracking-tightest text-site-ink">
-                  {grid.total.toLocaleString()}
-                </span>{" "}
-                contributions
-              </div>
+            {t.projects > 0 && (
+              <p className="font-mono text-sm tabular-nums text-dust">
+                {t.projects} project{t.projects === 1 ? "" : "s"} · {t.members}{" "}
+                member{t.members === 1 ? "" : "s"}
+              </p>
             )}
           </div>
 
-          {hasData ? (
-            <ContributionGrid days={grid.days} />
-          ) : (
-            <div className="rounded-xl border border-dashed border-site-line px-6 py-12 text-center">
-              <p className="font-display text-base font-bold tracking-tightest text-site-ink">
-                Nothing recorded yet.
+          {projects.length === 0 ? (
+            <div className="mt-12 rounded-2xl border border-dashed border-seam px-8 py-16 text-center">
+              <p className="text-display-md font-semibold">Nothing published yet.</p>
+              <p className="measure mx-auto mt-4 text-body text-haze">
+                This section fills in as members land work upstream. Each entry
+                carries a link to the merged pull request.
               </p>
-              <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-site-dim">
-                This grid fills in as members contribute. The first entry on this
-                board is available.
-              </p>
-              <Link
-                href="/join"
-                className="mt-5 inline-block rounded-lg bg-site-violet px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110"
-              >
-                Be the first
-              </Link>
             </div>
+          ) : (
+            <ul className="mt-14 divide-y divide-seam border-y border-seam">
+              {projects.map((p) => (
+                <li key={p.repo} className="group py-10 sm:py-12">
+                  <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-start">
+                    <div>
+                      <a
+                        href={p.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-baseline gap-3 font-mono text-body-lg text-rime transition-colors duration-300 ease-glide hover:text-plasma"
+                      >
+                        {p.repo}
+                        <span
+                          aria-hidden
+                          className="translate-y-[-1px] text-dust transition-transform duration-300 ease-glide group-hover:translate-x-1 group-hover:text-plasma"
+                        >
+                          ↗
+                        </span>
+                      </a>
+
+                      <p className="measure mt-4 text-body text-haze">{p.what}</p>
+                      <p className="measure mt-5 text-body text-rime">{p.did}</p>
+
+                      <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 font-mono text-xs text-dust">
+                        {p.memberUrl ? (
+                          <a
+                            href={p.memberUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-haze transition-colors hover:text-plasma"
+                          >
+                            {p.member}
+                          </a>
+                        ) : (
+                          <span className="text-haze">{p.member}</span>
+                        )}
+                        {p.language && <span>{p.language}</span>}
+                      </div>
+                    </div>
+
+                    {/* The proof, given the weight it deserves. */}
+                    {p.proof && (
+                      <div className="lg:pl-12 lg:text-right">
+                        <p className="label">{p.proof.label}</p>
+                        <p className="mt-3 font-mono text-display-md font-medium tabular-nums text-plasma">
+                          {p.proof.value}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </section>
 
-        {/* ---- Totals ---- */}
-        {totals.members > 0 && (
-          <section className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-site-line bg-site-line sm:grid-cols-4">
-            {[
-              { label: "Members", value: totals.members },
-              { label: "Pull requests merged", value: totals.mergedPRs },
-              { label: "Issues opened", value: totals.issuesOpened },
-              { label: "Repos contributed to", value: totals.reposTouched },
-            ].map((t) => (
-              <div key={t.label} className="bg-site-raise px-5 py-6">
-                <div className="font-display text-3xl font-extrabold tracking-tightest text-site-ink">
-                  {t.value.toLocaleString()}
+        {/* ---- Tracks ------------------------------------------------------ */}
+        <section className="section pt-28 sm:pt-40">
+          <p className="label">Three tracks</p>
+          <h2 className="mt-6 text-display-lg font-semibold">What you can work on</h2>
+
+          <div className="mt-14 space-y-px overflow-hidden rounded-2xl bg-seam">
+            {TRACKS.map((track) => (
+              <div key={track.name} className="bg-hull p-8 sm:p-10">
+                <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:gap-12">
+                  <div>
+                    <h3 className="text-display-md font-semibold">{track.name}</h3>
+                    <p className="mt-3 font-mono text-xs text-plasma">
+                      {track.summary}
+                    </p>
+                  </div>
+                  <p className="text-body text-haze lg:pt-2">{track.detail}</p>
                 </div>
-                <div className="eyebrow mt-1.5">{t.label}</div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* ---- Top ranked members. The signature element, used as proof. ---- */}
-        {top.length > 0 && (
-          <section className="mt-20">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className="display-lg">Ranked contributors</h2>
-                <p className="mt-2 max-w-xl text-sm leading-relaxed text-site-dim">
-                  Position among all contributors to a project our member does not
-                  own, by commits on its default branch. GitHub&apos;s own ordering.
-                </p>
-              </div>
-              <Link
-                href="/leaderboard"
-                className="font-mono text-xs text-site-dim hover:text-site-ink"
-              >
-                Full leaderboard →
-              </Link>
-            </div>
-
-            <ul className="mt-8 divide-y divide-site-line border-y border-site-line">
-              {top.map((entry, i) => {
-                const best = entry.stats?.bestRank;
-                if (!best) return null;
-                return (
-                  <li key={entry.member.id}>
-                    <Link
-                      href={`/members/${entry.member.github}`}
-                      className="group flex flex-wrap items-center gap-x-6 gap-y-3 py-5 transition hover:bg-site-raise/60"
-                    >
-                      <div className="w-24 shrink-0">
-                        <RankBadge
-                          rank={best.rank}
-                          totalContributors={best.totalContributors}
-                          contributorsExact={best.contributorsExact}
-                          emphasis={i === 0}
-                        />
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="font-display text-base font-bold tracking-tightest text-site-ink">
-                          {entry.member.displayName}
-                        </div>
-                        <div className="mt-0.5 truncate font-mono text-xs text-site-dim">
-                          {best.repo}
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 items-center gap-6 font-mono text-xs text-site-dim">
-                        <span>
-                          <span className="text-site-ink">
-                            {entry.stats?.totalMergedPRs ?? 0}
-                          </span>{" "}
-                          merged
-                        </span>
-                        {entry.stats?.topLanguages[0] && (
-                          <span className="hidden sm:inline">
-                            {entry.stats.topLanguages.slice(0, 2).join(" · ")}
-                          </span>
-                        )}
-                        <span
-                          aria-hidden
-                          className="text-site-faint transition group-hover:text-site-violet"
-                        >
-                          →
-                        </span>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
-
-        {/* ---- Programs ---- */}
-        <section className="mt-24">
-          <h2 className="display-lg">What you can work on</h2>
-          <div className="mt-8 grid gap-px overflow-hidden rounded-2xl border border-site-line bg-site-line md:grid-cols-3">
-            {[
-              {
-                title: "Open source mentorship",
-                body: "A mentor helps you find a first issue in a real project, review your patch before you send it, and keep going after it merges.",
-              },
-              {
-                title: "AI security",
-                body: "Find and responsibly report security weaknesses in open-source AI tooling — prompt injection, unsafe deserialisation, leaked credentials in model configs — then land the fix upstream.",
-                href: "/security",
-                cta: "Disclosure policy",
-              },
-              {
-                title: "Club projects",
-                body: "This website is one of them. It is open source, and the issue tracker is where new members usually start.",
-              },
-            ].map((p) => (
-              <div key={p.title} className="flex flex-col bg-site-raise p-6">
-                <h3 className="font-display text-base font-bold tracking-tightest text-site-ink">
-                  {p.title}
-                </h3>
-                <p className="mt-2.5 flex-1 text-sm leading-relaxed text-site-dim">
-                  {p.body}
-                </p>
-                {p.href && (
-                  <Link
-                    href={p.href}
-                    className="mt-4 font-mono text-xs text-site-violet hover:brightness-125"
-                  >
-                    {p.cta} →
-                  </Link>
-                )}
               </div>
             ))}
           </div>
         </section>
-      </main>
 
-      <SiteFooter />
+        {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
+        <section className="section pt-28 sm:pt-40">
+          <p className="label">How a first contribution actually goes</p>
+          <h2 className="mt-6 max-w-3xl text-display-lg font-semibold text-balance">
+            Four steps, and the third is the one people skip.
+          </h2>
+
+          <ol className="mt-14 grid gap-x-12 gap-y-10 sm:grid-cols-2">
+            {PATH.map((s, i) => (
+              <li key={s.step} className="flex gap-5">
+                <span
+                  className="mt-1 shrink-0 font-mono text-xs tabular-nums text-plasma"
+                  aria-hidden
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div>
+                  <h3 className="text-body-lg font-semibold">{s.step}</h3>
+                  <p className="mt-2 text-body text-haze">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        {/* ---- Join -------------------------------------------------------- */}
+        <section id="join" className="section pt-28 sm:pt-40">
+          <div className="seam-fade" />
+          <div className="pt-20 sm:pt-28">
+            <h2 className="max-w-3xl text-display-lg font-semibold text-balance">
+              If you want your name in the commit log, start here.
+            </h2>
+            <p className="measure mt-7 text-body-lg text-haze">
+              Bring a laptop and a GitHub account. You do not need to be good yet —
+              a first contribution is mostly about learning how the process works.
+            </p>
+
+            <div className="mt-11 flex flex-wrap items-center gap-3">
+              <a
+                href={`mailto:${LINKS.email}`}
+                className="rounded-full bg-rime px-6 py-3 text-sm font-semibold text-void transition duration-300 ease-glide hover:bg-plasma"
+              >
+                Get in touch
+              </a>
+              <a
+                href={LINKS.github}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full border border-seam px-6 py-3 text-sm font-semibold text-rime transition duration-300 ease-glide hover:border-plasma/60"
+              >
+                Our GitHub
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* ---- Footer ------------------------------------------------------ */}
+        <footer className="section pb-16 pt-28 sm:pt-40">
+          <div className="seam-fade" />
+          <div className="flex flex-wrap items-start justify-between gap-8 pt-10">
+            <div>
+              <p className="font-semibold">Scaler Open Source Club</p>
+              <p className="mt-2 max-w-sm text-sm text-haze">
+                A student club at Scaler School of Technology.
+              </p>
+            </div>
+            <p className="font-mono text-xs text-dust">scaleropensourcelabs.com</p>
+          </div>
+        </footer>
+      </main>
     </>
   );
 }
