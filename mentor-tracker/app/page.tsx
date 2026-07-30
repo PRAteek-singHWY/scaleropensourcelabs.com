@@ -25,8 +25,21 @@ export default async function HomePage({
 
   // Needs a rank to be worth showing AND a reachable page to link to. A repo rank
   // comes from commits, which doesn't by itself imply a merged PR, so both apply.
+  //
+  // Ordered by RANK here, not by merged PRs like the leaderboard. The section is
+  // called "Ranked contributors" and the bold left-hand number is the rank, so the
+  // eye reads that column as the sort key — listing #1, #22, #5, #65 under it looks
+  // like a bug even though it was correctly ordered by something else.
   const top = board
     .filter((e) => e.stats?.bestRank && qualifiesForPublicPage(e.stats))
+    .sort((a, b) => {
+      const ra = a.stats?.bestRank;
+      const rb = b.stats?.bestRank;
+      if (!ra || !rb) return 0;
+      if (ra.rank !== rb.rank) return ra.rank - rb.rank;
+      // Same position: the larger contributor pool is the stronger result.
+      return (rb.totalContributors ?? 0) - (ra.totalContributors ?? 0);
+    })
     .slice(0, 5);
   const hasData = grid.days.length > 0;
 

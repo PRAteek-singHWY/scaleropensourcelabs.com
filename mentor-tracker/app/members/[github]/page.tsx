@@ -5,6 +5,7 @@ import { SiteNav, SiteFooter } from "@/components/site/SiteChrome";
 import RankBadge from "@/components/site/RankBadge";
 import { loadPublicMember } from "@/lib/leaderboard";
 import { USERNAME_RE } from "@/lib/github";
+import Avatar from "@/components/site/Avatar";
 
 export const revalidate = 3600;
 
@@ -54,14 +55,11 @@ export default async function MemberPage({
         {/* Header */}
         <header className="mt-6 flex flex-wrap items-start justify-between gap-6">
           <div className="flex items-start gap-5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={`https://github.com/${member.github}.png`}
-              alt=""
-              width={72}
-              height={72}
-              className="h-18 w-18 rounded-2xl ring-1 ring-site-line"
-              style={{ height: 72, width: 72 }}
+            <Avatar
+              github={member.github}
+              name={member.displayName}
+              size={72}
+              rounded="2xl"
             />
             <div>
               <h1 className="display-lg">{member.displayName}</h1>

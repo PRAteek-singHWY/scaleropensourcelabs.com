@@ -7,6 +7,7 @@ import {
   PUBLIC_LEADERBOARD_LIMIT,
 } from "@/lib/leaderboard";
 import { qualifiesForPublicPage } from "@/lib/public";
+import Avatar from "@/components/site/Avatar";
 
 export const revalidate = 3600;
 export const metadata = {
@@ -50,10 +51,19 @@ export default async function LeaderboardPage() {
           they measure effort rather than accepted work.
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-site-dim">
-          This board shows the top {PUBLIC_LEADERBOARD_LIMIT} of{" "}
-          {totalMembers || "our"} member{totalMembers === 1 ? "" : "s"}. Positions
-          below that are deliberately not published — members can see their own
-          standing when signed in.
+          {totalMembers > PUBLIC_LEADERBOARD_LIMIT ? (
+            <>
+              This board shows the top {PUBLIC_LEADERBOARD_LIMIT} of {totalMembers}{" "}
+              members. Positions below that are deliberately not published — members
+              can see their own standing when signed in.
+            </>
+          ) : (
+            <>
+              Every member with contributions is shown. Once the club passes{" "}
+              {PUBLIC_LEADERBOARD_LIMIT} members this board keeps the top{" "}
+              {PUBLIC_LEADERBOARD_LIMIT} and the rest stays private.
+            </>
+          )}
         </p>
 
         <div className="mt-8">
@@ -122,14 +132,10 @@ export default async function LeaderboardPage() {
                           href={hasPage ? `/members/${entry.member.github}` : null}
                           className="group flex items-center gap-3"
                         >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={`https://github.com/${entry.member.github}.png`}
-                            alt=""
-                            width={32}
-                            height={32}
-                            loading="lazy"
-                            className="h-8 w-8 rounded-full ring-1 ring-site-line"
+                          <Avatar
+                            github={entry.member.github}
+                            name={entry.member.displayName}
+                            size={32}
                           />
                           <span className="min-w-0">
                             <span className="block truncate font-semibold text-site-ink group-hover:text-site-violet">
