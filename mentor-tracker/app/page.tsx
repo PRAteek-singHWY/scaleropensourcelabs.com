@@ -1,4 +1,5 @@
 import Hero from "@/components/hero/Hero";
+import Duo from "@/components/Duo";
 import { PATH, PROJECTS, TRACKS, LINKS, totals } from "@/content/club";
 
 // Fully static. No database, no auth, no API routes — the site is HTML plus one
@@ -20,9 +21,11 @@ export default function Home() {
         {/* ---- Thesis ------------------------------------------------------ */}
         <section className="section pt-28 sm:pt-40">
           <p className="label">What this is</p>
-          <h2 className="mt-6 max-w-4xl text-display-lg font-semibold text-balance">
-            A club is easy to start. Getting a stranger to merge your code is not.
-          </h2>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            lead="A club is easy to start."
+            trail="Getting a stranger to merge your code is not."
+          />
           <div className="measure mt-8 space-y-5 text-body-lg text-haze">
             <p>
               Most student open-source groups measure attendance. We measure pull
@@ -40,14 +43,17 @@ export default function Home() {
         <section
           id="projects"
           className="section pt-28 sm:pt-40"
-          aria-labelledby="projects-h"
+          aria-label="Upstream work"
         >
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div>
               <p className="label">Upstream work</p>
-              <h2 id="projects-h" className="mt-6 text-display-lg font-semibold">
-                Where our code went
-              </h2>
+              <Duo
+                as="h2"
+                className="mt-6 text-display-lg font-semibold"
+                lead="Where our code went."
+                trail="Every line links upstream."
+              />
             </div>
             {t.projects > 0 && (
               <p className="font-mono text-sm tabular-nums text-dust">
@@ -125,7 +131,11 @@ export default function Home() {
         {/* ---- Tracks ------------------------------------------------------ */}
         <section className="section pt-28 sm:pt-40">
           <p className="label">Three tracks</p>
-          <h2 className="mt-6 text-display-lg font-semibold">What you can work on</h2>
+          <Duo
+            className="mt-6 text-display-lg font-semibold"
+            lead="What you can work on."
+            trail="Three tracks, three difficulties."
+          />
 
           <div className="mt-14 space-y-px overflow-hidden rounded-2xl bg-seam">
             {TRACKS.map((track) => (
@@ -147,9 +157,11 @@ export default function Home() {
         {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
         <section className="section pt-28 sm:pt-40">
           <p className="label">How a first contribution actually goes</p>
-          <h2 className="mt-6 max-w-3xl text-display-lg font-semibold text-balance">
-            Four steps, and the third is the one people skip.
-          </h2>
+          <Duo
+            className="mt-6 max-w-3xl text-display-lg font-semibold text-balance"
+            lead="Four steps."
+            trail="The third is the one people skip."
+          />
 
           <ol className="mt-14 grid gap-x-12 gap-y-10 sm:grid-cols-2">
             {PATH.map((s, i) => (
@@ -173,9 +185,11 @@ export default function Home() {
         <section id="join" className="section pt-28 sm:pt-40">
           <div className="seam-fade" />
           <div className="pt-20 sm:pt-28">
-            <h2 className="max-w-3xl text-display-lg font-semibold text-balance">
-              If you want your name in the commit log, start here.
-            </h2>
+            <Duo
+              className="max-w-3xl text-display-lg font-semibold text-balance"
+              lead="Want your name in the commit log?"
+              trail="Start here."
+            />
             <p className="measure mt-7 text-body-lg text-haze">
               Bring a laptop and a GitHub account. You do not need to be good yet —
               a first contribution is mostly about learning how the process works.

@@ -42,19 +42,21 @@ const config: Config = {
       },
       // A real scale, not arbitrary clamps scattered through the markup.
       fontSize: {
-        // Sized so a three-line headline fits a 720px-tall viewport with room for
-        // the sub-copy and buttons beneath it. The first pass used 11vw, which
-        // rendered ~170px on a laptop and pushed the first and last lines off
-        // screen entirely — a display scale has to be checked against the shortest
-        // viewport it will meet, not just the widest.
-        "display-xl": ["clamp(2.5rem, 6.2vw, 5.25rem)", { lineHeight: "0.94", letterSpacing: "-0.04em" }],
-        "display-lg": ["clamp(1.875rem, 3.8vw, 3.25rem)", { lineHeight: "1.02", letterSpacing: "-0.032em" }],
-        "display-md": ["clamp(1.375rem, 2.2vw, 1.875rem)", { lineHeight: "1.12", letterSpacing: "-0.022em" }],
+        // Tracking measured off apple.com/in/store rather than guessed: their H1
+        // is 80px with -1.2px letter-spacing, i.e. -0.015em. The first pass here
+        // used -0.04em — nearly three times tighter — which is why it read as
+        // cramped and shouty instead of composed. Apple is a far lighter touch
+        // than it looks; the authority comes from size and space, not squeeze.
+        //
+        // Line-height likewise: theirs is 84/80 = 1.05, not the sub-1.0 crush.
+        "display-xl": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1.05", letterSpacing: "-0.015em" }],
+        "display-lg": ["clamp(1.75rem, 3.4vw, 2.75rem)", { lineHeight: "1.08", letterSpacing: "-0.014em" }],
+        "display-md": ["clamp(1.25rem, 2vw, 1.625rem)", { lineHeight: "1.18", letterSpacing: "-0.012em" }],
         "body-lg": ["clamp(1.0625rem, 1.5vw, 1.375rem)", { lineHeight: "1.5", letterSpacing: "-0.011em" }],
         "body": ["1rem", { lineHeight: "1.6", letterSpacing: "-0.006em" }],
         "label": ["0.6875rem", { lineHeight: "1.3", letterSpacing: "0.18em" }],
       },
-      letterSpacing: { tightest: "-0.045em" },
+      letterSpacing: { tightest: "-0.015em" },
       transitionTimingFunction: {
         // The Apple feel lives here as much as anywhere: a long, slow ease-out
         // rather than the default's symmetric curve.

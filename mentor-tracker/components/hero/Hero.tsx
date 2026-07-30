@@ -162,7 +162,7 @@ export default function Hero() {
             {/* No forced line breaks: they fought the fluid scale and produced a
                 five-line block that overflowed short viewports. A max-width does
                 the same job and survives every screen size. */}
-            <h1 className="mt-5 max-w-[22ch] text-display-xl font-bold text-balance animate-rise">
+            <h1 className="mt-5 max-w-[22ch] text-display-xl font-semibold text-balance animate-rise">
               We put student names in the{" "}
               <span className="text-plasma">commit log.</span>
             </h1>
