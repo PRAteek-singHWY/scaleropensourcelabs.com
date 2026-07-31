@@ -126,3 +126,133 @@ export const LINKS = {
   security: "/security",
   email: "opensource@scaleropensourcelabs.com",
 };
+
+// ---------------------------------------------------------------------------
+// SELECTIONS — the club's strongest claim.
+//
+// Getting students into GSoC, LFX Mentorship, C4GT and Summer of Bitcoin is the
+// most internationally legible thing a college open-source club can show. These
+// programmes are recognised on sight by exactly the audience this site is for, and
+// unlike a self-reported metric they cannot be manufactured: somebody else ran a
+// selection process and picked your member.
+//
+// Two rules, both non-negotiable.
+//
+// 1. CONSENT. Each entry publishes a real student's face and name to an
+//    international audience. That needs their explicit permission, and `consented`
+//    must be true or the entry does not render — the same rule the old dashboard
+//    enforced in the database, applied here in the content file.
+//
+// 2. NO PROGRAMME LOGOS. We render the programme NAME as type, never the official
+//    GSoC/Linux Foundation/C4GT mark. Those are trademarks belonging to other
+//    organisations, and putting them on a club site implies an endorsement nobody
+//    granted. Typographic treatment says the same thing and is ours to use.
+
+export type Programme = "GSOC" | "LFX" | "C4GT" | "SOB" | "OUTREACHY";
+
+/** Full names, since the acronyms mean nothing to a general reader. */
+export const PROGRAMME_NAME: Record<Programme, string> = {
+  GSOC: "Google Summer of Code",
+  LFX: "LFX Mentorship",
+  C4GT: "Code for GovTech",
+  SOB: "Summer of Bitcoin",
+  OUTREACHY: "Outreachy",
+};
+
+export const PROGRAMME_SHORT: Record<Programme, string> = {
+  GSOC: "GSoC",
+  LFX: "LFX",
+  C4GT: "C4GT",
+  SOB: "SoB",
+  OUTREACHY: "Outreachy",
+};
+
+export type Selection = {
+  name: string;
+  programme: Programme;
+  year: string;
+  /** The mentoring organisation that selected them. */
+  org: string;
+  /** One line on what they actually built. Specific beats impressive. */
+  work: string;
+  /** Path under /public/people. Falls back to a monogram when absent. */
+  photo?: string;
+  github?: string;
+  /** Proof link: the project page, the merged work, the announcement. */
+  url?: string;
+  /** Must be true to render. See rule 1 above. */
+  consented: boolean;
+};
+
+// Awaiting real entries. Each needs a name, programme, year, org, one line of
+// work, and that member's consent to being published.
+export const SELECTIONS: Selection[] = [];
+
+/**
+ * Scaffold for local development only.
+ *
+ * The hall is a scroll-driven, multi-station layout — it cannot be designed or
+ * reviewed against an empty array, because the weave, the alternating sides and the
+ * active-card transitions only exist once there are stations to fly past.
+ *
+ * These are deliberately NOT plausible: obvious placeholder names and organisations,
+ * so nobody can mistake a screenshot for a real claim. And they are gated on
+ * NODE_ENV, so a production build cannot ship them even by accident — the guard is
+ * structural rather than a note asking someone to remember.
+ */
+const SCAFFOLD: Selection[] = [
+  {
+    name: "Placeholder One",
+    programme: "GSOC",
+    year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Two",
+    programme: "LFX",
+    year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Three",
+    programme: "C4GT",
+    year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Four",
+    programme: "SOB",
+    year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+];
+
+export function publishedSelections(): Selection[] {
+  const real = SELECTIONS.filter((s) => s.consented);
+  if (real.length > 0) return real;
+  return process.env.NODE_ENV === "production" ? [] : SCAFFOLD;
+}
+
+/** Programme counts, derived so the headline can never drift from the list. */
+export function selectionStats() {
+  const live = publishedSelections();
+  const byProgramme = new Map<Programme, number>();
+  for (const s of live) {
+    byProgramme.set(s.programme, (byProgramme.get(s.programme) ?? 0) + 1);
+  }
+  return {
+    total: live.length,
+    programmes: [...byProgramme.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .map(([programme, count]) => ({ programme, count })),
+    orgs: new Set(live.map((s) => s.org)).size,
+  };
+}

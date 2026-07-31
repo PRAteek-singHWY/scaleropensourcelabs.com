@@ -3,6 +3,7 @@ import Duo from "@/components/Duo";
 import Nav from "@/components/Nav";
 import Carousel from "@/components/Carousel";
 import Eyebrow from "@/components/Eyebrow";
+import Hall from "@/components/hall/Hall";
 import { PATH, PROJECTS, TRACKS, LINKS, totals } from "@/content/club";
 
 // Fully static. No database, no auth, no API routes — the site is HTML plus one
@@ -22,6 +23,26 @@ export default function Home() {
       <Hero />
 
       <main>
+        {/* ---- The hall: selections into international programmes ----------
+            Placed first because it is the strongest thing the club can say. A
+            named student next to "GSoC 2026" is proof somebody else ran a
+            selection and picked them; everything below is elaboration. */}
+        <section id="hall" aria-label="Students selected into international programmes">
+          <div className="section pt-28 sm:pt-40">
+            <p className="label">Selected</p>
+            <Duo
+              className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+              lead="Somebody else picked them."
+              trail="GSoC, LFX Mentorship, C4GT, Summer of Bitcoin."
+            />
+            <p className="measure mt-7 text-body-lg text-haze">
+              These are competitive, international selection processes run by other
+              organisations. Getting in is not something a club can award itself.
+            </p>
+          </div>
+          <Hall />
+        </section>
+
         {/* ---- Thesis ------------------------------------------------------ */}
         <section className="section pt-28 sm:pt-40">
           <p className="label">What this is</p>
