@@ -16,15 +16,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Portrait from "@/components/Portrait";
 import {
+  PROGRAMME_COLOUR,
   PROGRAMME_NAME,
   PROGRAMME_SHORT,
   publishedSelections,
   selectionStats,
 } from "@/content/club";
 
-const Flight = dynamic(() => import("./Flight"), { ssr: false });
+const System = dynamic(() => import("@/components/system/System"), { ssr: false });
 
 function hasWebGL(): boolean {
   if (typeof window === "undefined") return false;
@@ -74,9 +74,14 @@ export default function Hall() {
         // centres — i.e. it stays lit for the whole time it is drifting up and out
         // of frame. Rounding makes "active" mean "nearest to centre", which is what
         // the reader is actually looking at.
+        // MUST match System.tsx's focus mapping exactly: p * (n - 1), not p * n.
+        // They had diverged, so the caption named one programme while the camera
+        // framed a different planet — an LFX card sitting over a blue GSoC world.
+        // Any scroll-driven pair like this has to share one index formula, or they
+        // drift apart the moment either side is tuned.
         const next = Math.min(
           people.length - 1,
-          Math.max(0, Math.round(p * people.length)),
+          Math.max(0, Math.round(p * (people.length - 1))),
         );
         setActive((prev) => (prev === next ? prev : next));
       });
@@ -115,9 +120,9 @@ export default function Hall() {
       <div className="sticky top-0 h-screen overflow-hidden">
         <div className="absolute inset-0" aria-hidden>
           {showFlight ? (
-            <Flight
+            <System
               progress={progress}
-              stations={people.length}
+              people={people}
               reduced={caps.reduced}
               lowEnd={caps.lowEnd}
             />
@@ -161,7 +166,6 @@ export default function Hall() {
           the weaving rocket passes between them. */}
       <div className="absolute inset-x-0 top-0">
         {people.map((s, i) => {
-          const right = i % 2 === 1;
           return (
             <div
               key={`${s.name}-${s.programme}-${s.year}`}
@@ -186,7 +190,11 @@ export default function Hall() {
                    * scale alone read cleaner and settle instantly.
                    */
                   className={`max-h-[calc(100vh-6rem)] w-full max-w-[24rem] overflow-hidden transition-[opacity,transform] duration-[220ms] ease-glide ${
-                    right ? "ml-auto" : "mr-auto"
+                    /* Always left. Alternating sides made sense when a weaving
+                       rocket passed between the cards; the system's camera now
+                       frames every planet in the RIGHT half of frame, so a card on
+                       the right lands on top of its own subject. */
+                    "mr-auto"
                   } ${
                     /* The active card has to READ as the subject. bg-hull/85 over a
                        near-black field is dark-on-dark, so "active" was landing
@@ -201,37 +209,32 @@ export default function Hall() {
                   style={{ containerType: "inline-size" }}
                 >
                   <div
-                    className={`overflow-hidden rounded-[18px] border transition-[border-color,box-shadow] duration-[220ms] ease-glide ${
-                      active === i
-                        ? "border-plasma/35 bg-hull shadow-[0_0_0_1px_rgba(95,212,255,0.10),0_40px_90px_-40px_rgba(0,0,0,0.95)]"
-                        : "border-seam bg-hull/70"
-                    }`}
+                    className="overflow-hidden rounded-[18px] border bg-hull/80 backdrop-blur-xl transition-[border-color] duration-[220ms] ease-glide"
+                    style={{
+                      borderColor:
+                        active === i ? `${PROGRAMME_COLOUR[s.programme]}59` : "#1A202C",
+                    }}
                   >
-                    <div className="relative aspect-[5/4] w-full overflow-hidden">
-                      <Portrait
-                        name={s.name}
-                        photo={s.photo}
-                        priority={i < 2}
-                        className="absolute inset-0 h-full w-full"
-                      />
-                      <div
-                        aria-hidden
-                        className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-hull via-hull/80 to-transparent"
-                      />
-                      <div className="absolute inset-x-0 bottom-0 p-6">
-                        {/* The programme is the largest element: "GSoC" is the word
-                            this audience recognises on sight. */}
-                        <p className="text-display-md font-semibold leading-none text-rime">
-                          {PROGRAMME_SHORT[s.programme]}
-                        </p>
-                        <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-plasma">
-                          {s.year} · {s.org}
-                        </p>
-                      </div>
-                    </div>
+                    {/* A colour bar rather than a photograph: the planet in the
+                        scene is the image, and a portrait beside it would compete.
+                        The bar ties the caption to the world it describes. */}
+                    <div
+                      aria-hidden
+                      className="h-1 w-full"
+                      style={{ background: PROGRAMME_COLOUR[s.programme] }}
+                    />
 
                     <div className="p-6">
-                      <p className="font-semibold text-rime">{s.name}</p>
+                      <p
+                        className="text-display-md font-semibold leading-none"
+                        style={{ color: PROGRAMME_COLOUR[s.programme] }}
+                      >
+                        {PROGRAMME_SHORT[s.programme]}
+                      </p>
+                      <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-dust">
+                        {s.year} · {s.org}
+                      </p>
+                      <p className="mt-4 font-semibold text-rime">{s.name}</p>
                       <p className="mt-2 text-sm leading-relaxed text-haze">{s.work}</p>
                       <div className="mt-5 flex items-center gap-4 border-t border-seam pt-4 font-mono text-xs">
                         <span className="text-dust">{PROGRAMME_NAME[s.programme]}</span>

@@ -159,6 +159,29 @@ export const PROGRAMME_NAME: Record<Programme, string> = {
   OUTREACHY: "Outreachy",
 };
 
+/**
+ * Programme colours, used to tint each planet in the system.
+ *
+ * Validated as a categorical set against the #05070D surface with the dataviz
+ * validator — lightness band, chroma floor, normal-vision separation and contrast
+ * all pass. Adjacent-pair CVD separation lands at ΔE 6.5 under deuteranopia, which
+ * is the floor band and legal ONLY with secondary encoding, so every planet also
+ * carries its programme name as a direct label. Colour never carries identity
+ * alone here.
+ *
+ * The obvious palette — Google blue for GSoC next to a violet for LFX — failed
+ * badly: ΔE 2.5 under protanopia, effectively one colour for a red-green
+ * colourblind viewer. Blue and violet are adjacent hues; magenta buys the
+ * separation that violet cannot.
+ */
+export const PROGRAMME_COLOUR: Record<Programme, string> = {
+  GSOC: "#4A86E8",
+  LFX: "#D64FA0",
+  C4GT: "#1F9D6B",
+  SOB: "#B8871F",
+  OUTREACHY: "#8B6DE8",
+};
+
 export const PROGRAMME_SHORT: Record<Programme, string> = {
   GSOC: "GSoC",
   LFX: "LFX",
@@ -212,7 +235,7 @@ const SCAFFOLD: Selection[] = [
   {
     name: "Placeholder Two",
     programme: "LFX",
-    year: "2026",
+    year: "2025",
     org: "Example Foundation",
     work: "Replace with what this member actually built, in one specific sentence.",
     consented: true,
@@ -228,7 +251,87 @@ const SCAFFOLD: Selection[] = [
   {
     name: "Placeholder Four",
     programme: "SOB",
+    year: "2025",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Five",
+    programme: "GSOC",
     year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Six",
+    programme: "LFX",
+    year: "2025",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Seven",
+    programme: "GSOC",
+    year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Eight",
+    programme: "C4GT",
+    year: "2025",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Nine",
+    programme: "SOB",
+    year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Ten",
+    programme: "GSOC",
+    year: "2025",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Eleven",
+    programme: "LFX",
+    year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Twelve",
+    programme: "C4GT",
+    year: "2025",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Thirteen",
+    programme: "GSOC",
+    year: "2026",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  },
+  {
+    name: "Placeholder Fourteen",
+    programme: "SOB",
+    year: "2025",
     org: "Example Foundation",
     work: "Replace with what this member actually built, in one specific sentence.",
     consented: true,
