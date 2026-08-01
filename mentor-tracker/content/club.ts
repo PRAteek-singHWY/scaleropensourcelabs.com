@@ -472,3 +472,133 @@ export const CULTURE: { title: string; body: string }[] = [
     body: "People join knowing wildly different amounts. Sitting in on a session you only half follow is a completely normal way to start, and everyone here did it.",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// POSITIONING against the other club a student is choosing between.
+//
+// EVERY NUMBER HERE IS VERIFIED AGAINST A PRIMARY SOURCE AND CARRIES ITS LINK.
+// That is not fussiness — this section attacks a rival activity, so it is the
+// first place a sceptical reader will go looking for an exaggeration. One
+// unsupported figure here retroactively discredits every other claim on a site
+// whose whole thesis is "you can check this".
+//
+// Two claims were CUT during research because they did not hold up:
+//   * "only ~9 people per college make ICPC" — no rule or dataset produces 9.
+//     The real numbers (3 by rule, ~5.6 in practice, 30 nationally) are both
+//     true and more striking, so the invented figure bought nothing.
+//   * "open source is an easier door than ICPC" — false. GSoC 2025 accepted
+//     1,272 of 15,240 applicants, about 8.3%. Comparable brutality.
+//
+// So the argument is deliberately NOT "our thing is easier to win". It is that
+// open source pays out below the top prize and competitive programming mostly
+// does not. That is the floor, not the ceiling, and it is defensible.
+
+export type Claim = {
+  stat?: string;
+  line: string;
+  source?: { label: string; url: string };
+};
+
+export const POSITIONING: Claim[] = [
+  {
+    stat: "3",
+    line: "Only one team from a given institution may advance to the ICPC World Finals. Three students, per college, per year. That is the rulebook, not our opinion.",
+    source: {
+      label: "ICPC Regional Rules",
+      url: "https://icpc-iiitdm.vercel.app/onsite-rules.pdf",
+    },
+  },
+  {
+    stat: "30",
+    line: "Ten Indian teams reached the 2025 World Finals in Baku. Thirty students, for the entire country. They earned every place. The door is simply that narrow by design.",
+    source: { label: "ICPC 2025 standings", url: "https://cphof.org/standings/icpc/2025" },
+  },
+  {
+    line: "There is no rule capping how many people from your college can get code merged into Kubernetes. Competitive programming is a sport with a fixed number of podium places. Open source is a backlog with an unbounded number of open issues.",
+  },
+  {
+    stat: "8.3%",
+    line: "GSoC accepted 1,272 people from 15,240 applicants in 2025. This is not the soft option, and we will not pretend it is. The difference is what you are left holding if you do not get in — a rating graph, or commits with your name on them.",
+    source: {
+      label: "Google Open Source Blog",
+      url: "https://opensource.googleblog.com/2025/08/google-summer-of-code-2025-contributor-statistics.html",
+    },
+  },
+  {
+    line: "ICPC eligibility runs out: five regional years, two World Finals, and you must still be enrolled. Your commit history has no eligibility clause, and GSoC dropped its student-only requirement in 2022.",
+    source: {
+      label: "GSoC eligibility change",
+      url: "https://opensource.googleblog.com/2021/11/expanding-google-summer-of-code-in-2022.html",
+    },
+  },
+  {
+    line: "India now has the largest open-source contributor base in the world. American developers still contribute more per head. That gap is the entire reason this club exists.",
+    source: {
+      label: "GitHub Octoverse 2025",
+      url: "https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/",
+    },
+  },
+];
+
+/**
+ * What we are worse at.
+ *
+ * This is on the page on purpose. A comparison that lists only our advantages
+ * reads as marketing and gets discounted wholesale; naming the real cost is what
+ * makes the paragraph above believable. The DSA point goes first because it is
+ * the single strongest honest argument for joining the CP club instead, and
+ * burying it would be the tell.
+ */
+export const TRADE_OFFS: string[] = [
+  "We will not prepare you for the DSA round. That is the filter on most campus placements, and the competitive programming club is straightforwardly better at it. Do both.",
+  "Feedback is slow and depends on strangers. A pull request can sit for three weeks; a judge answers in thirty seconds. If a tight loop is what keeps you going, this is the harder room.",
+  "There is no single number for your resume. Nothing sorts. A recruiter has to actually open your GitHub, and some will not.",
+  "Getting started takes longer. Building the project, finding a tractable issue and reading enough code to be useful can take weeks. Your first submission on a judge takes ten minutes.",
+  "If you are aiming at quant or high-frequency trading, contest standing is the recognised route and we are not a substitute for it.",
+];
+
+// ---------------------------------------------------------------------------
+// MENTORS.
+//
+// A student mentor is not a professor, and a page that implies otherwise is
+// detectable in one line. The programmes that handle peer mentorship credibly all
+// redefine authority away from rank: Outreachy states mentor eligibility purely as
+// hours committed, GSoC defines a mentor by duty rather than qualification, and
+// Recurse Center establishes seniority by naming an artifact, attaching a number,
+// and stopping.
+//
+// So each entry here is: a named artifact, a public link that proves it, an
+// explicit boundary on what they are useful for, and a bounded availability. No
+// adjectives describing the person. Recency and a checkable record are the honest
+// basis of a senior's authority, and they are enough.
+//
+// On "lifelong mentors": the word never appears. Asserting duration spends it and
+// proves nothing. Instead each entry can carry who mentored THEM — after two or
+// three cohorts that lineage renders as a visible graph, which demonstrates the
+// same thing and cannot be faked.
+
+export type Mentor = {
+  name: string;
+  /** Present tense, no adjectives. "Final year, CSE." / "Graduated 2024. …" */
+  situation: string;
+  /** The credential: programme, year, org, and the official public archive link. */
+  credential: { programme: Programme; year: string; org: string; url?: string };
+  /** One sentence naming a subsystem, not a domain. Links the merged work. */
+  shipped: string;
+  shippedUrl?: string;
+  /** The boundary of their authority. This is what makes the inside believable. */
+  askAbout: string[];
+  /** A stated commitment, not a disposition. Only publish what will hold. */
+  around: string;
+  github?: string;
+  /** Who taught them. Needs BOTH people's consent — it discloses about both. */
+  mentoredBy?: string;
+  /** Publication consent, per person. No consent, no entry. */
+  consented: boolean;
+};
+
+export const MENTORS: Mentor[] = [];
+
+export function publishedMentors(): Mentor[] {
+  return MENTORS.filter((m) => m.consented);
+}

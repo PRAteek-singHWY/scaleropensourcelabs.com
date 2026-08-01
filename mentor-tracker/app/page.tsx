@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import Carousel from "@/components/Carousel";
 import Eyebrow from "@/components/Eyebrow";
 import Hall from "@/components/hall/Hall";
+import Roster from "@/components/hall/Roster";
 import {
   CULTURE,
   LINKS,
@@ -14,7 +15,9 @@ import {
   PROGRAMME_NAME,
   PROGRAMME_SHORT,
   PROJECTS,
+  POSITIONING,
   TRACKS,
+  TRADE_OFFS,
   totals,
 } from "@/content/club";
 
@@ -53,6 +56,7 @@ export default function Home() {
             </p>
           </div>
           <Hall />
+          <Roster />
         </section>
 
         {/* ---- Thesis ------------------------------------------------------ */}
@@ -251,6 +255,66 @@ export default function Home() {
                 <p className="mt-3 text-body text-haze">{o.body}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ---- Why this and not the CP club --------------------------------- */}
+        <section id="why-us" className="section pt-28 sm:pt-40">
+          <p className="label">Choosing a club</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            lead="Competitive programming has a fixed number of winners."
+            trail="Open source does not."
+          />
+
+          <div className="mt-14 space-y-10 border-t border-seam pt-10">
+            {POSITIONING.map((c, i) => (
+              <div key={i} className="grid gap-5 sm:grid-cols-[7rem_1fr] sm:gap-10">
+                <div>
+                  {c.stat && (
+                    <p className="font-display text-display-md font-semibold tabular-nums text-accent">
+                      {c.stat}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <p className="measure text-body-lg text-ink">{c.line}</p>
+                  {/* Every claim terminates in a third-party link. With no
+                      testimonials and no placement data, external verifiability is
+                      the substitute for social proof — and it is the only thing
+                      that makes an attack on a rival activity fair. */}
+                  {c.source && (
+                    <a
+                      href={c.source.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-block font-mono text-xs text-accent hover:brightness-125"
+                    >
+                      {c.source.label} ↗
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* The honest cost. A comparison listing only our advantages gets
+              discounted wholesale; naming what we are worse at is what makes the
+              rest of the section believable. */}
+          <div className="mt-16 rounded-[18px] border border-seam bg-raise p-8 sm:p-10">
+            <h3 className="text-display-md font-semibold">What we are worse at</h3>
+            <p className="measure mt-3 text-body text-haze">
+              Every one of these is a real reason to join the competitive
+              programming club instead.
+            </p>
+            <ul className="mt-8 space-y-5">
+              {TRADE_OFFS.map((t) => (
+                <li key={t} className="flex gap-4">
+                  <span aria-hidden className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-ember" />
+                  <span className="text-body text-haze">{t}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
