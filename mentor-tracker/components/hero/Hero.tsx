@@ -209,6 +209,7 @@ export default function Hero() {
                   Join the club
                 </a>
               </div>
+
             </div>
           </div>
         </div>

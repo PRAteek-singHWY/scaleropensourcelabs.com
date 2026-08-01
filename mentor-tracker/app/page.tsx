@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import Carousel from "@/components/Carousel";
 import Eyebrow from "@/components/Eyebrow";
 import Hall from "@/components/hall/Hall";
+import ApplyForm from "@/components/ApplyForm";
 import Roster from "@/components/hall/Roster";
 import {
   CULTURE,
@@ -38,6 +39,47 @@ export default function Home() {
       <Hero />
 
       <main>
+        {/* ---- Apply, immediately below the hero ----------------------------
+            The form cannot live INSIDE the hero: that hero is sticky and
+            scroll-scrubbed, and animating a background under someone who is
+            filling in fields is hostile. Scaler's hero carries its form because
+            their hero is static. So the form gets the very next band instead —
+            one scroll, still the second thing you meet, and it keeps both
+            mechanics intact. */}
+        <section id="apply" className="section pt-24 sm:pt-32">
+          <div className="grid gap-12 lg:grid-cols-[1fr_26rem] lg:gap-20">
+            <div>
+              <p className="label">Applications open</p>
+              <Duo
+                className="mt-6 max-w-2xl text-display-lg font-semibold text-balance"
+                lead="You do not need to be good yet."
+                trail="You need a laptop and a GitHub account."
+              />
+              <p className="measure mt-7 text-body-lg text-haze">
+                Most people arrive having never opened a pull request. That is the
+                normal starting point, not a disqualification — every name further
+                down this page began there.
+              </p>
+
+              {/* The two questions every prospective member asks first, answered
+                  before they have to ask. Straight from the reference, where they
+                  sit under the hero as tiles. */}
+              <div className="mt-10 grid max-w-lg grid-cols-2 gap-3">
+                <div className="rounded-[10px] border border-seam bg-raise px-5 py-4">
+                  <p className="text-body-lg font-semibold text-accent">Free</p>
+                  <p className="mt-1 text-sm text-haze">No fee, ever</p>
+                </div>
+                <div className="rounded-[10px] border border-seam bg-raise px-5 py-4">
+                  <p className="text-body-lg font-semibold text-accent">All years</p>
+                  <p className="mt-1 text-sm text-haze">No prior experience</p>
+                </div>
+              </div>
+            </div>
+
+            <ApplyForm />
+          </div>
+        </section>
+
         {/* ---- The hall: selections into international programmes ----------
             Placed first because it is the strongest thing the club can say. A
             named student next to "GSoC 2026" is proof somebody else ran a

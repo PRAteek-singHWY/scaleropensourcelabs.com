@@ -17,3 +17,7 @@ next-env.d.ts
 *.log
 .vercel
 tsconfig.tsbuildinfo
+
+# Playwright capture output. The script is committed; its screenshots are not —
+# they are large, regenerable in one command, and would churn every run.
+study/
