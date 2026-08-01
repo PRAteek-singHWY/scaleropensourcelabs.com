@@ -7,24 +7,26 @@
 // with the one thing you want read first.
 
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const ITEMS = [
-  { href: "#projects", label: "Work" },
-  { href: "#tracks", label: "Tracks" },
-  { href: "#path", label: "How it works" },
+  { href: "#hall", label: "Selected" },
+  { href: "#programmes", label: "Programmes" },
+  { href: "#outcomes", label: "Why" },
+  { href: "#culture", label: "The club" },
   { href: "#join", label: "Join" },
 ] as const;
 
 export default function Nav() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-seam/60 bg-void/70 backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-seam/60 bg-bg/70 backdrop-blur-xl">
       <nav
         aria-label="Main"
         className="mx-auto flex h-11 max-w-[76rem] items-center justify-between gap-6 px-6 sm:px-8"
       >
         <Link
           href="/"
-          className="text-xs font-medium tracking-tight text-rime transition-colors duration-300 ease-glide hover:text-plasma"
+          className="text-xs font-medium tracking-tight text-ink transition-colors duration-300 ease-glide hover:text-accent"
         >
           OSC
         </Link>
@@ -34,7 +36,7 @@ export default function Nav() {
             <li key={i.href}>
               <a
                 href={i.href}
-                className="text-xs text-haze transition-colors duration-300 ease-glide hover:text-rime"
+                className="text-xs text-haze transition-colors duration-300 ease-glide hover:text-ink"
               >
                 {i.label}
               </a>
@@ -42,14 +44,17 @@ export default function Nav() {
           ))}
         </ul>
 
-        <a
-          href="https://github.com/PRAteek-singHWY"
-          target="_blank"
-          rel="noreferrer"
-          className="hidden text-xs text-haze transition-colors duration-300 ease-glide hover:text-rime sm:block"
-        >
-          GitHub ↗
-        </a>
+        <div className="flex items-center gap-4">
+          <a
+            href="https://github.com/PRAteek-singHWY"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden text-xs text-haze transition-colors duration-300 ease-glide hover:text-ink sm:block"
+          >
+            GitHub ↗
+          </a>
+          <ThemeToggle />
+        </div>
       </nav>
     </header>
   );

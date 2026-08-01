@@ -83,7 +83,7 @@ export default function Carousel({
           type="button"
           onClick={() => nudge(-1)}
           aria-label={`Scroll ${label} backwards`}
-          className="absolute -left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-seam bg-hull/90 text-rime backdrop-blur transition duration-300 ease-glide hover:border-plasma/60 sm:flex"
+          className="absolute -left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-seam bg-raise/90 text-ink backdrop-blur transition duration-300 ease-glide hover:border-accent/60 sm:flex"
         >
           <span aria-hidden>‹</span>
         </button>
@@ -93,7 +93,7 @@ export default function Carousel({
           type="button"
           onClick={() => nudge(1)}
           aria-label={`Scroll ${label} forwards`}
-          className="absolute -right-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-seam bg-hull/90 text-rime backdrop-blur transition duration-300 ease-glide hover:border-plasma/60 sm:flex"
+          className="absolute -right-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-seam bg-raise/90 text-ink backdrop-blur transition duration-300 ease-glide hover:border-accent/60 sm:flex"
         >
           <span aria-hidden>›</span>
         </button>

@@ -26,7 +26,7 @@ export default function Duo({
   const Tag = as;
   return (
     <Tag className={className}>
-      <span className="text-rime">{lead}</span>
+      <span className="text-ink">{lead}</span>
       {trail ? <span className="text-haze"> {trail}</span> : null}
     </Tag>
   );

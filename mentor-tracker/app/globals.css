@@ -2,73 +2,168 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   THEME TOKENS
+
+   Every colour is a custom property so light and dark are one system rather than
+   two stylesheets. Components style through the token names only — none of them
+   knows which theme is active, which is what stops the two drifting apart.
+
+   Precedence, deliberately in this order:
+     1. :root                        light, the default
+     2. prefers-color-scheme: dark   follows the OS
+     3. [data-theme]                 an explicit choice, wins over the OS in BOTH
+                                     directions (a light-mode toggle has to work
+                                     on a machine set to dark)
+
+   Light is the default because the reference — apple.com — is light. Dark is a
+   full peer, not an inversion: the neutrals are re-picked with a blue cast and
+   the accent is darkened for the light ground, because #5FD4FF on white is
+   unreadable.
+   --------------------------------------------------------------------------- */
+
 :root {
+  color-scheme: light;
+
+  --bg: #FBFBFD;          /* page */
+  --raise: #FFFFFF;       /* cards */
+  --sunk: #F1F2F6;        /* recessed fills */
+  --seam: #E3E5EC;        /* hairlines */
+  --ink: #14161C;         /* primary text */
+  --haze: #565C6B;        /* secondary text */
+  --dust: #868C9B;        /* tertiary text */
+
+  /* Cyan at #5FD4FF fails against white, so light mode steps it down to a
+     teal-blue that holds contrast without changing hue family. */
+  --accent: #0A7EA4;
+  --accent-soft: #E4F4FA;
+  --ember: #B4551A;
+
+  /* The space sections are pinned dark in BOTH themes — a solar system on a
+     white page is nonsense. These never vary. */
+  --void: #05070D;
+  --void-raise: #0B0F17;
+  --void-seam: #1A202C;
+  --void-ink: #F2F5FA;
+  --void-haze: #8B95A6;
+  --void-dust: #5A6376;
+  --void-accent: #5FD4FF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #05070D;
+    --raise: #0B0F17;
+    --sunk: #0E131C;
+    --seam: #1A202C;
+    --ink: #F2F5FA;
+    --haze: #8B95A6;
+    --dust: #5A6376;
+    --accent: #5FD4FF;
+    --accent-soft: #10222C;
+    --ember: #FF8A3D;
+  }
+}
+
+:root[data-theme="dark"] {
   color-scheme: dark;
+  --bg: #05070D;
+  --raise: #0B0F17;
+  --sunk: #0E131C;
+  --seam: #1A202C;
+  --ink: #F2F5FA;
+  --haze: #8B95A6;
+  --dust: #5A6376;
+  --accent: #5FD4FF;
+  --accent-soft: #10222C;
+  --ember: #FF8A3D;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #FBFBFD;
+  --raise: #FFFFFF;
+  --sunk: #F1F2F6;
+  --seam: #E3E5EC;
+  --ink: #14161C;
+  --haze: #565C6B;
+  --dust: #868C9B;
+  --accent: #0A7EA4;
+  --accent-soft: #E4F4FA;
+  --ember: #B4551A;
 }
 
 html {
-  /* The hero is scroll-driven, so smooth-scroll would fight the scrub. */
+  /* The hero and hall are scroll-driven, so smooth-scroll would fight the scrub. */
   scroll-behavior: auto;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  @apply bg-void font-sans text-rime antialiased;
+  @apply bg-bg font-sans text-ink antialiased;
   margin: 0;
-  /* Wide content must scroll inside its own container, never the page. */
   overflow-x: hidden;
+  /* Theme changes shouldn't strobe, but the swap must still feel immediate. */
+  transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Keyboard focus is visible everywhere by default, not per-component. */
+/* A section that is always night, whatever the theme. Scopes the dark token set
+   locally so children keep using the same names. */
+.night {
+  --bg: var(--void);
+  --raise: var(--void-raise);
+  --sunk: var(--void-raise);
+  --seam: var(--void-seam);
+  --ink: var(--void-ink);
+  --haze: var(--void-haze);
+  --dust: var(--void-dust);
+  --accent: var(--void-accent);
+  @apply bg-void text-void-ink;
+  color-scheme: dark;
+}
+
 :focus-visible {
-  outline: 2px solid #5fd4ff;
+  outline: 2px solid var(--accent);
   outline-offset: 3px;
   border-radius: 2px;
 }
 
-/* Small uppercase mono label. Reads as instrumentation, which is the register
-   this subject actually lives in. */
 .label {
   @apply font-mono text-label uppercase text-dust;
 }
 
-/* Sections breathe. One rule so spacing can't drift between them. */
 .section {
   @apply mx-auto w-full max-w-[76rem] px-6 sm:px-8;
 }
 
-/* Running text stays near 65 characters regardless of the container. */
 .measure {
   max-width: 34em;
 }
 
-/* A hairline that fades out, rather than a hard rule stopping mid-air. */
 .seam-fade {
   height: 1px;
-  background: linear-gradient(90deg, transparent, #1a202c 12%, #1a202c 88%, transparent);
+  background: linear-gradient(90deg, transparent, var(--seam) 12%, var(--seam) 88%, transparent);
 }
 
 ::selection {
-  background: rgba(95, 212, 255, 0.28);
-  color: #f2f5fa;
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: var(--ink);
 }
 
-/* Thin scrollbars, on-theme. */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1a202c transparent;
+  scrollbar-color: var(--seam) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: #1a202c;
+  background: var(--seam);
   border-radius: 9999px;
 }
 
-/* Motion is an enhancement. Everything must read correctly without it — the
-   hero swaps to a static composition rather than freezing mid-animation. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

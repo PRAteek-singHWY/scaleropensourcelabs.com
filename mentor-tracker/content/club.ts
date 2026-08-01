@@ -359,3 +359,116 @@ export function selectionStats() {
     orgs: new Set(live.map((s) => s.org)).size,
   };
 }
+
+// ---------------------------------------------------------------------------
+// PROGRAMMES — the product line.
+//
+// The site's job is not only to show that members got selected; it is to explain
+// what these programmes ARE to someone who has never heard of them, and what they
+// pay. Most students don't apply because nobody told them the thing exists, pays
+// real money, and takes applicants with almost no track record.
+//
+// Stipends are deliberately written as "published by the programme" rather than
+// quoted as our own figures. They change year to year and we are not the source.
+
+export type ProgrammeInfo = {
+  key: Programme;
+  what: string;
+  who: string;
+  /** Rough shape of the year — not exact dates, which move annually. */
+  when: string;
+  pays: string;
+  /** What OSC specifically does to get you in. This is the product. */
+  weDo: string;
+  url: string;
+};
+
+export const PROGRAMMES: ProgrammeInfo[] = [
+  {
+    key: "GSOC",
+    what: "Google pays you to write code for an open-source organisation over a summer, with a mentor from that organisation assigned to you.",
+    who: "Anyone 18+ who is new to the organisation. You do not need to be a student, and you do not need existing open-source experience.",
+    when: "Organisations announced early in the year, applications a few weeks later, coding over the summer.",
+    pays: "A stipend set by Google, varying by country and project size. Check the current figure on the programme site.",
+    weDo: "We start six months early. Selection goes to people the maintainers already recognise, so the work is contributing steadily before applications open — not writing a good proposal in March.",
+    url: "https://summerofcode.withgoogle.com/",
+  },
+  {
+    key: "LFX",
+    what: "The Linux Foundation's mentorship programme, running across CNCF, Kubernetes, Node.js and the rest of its projects.",
+    who: "Beginners are explicitly the target. Terms run several times a year, so a miss is a few months rather than a year.",
+    when: "Three terms annually, so there is almost always one open or opening.",
+    pays: "A stipend published by the Linux Foundation, scaled by region.",
+    weDo: "Help you pick a term and project that matches what you already know, and get a first contribution merged into that project before the application closes.",
+    url: "https://lfx.linuxfoundation.org/tools/mentorship/",
+  },
+  {
+    key: "C4GT",
+    what: "Code for GovTech: open-source contribution to digital public infrastructure — the software Indian government services actually run on.",
+    who: "Indian students, with a strong bias toward people who want their work used at national scale rather than starred on GitHub.",
+    when: "An annual summer cohort plus year-round contribution windows.",
+    pays: "A stipend published by the programme.",
+    weDo: "Point you at the DPI projects with responsive maintainers, and help you read a codebase built for scale rather than for demos.",
+    url: "https://www.codeforgovtech.in/",
+  },
+  {
+    key: "SOB",
+    what: "Summer of Bitcoin: a paid summer programme contributing to Bitcoin and Lightning open-source projects.",
+    who: "Students, with a real ramp for people who have never touched the codebase. The C++ is intimidating and the community knows it.",
+    when: "Applications early in the year, coding over the summer.",
+    pays: "A stipend published by the programme.",
+    weDo: "Work through the onboarding curriculum together, because almost nobody finishes it alone.",
+    url: "https://www.summerofbitcoin.org/",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// WHAT YOU ACTUALLY GET — the argument that outlasts the stipend.
+//
+// The stipend is the smallest part. A student who lands one of these ends up with
+// a public track record, a named maintainer who knows their work, and a reference
+// from outside their university. That is what turns into an internship.
+
+export const OUTCOMES: { title: string; body: string }[] = [
+  {
+    title: "A maintainer who knows your name",
+    body: "You spend a summer being reviewed by someone senior at a real project. They remember who ships. That relationship does not expire when the programme ends — it is the single most valuable thing here, and it is not the money.",
+  },
+  {
+    title: "A public record an employer can read",
+    body: "Merged pull requests in a project a company already depends on. Not a certificate, not a course completion — code they can open and read, with your name on the commit.",
+  },
+  {
+    title: "A reference from outside your college",
+    body: "Every student in your batch has the same professors. Almost none of them have someone at a foundation willing to vouch for their work.",
+  },
+  {
+    title: "The people doing it with you",
+    body: "The others in this club apply to the same programmes, review each other's patches, and share which maintainers actually reply. That network is why the second selection is easier than the first.",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// HOW THE CLUB ACTUALLY RUNS.
+//
+// Written plainly and specifically. "Vibrant community" tells a reader nothing;
+// coffee and Maggi at eleven at night tells them exactly what walking in is like.
+
+export const CULTURE: { title: string; body: string }[] = [
+  {
+    title: "Discussions, not lectures",
+    body: "Sessions are people arguing about a codebase with a laptop open, not slides. If you have a question halfway through, that is the session.",
+  },
+  {
+    title: "Coffee and Maggi are on the club",
+    body: "Working sessions run late and nobody codes well hungry. There is always chai, coffee and Maggi, and you do not have to ask.",
+  },
+  {
+    title: "Work where you like",
+    body: "Library, lab, hostel common room, or the campus spot everyone knows. We pick the location by what the group wants that week, not by what was booked.",
+  },
+  {
+    title: "Nobody is behind",
+    body: "People join knowing wildly different amounts. Sitting in on a session you only half follow is a completely normal way to start, and everyone here did it.",
+  },
+];

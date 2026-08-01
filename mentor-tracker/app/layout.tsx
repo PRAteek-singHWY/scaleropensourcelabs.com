@@ -51,7 +51,20 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
-      <body>{children}</body>
+      <body>
+        {/* Anti-flash for the theme toggle.
+            Must be the first node in <body>, NOT in <head>: the App Router hoists
+            and strips a manually-authored <head>, so a script placed there never
+            ships. It runs synchronously before anything below paints, so a reader
+            who chose light never sees a frame of dark. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){try{var m=localStorage.getItem('osc-theme');if(m==='light'||m==='dark'){document.documentElement.setAttribute('data-theme',m)}}catch(e){}})()",
+          }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

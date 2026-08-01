@@ -53,7 +53,7 @@ export default function Portrait({
     const h = tilt(name);
     return (
       <div
-        className={`relative flex items-center justify-center overflow-hidden bg-hull ${className}`}
+        className={`relative flex items-center justify-center overflow-hidden bg-raise ${className}`}
         role="img"
         aria-label={name}
       >
@@ -66,7 +66,7 @@ export default function Portrait({
         />
         <span
           aria-hidden
-          className="relative select-none font-semibold tracking-tightest text-rime/70"
+          className="relative select-none font-semibold tracking-tightest text-ink/70"
           style={{ fontSize: "clamp(1.75rem, 8cqw, 5rem)" }}
         >
           {initials(name)}

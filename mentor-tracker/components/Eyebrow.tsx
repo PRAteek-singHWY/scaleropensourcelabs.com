@@ -12,7 +12,7 @@
 export type EyebrowTone = "merged" | "security" | "neutral";
 
 const TONE: Record<EyebrowTone, string> = {
-  merged: "text-plasma",
+  merged: "text-accent",
   security: "text-ember",
   neutral: "text-dust",
 };

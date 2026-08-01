@@ -22,19 +22,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Space. Blue-cast rather than neutral grey so the cyan sits in the same
-        // family as its ground instead of vibrating against it.
-        void: "#05070D", // base
-        hull: "#0B0F17", // raised surface
-        seam: "#1A202C", // hairline
-        rime: "#F2F5FA", // primary text
-        haze: "#8B95A6", // secondary text
-        dust: "#4E5769", // tertiary / disabled
+        // Every colour resolves through a CSS variable, so a component never knows
+        // which theme is active and light/dark can never drift apart. The variables
+        // and their per-theme values live in app/globals.css.
+        bg: "var(--bg)",
+        raise: "var(--raise)",
+        sunk: "var(--sunk)",
+        seam: "var(--seam)",
+        ink: "var(--ink)",
+        haze: "var(--haze)",
+        dust: "var(--dust)",
+        accent: "var(--accent)",
+        "accent-soft": "var(--accent-soft)",
+        ember: "var(--ember)",
 
-        // Ignition.
-        plasma: "#5FD4FF", // primary accent — full-burn exhaust
-        "plasma-deep": "#1E7FA8", // low step of the plasma ramp
-        ember: "#FF8A3D", // single signal colour, used sparingly
+        // The always-dark set, for sections that stay night in both themes.
+        void: "var(--void)",
+        "void-raise": "var(--void-raise)",
+        "void-seam": "var(--void-seam)",
+        "void-ink": "var(--void-ink)",
+        "void-haze": "var(--void-haze)",
+        "void-dust": "var(--void-dust)",
+        "void-accent": "var(--void-accent)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

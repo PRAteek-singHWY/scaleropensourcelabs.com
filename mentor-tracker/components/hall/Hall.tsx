@@ -143,7 +143,7 @@ export default function Hall() {
 
           <div className="flex flex-wrap items-baseline gap-x-8 gap-y-3">
             <p>
-              <span className="text-display-lg font-semibold tracking-tightest text-rime">
+              <span className="text-display-lg font-semibold tracking-tightest text-ink">
                 {stats.total}
               </span>
               <span className="ml-3 text-body text-haze">
@@ -153,7 +153,7 @@ export default function Hall() {
             <ul className="flex flex-wrap items-center gap-x-6 gap-y-2">
               {stats.programmes.map(({ programme, count }) => (
                 <li key={programme} className="font-mono text-xs">
-                  <span className="text-rime">{PROGRAMME_SHORT[programme]}</span>
+                  <span className="text-ink">{PROGRAMME_SHORT[programme]}</span>
                   <span className="ml-1.5 text-dust tabular-nums">×{count}</span>
                 </li>
               ))}
@@ -196,7 +196,7 @@ export default function Hall() {
                        the right lands on top of its own subject. */
                     "mr-auto"
                   } ${
-                    /* The active card has to READ as the subject. bg-hull/85 over a
+                    /* The active card has to READ as the subject. bg-raise/85 over a
                        near-black field is dark-on-dark, so "active" was landing
                        correctly and still looking dim — the state was right and the
                        contrast was wrong. Active now gets a solid surface, a plasma
@@ -209,7 +209,7 @@ export default function Hall() {
                   style={{ containerType: "inline-size" }}
                 >
                   <div
-                    className="overflow-hidden rounded-[18px] border bg-hull/80 backdrop-blur-xl transition-[border-color] duration-[220ms] ease-glide"
+                    className="overflow-hidden rounded-[18px] border bg-raise/80 backdrop-blur-xl transition-[border-color] duration-[220ms] ease-glide"
                     style={{
                       borderColor:
                         active === i ? `${PROGRAMME_COLOUR[s.programme]}59` : "#1A202C",
@@ -234,7 +234,7 @@ export default function Hall() {
                       <p className="mt-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-dust">
                         {s.year} · {s.org}
                       </p>
-                      <p className="mt-4 font-semibold text-rime">{s.name}</p>
+                      <p className="mt-4 font-semibold text-ink">{s.name}</p>
                       <p className="mt-2 text-sm leading-relaxed text-haze">{s.work}</p>
                       <div className="mt-5 flex items-center gap-4 border-t border-seam pt-4 font-mono text-xs">
                         <span className="text-dust">{PROGRAMME_NAME[s.programme]}</span>
@@ -243,7 +243,7 @@ export default function Hall() {
                             href={s.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="pointer-events-auto ml-auto text-haze transition-colors hover:text-plasma"
+                            className="pointer-events-auto ml-auto text-haze transition-colors hover:text-accent"
                           >
                             Proof ↗
                           </a>

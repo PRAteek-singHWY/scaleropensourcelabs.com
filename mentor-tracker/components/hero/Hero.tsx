@@ -130,7 +130,7 @@ export default function Hero() {
       // 320vh left the vehicle out of frame for most of the scroll, so the tail
       // of the hero was dead space. 220vh keeps the ascent occupying the whole
       // budget.
-      className={showCanvas && !caps.reduced ? "relative h-[220vh]" : "relative h-screen"}
+      className={`night ${showCanvas && !caps.reduced ? "relative h-[220vh]" : "relative h-screen"}`}
       aria-label="Scaler Open Source Club"
     >
       <div className="sticky top-0 flex h-screen items-center overflow-hidden">
@@ -143,7 +143,7 @@ export default function Hero() {
             // composition that holds the same shape so the layout never breaks.
             <div className="absolute inset-0">
               <div className="absolute left-1/2 top-1/2 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(95,212,255,0.14),transparent_62%)]" />
-              <div className="absolute left-1/2 top-1/2 h-[70vh] w-px -translate-x-1/2 -translate-y-1/2 bg-gradient-to-b from-transparent via-plasma/45 to-transparent" />
+              <div className="absolute left-1/2 top-1/2 h-[70vh] w-px -translate-x-1/2 -translate-y-1/2 bg-gradient-to-b from-transparent via-accent/45 to-transparent" />
             </div>
           )}
         </div>
@@ -151,7 +151,7 @@ export default function Hero() {
         {/* Ground haze, so the vehicle reads as leaving something. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-void via-void/50 to-transparent"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-bg via-bg/50 to-transparent"
         />
 
         {/* ---- Copy ----
@@ -167,12 +167,12 @@ export default function Hero() {
               <h1 className="mt-4 text-display-xl font-semibold animate-rise">
                 Open
                 <br />
-                <span className="text-plasma">Source</span>
+                <span className="text-accent">Source</span>
               </h1>
             </div>
 
             <div className="animate-rise lg:pt-14 lg:text-right">
-              <p className="measure text-body-lg text-rime lg:ml-auto">
+              <p className="measure text-body-lg text-ink lg:ml-auto">
                 We put student names in the commit log.
               </p>
               <p className="measure mt-4 text-body text-haze lg:ml-auto">
@@ -186,7 +186,7 @@ export default function Hero() {
                 aria-live="polite"
                 aria-atomic="true"
               >
-                <span className="font-mono text-label uppercase tabular-nums text-plasma">
+                <span className="font-mono text-label uppercase tabular-nums text-accent">
                   {current.altitude}
                 </span>
                 <span className="h-px w-8 bg-seam" aria-hidden />
@@ -198,13 +198,13 @@ export default function Hero() {
               <div className="mt-9 flex flex-wrap items-center gap-3 lg:justify-end">
                 <a
                   href="#projects"
-                  className="rounded-full bg-rime px-6 py-3 text-sm font-semibold text-void transition duration-300 ease-glide hover:bg-plasma"
+                  className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-void transition duration-300 ease-glide hover:bg-accent"
                 >
                   See what we shipped
                 </a>
                 <a
                   href="#join"
-                  className="rounded-full border border-seam px-6 py-3 text-sm font-semibold text-rime transition duration-300 ease-glide hover:border-plasma/60"
+                  className="rounded-full border border-seam px-6 py-3 text-sm font-semibold text-ink transition duration-300 ease-glide hover:border-accent/60"
                 >
                   Join the club
                 </a>

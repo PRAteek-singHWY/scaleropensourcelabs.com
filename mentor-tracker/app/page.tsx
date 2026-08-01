@@ -4,7 +4,19 @@ import Nav from "@/components/Nav";
 import Carousel from "@/components/Carousel";
 import Eyebrow from "@/components/Eyebrow";
 import Hall from "@/components/hall/Hall";
-import { PATH, PROJECTS, TRACKS, LINKS, totals } from "@/content/club";
+import {
+  CULTURE,
+  LINKS,
+  OUTCOMES,
+  PATH,
+  PROGRAMMES,
+  PROGRAMME_COLOUR,
+  PROGRAMME_NAME,
+  PROGRAMME_SHORT,
+  PROJECTS,
+  TRACKS,
+  totals,
+} from "@/content/club";
 
 // Fully static. No database, no auth, no API routes — the site is HTML plus one
 // lazily-loaded WebGL scene, so it renders identically anywhere and there is
@@ -27,7 +39,7 @@ export default function Home() {
             Placed first because it is the strongest thing the club can say. A
             named student next to "GSoC 2026" is proof somebody else ran a
             selection and picked them; everything below is elaboration. */}
-        <section id="hall" aria-label="Students selected into international programmes">
+        <section id="hall" className="night" aria-label="Students selected into international programmes">
           <div className="section pt-28 sm:pt-40">
             <p className="label">Selected</p>
             <Duo
@@ -103,7 +115,7 @@ export default function Home() {
                   key={p.repo}
                   data-card
                   /* 18px radius, measured off Apple's cards. */
-                  className="flex w-[19rem] shrink-0 snap-start flex-col rounded-[18px] border border-seam bg-hull p-7 sm:w-[23rem]"
+                  className="flex w-[19rem] shrink-0 snap-start flex-col rounded-[18px] border border-seam bg-raise p-7 sm:w-[23rem]"
                 >
                   {p.tag ? (
                     <Eyebrow tone={p.tag.tone}>{p.tag.label}</Eyebrow>
@@ -115,7 +127,7 @@ export default function Home() {
                     href={p.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="group mt-3 inline-flex items-baseline gap-2 font-mono text-body-lg text-rime transition-colors duration-300 ease-glide hover:text-plasma"
+                    className="group mt-3 inline-flex items-baseline gap-2 font-mono text-body-lg text-ink transition-colors duration-300 ease-glide hover:text-accent"
                   >
                     {p.repo}
                     <span
@@ -127,14 +139,14 @@ export default function Home() {
                   </a>
 
                   <p className="mt-4 text-sm leading-relaxed text-haze">{p.what}</p>
-                  <p className="mt-4 text-sm leading-relaxed text-rime">{p.did}</p>
+                  <p className="mt-4 text-sm leading-relaxed text-ink">{p.did}</p>
 
                   {/* The proof, given the weight it deserves, pinned to the base
                       so cards of differing text length still align. */}
                   {p.proof && (
                     <div className="mt-auto pt-8">
                       <Eyebrow>{p.proof.label}</Eyebrow>
-                      <p className="mt-2 font-mono text-display-md font-medium tabular-nums text-plasma">
+                      <p className="mt-2 font-mono text-display-md font-medium tabular-nums text-accent">
                         {p.proof.value}
                       </p>
                     </div>
@@ -146,7 +158,7 @@ export default function Home() {
                         href={p.memberUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-haze transition-colors hover:text-plasma"
+                        className="text-haze transition-colors hover:text-accent"
                       >
                         {p.member}
                       </a>
@@ -161,6 +173,109 @@ export default function Home() {
           )}
         </section>
 
+        {/* ---- The programmes: what they are, and what we do about it ------ */}
+        <section id="programmes" className="section pt-28 sm:pt-40">
+          <p className="label">The programmes</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            lead="Paid, competitive, and open to beginners."
+            trail="Most students never apply because nobody told them these exist."
+          />
+
+          <div className="mt-14 space-y-px overflow-hidden rounded-[18px] bg-seam">
+            {PROGRAMMES.map((pg) => (
+              <div key={pg.key} className="bg-raise p-8 sm:p-10">
+                <div className="grid gap-8 lg:grid-cols-[16rem_1fr] lg:gap-14">
+                  <div>
+                    {/* Programme name as type, tinted to match its planet in the
+                        system above — never the official logo. Those marks belong
+                        to Google, the Linux Foundation and others, and using them
+                        implies an endorsement nobody granted. */}
+                    <p
+                      className="text-display-md font-semibold leading-none"
+                      style={{ color: PROGRAMME_COLOUR[pg.key] }}
+                    >
+                      {PROGRAMME_SHORT[pg.key]}
+                    </p>
+                    <p className="mt-2 font-mono text-xs text-dust">
+                      {PROGRAMME_NAME[pg.key]}
+                    </p>
+                    <a
+                      href={pg.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-4 inline-block font-mono text-xs text-accent hover:brightness-125"
+                    >
+                      Official site ↗
+                    </a>
+                  </div>
+
+                  <dl className="grid gap-6 sm:grid-cols-2">
+                    {[
+                      ["What it is", pg.what],
+                      ["Who gets in", pg.who],
+                      ["When it runs", pg.when],
+                      ["What it pays", pg.pays],
+                    ].map(([k, v]) => (
+                      <div key={k}>
+                        <dt className="label">{k}</dt>
+                        <dd className="mt-2 text-sm leading-relaxed text-haze">{v}</dd>
+                      </div>
+                    ))}
+                    <div className="sm:col-span-2 border-t border-seam pt-5">
+                      <dt className="label" style={{ color: PROGRAMME_COLOUR[pg.key] }}>
+                        What the club does
+                      </dt>
+                      <dd className="mt-2 text-sm leading-relaxed text-ink">{pg.weDo}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ---- What you actually get ---------------------------------------- */}
+        <section id="outcomes" className="section pt-28 sm:pt-40">
+          <p className="label">Beyond the stipend</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            lead="The money is the smallest part."
+            trail="What lasts is who ends up knowing your work."
+          />
+
+          <div className="mt-14 grid gap-x-14 gap-y-10 sm:grid-cols-2">
+            {OUTCOMES.map((o) => (
+              <div key={o.title} className="border-t border-seam pt-6">
+                <h3 className="text-body-lg font-semibold">{o.title}</h3>
+                <p className="mt-3 text-body text-haze">{o.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ---- How the club actually runs ----------------------------------- */}
+        <section id="culture" className="section pt-28 sm:pt-40">
+          <p className="label">What it&apos;s like</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            lead="It is mostly people arguing about code with Maggi."
+            trail="Which is the point."
+          />
+
+          <div className="mt-14 grid gap-4 sm:grid-cols-2">
+            {CULTURE.map((c) => (
+              <div
+                key={c.title}
+                className="rounded-[18px] border border-seam bg-raise p-7"
+              >
+                <h3 className="text-body-lg font-semibold">{c.title}</h3>
+                <p className="mt-3 text-body text-haze">{c.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
         {/* ---- Tracks ------------------------------------------------------ */}
         <section id="tracks" className="section pt-28 sm:pt-40">
           <p className="label">Three tracks</p>
@@ -172,11 +287,11 @@ export default function Home() {
 
           <div className="mt-14 space-y-px overflow-hidden rounded-2xl bg-seam">
             {TRACKS.map((track) => (
-              <div key={track.name} className="bg-hull p-8 sm:p-10">
+              <div key={track.name} className="bg-raise p-8 sm:p-10">
                 <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:gap-12">
                   <div>
                     <h3 className="text-display-md font-semibold">{track.name}</h3>
-                    <p className="mt-3 font-mono text-xs text-plasma">
+                    <p className="mt-3 font-mono text-xs text-accent">
                       {track.summary}
                     </p>
                   </div>
@@ -200,7 +315,7 @@ export default function Home() {
             {PATH.map((s, i) => (
               <li key={s.step} className="flex gap-5">
                 <span
-                  className="mt-1 shrink-0 font-mono text-xs tabular-nums text-plasma"
+                  className="mt-1 shrink-0 font-mono text-xs tabular-nums text-accent"
                   aria-hidden
                 >
                   {String(i + 1).padStart(2, "0")}
@@ -231,7 +346,7 @@ export default function Home() {
             <div className="mt-11 flex flex-wrap items-center gap-3">
               <a
                 href={`mailto:${LINKS.email}`}
-                className="rounded-full bg-rime px-6 py-3 text-sm font-semibold text-void transition duration-300 ease-glide hover:bg-plasma"
+                className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-void transition duration-300 ease-glide hover:bg-accent"
               >
                 Get in touch
               </a>
@@ -239,7 +354,7 @@ export default function Home() {
                 href={LINKS.github}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-seam px-6 py-3 text-sm font-semibold text-rime transition duration-300 ease-glide hover:border-plasma/60"
+                className="rounded-full border border-seam px-6 py-3 text-sm font-semibold text-ink transition duration-300 ease-glide hover:border-accent/60"
               >
                 Our GitHub
               </a>
