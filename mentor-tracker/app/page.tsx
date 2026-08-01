@@ -105,7 +105,7 @@ export default function Home() {
           </div>
 
           {projects.length === 0 ? (
-            <div className="mt-12 rounded-[18px] border border-dashed border-seam px-8 py-16 text-center">
+            <div className="mt-12 rounded-[10px] border border-dashed border-seam px-8 py-16 text-center">
               <p className="text-display-md font-semibold">Nothing published yet.</p>
               <p className="measure mx-auto mt-4 text-body text-haze">
                 This fills in as members land work upstream. Each card carries a link
@@ -119,7 +119,7 @@ export default function Home() {
                   key={p.repo}
                   data-card
                   /* 18px radius, measured off Apple's cards. */
-                  className="flex w-[19rem] shrink-0 snap-start flex-col rounded-[18px] border border-seam bg-raise p-7 sm:w-[23rem]"
+                  className="flex w-[19rem] shrink-0 snap-start flex-col rounded-[10px] border border-seam bg-raise p-7 sm:w-[23rem]"
                 >
                   {p.tag ? (
                     <Eyebrow tone={p.tag.tone}>{p.tag.label}</Eyebrow>
@@ -186,7 +186,7 @@ export default function Home() {
             trail="Most students never apply because nobody told them these exist."
           />
 
-          <div className="mt-14 space-y-px overflow-hidden rounded-[18px] bg-seam">
+          <div className="mt-14 space-y-px overflow-hidden rounded-[10px] bg-seam">
             {PROGRAMMES.map((pg) => (
               <div key={pg.key} className="bg-raise p-8 sm:p-10">
                 <div className="grid gap-8 lg:grid-cols-[16rem_1fr] lg:gap-14">
@@ -301,7 +301,7 @@ export default function Home() {
           {/* The honest cost. A comparison listing only our advantages gets
               discounted wholesale; naming what we are worse at is what makes the
               rest of the section believable. */}
-          <div className="mt-16 rounded-[18px] border border-seam bg-raise p-8 sm:p-10">
+          <div className="mt-16 rounded-[10px] border border-seam bg-raise p-8 sm:p-10">
             <h3 className="text-display-md font-semibold">What we are worse at</h3>
             <p className="measure mt-3 text-body text-haze">
               Every one of these is a real reason to join the competitive
@@ -331,7 +331,7 @@ export default function Home() {
             {CULTURE.map((c) => (
               <div
                 key={c.title}
-                className="rounded-[18px] border border-seam bg-raise p-7"
+                className="rounded-[10px] border border-seam bg-raise p-7"
               >
                 <h3 className="text-body-lg font-semibold">{c.title}</h3>
                 <p className="mt-3 text-body text-haze">{c.body}</p>

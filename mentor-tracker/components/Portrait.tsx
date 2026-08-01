@@ -83,7 +83,7 @@ export default function Portrait({
       alt={name}
       loading={priority ? "eager" : "lazy"}
       onError={() => setFailed(true)}
-      className={`object-cover ${className}`}
+      className={`object-cover shadow-[inset_0_0_0_1px_rgba(0,0,0,0.10)] ${className}`}
     />
   );
 }

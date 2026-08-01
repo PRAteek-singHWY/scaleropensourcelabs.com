@@ -487,7 +487,7 @@ export const CULTURE: { title: string; body: string }[] = [
 //     The real numbers (3 by rule, ~5.6 in practice, 30 nationally) are both
 //     true and more striking, so the invented figure bought nothing.
 //   * "open source is an easier door than ICPC" — false. GSoC 2025 accepted
-//     1,272 of 15,240 applicants, about 8.3%. Comparable brutality.
+//     1,280 of 15,240 applicants, about 8.4%. Comparable brutality.
 //
 // So the argument is deliberately NOT "our thing is easier to win". It is that
 // open source pays out below the top prize and competitive programming mostly
@@ -517,8 +517,12 @@ export const POSITIONING: Claim[] = [
     line: "There is no rule capping how many people from your college can get code merged into Kubernetes. Competitive programming is a sport with a fixed number of podium places. Open source is a backlog with an unbounded number of open issues.",
   },
   {
-    stat: "8.3%",
-    line: "GSoC accepted 1,272 people from 15,240 applicants in 2025. This is not the soft option, and we will not pretend it is. The difference is what you are left holding if you do not get in — a rating graph, or commits with your name on them.",
+    stat: "8.4%",
+    // 1,280 not 1,272. Google's May announcement said 1,272; the August final
+    // statistics post — which is what we link — says 1,280. Citing one figure and
+    // linking a source that states another is the exact failure this whole section
+    // exists to avoid, so the number now matches the page it points at.
+    line: "GSoC accepted 1,280 people from 15,240 applicants in 2025. This is not the soft option, and we will not pretend it is. The difference is what you are left holding if you do not get in — a rating graph, or commits with your name on them.",
     source: {
       label: "Google Open Source Blog",
       url: "https://opensource.googleblog.com/2025/08/google-summer-of-code-2025-contributor-statistics.html",

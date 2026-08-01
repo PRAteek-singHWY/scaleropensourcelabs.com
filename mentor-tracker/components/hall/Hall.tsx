@@ -99,7 +99,7 @@ export default function Hall() {
   if (people.length === 0) {
     return (
       <div className="section mt-14">
-        <div className="rounded-[18px] border border-dashed border-seam px-8 py-20 text-center">
+        <div className="rounded-[10px] border border-dashed border-seam px-8 py-20 text-center">
           <p className="text-display-md font-semibold">No selections published yet.</p>
           <p className="measure mx-auto mt-4 text-body text-haze">
             Each entry needs the student&apos;s own permission before their name and
@@ -202,14 +202,16 @@ export default function Hall() {
                        contrast was wrong. Active now gets a solid surface, a plasma
                        edge and a lift; inactive recedes much further so the
                        difference is unmistakable rather than subtle. */
-                    active === i
-                      ? "scale-100 opacity-100"
-                      : "scale-[0.96] opacity-40"
+                    /* Opacity only. Measured across Linear, Vercel, Stripe and
+                       Railway: none of them scale or lift on state change — hover
+                       and active move 2px or shift opacity, nothing more. A card
+                       that grows reads as a template. */
+                    active === i ? "opacity-100" : "opacity-40"
                   }`}
                   style={{ containerType: "inline-size" }}
                 >
                   <div
-                    className="overflow-hidden rounded-[18px] border bg-raise/80 backdrop-blur-xl transition-[border-color] duration-[220ms] ease-glide"
+                    className="overflow-hidden rounded-[10px] border bg-raise/80 backdrop-blur-xl transition-[border-color] duration-[220ms] ease-glide"
                     style={{
                       borderColor:
                         active === i ? `${PROGRAMME_COLOUR[s.programme]}59` : "#1A202C",
