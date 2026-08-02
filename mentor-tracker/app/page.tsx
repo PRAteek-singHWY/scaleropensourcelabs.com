@@ -5,6 +5,7 @@ import Carousel from "@/components/Carousel";
 import Eyebrow from "@/components/Eyebrow";
 import Hall from "@/components/hall/Hall";
 import ApplyForm from "@/components/ApplyForm";
+import Mentors from "@/components/Mentors";
 import Roster from "@/components/hall/Roster";
 import {
   CULTURE,
@@ -16,6 +17,10 @@ import {
   PROGRAMME_NAME,
   PROGRAMME_SHORT,
   PROJECTS,
+  CALENDAR,
+  FAQ,
+  INSTITUTIONAL,
+  NOT_FOR,
   POSITIONING,
   TRACKS,
   TRADE_OFFS,
@@ -120,6 +125,26 @@ export default function Home() {
               here cannot be checked in one click, it should not be here.
             </p>
           </div>
+
+          {/* Outcomes merged in here rather than living as its own section. Two
+              philosophy blocks separated by Programmes broke the momentum twice,
+              and this argument is the evidence for the claim above — it belongs
+              in the same breath as it. */}
+          <p className="label mt-20">Beyond the stipend</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-md font-semibold text-balance"
+            lead="The money is the smallest part."
+            trail="What lasts is who ends up knowing your work."
+          />
+          <div className="mt-14 grid gap-x-14 gap-y-10 sm:grid-cols-2">
+            {OUTCOMES.map((o) => (
+              <div key={o.title} className="border-t border-seam pt-6">
+                <h3 className="text-body-lg font-semibold">{o.title}</h3>
+                <p className="mt-3 text-body text-haze">{o.body}</p>
+              </div>
+            ))}
+          </div>
+
         </section>
 
         {/* ---- Projects ---------------------------------------------------- */}
@@ -281,22 +306,49 @@ export default function Home() {
           </div>
         </section>
 
-        {/* ---- What you actually get ---------------------------------------- */}
-        <section id="outcomes" className="section pt-28 sm:pt-40">
-          <p className="label">Beyond the stipend</p>
+        {/* ---- Calendar -----------------------------------------------------
+            The only honest urgency device the club owns. The argument is
+            arithmetic, not a countdown: organisations select contributors who
+            already have months of commits in their repo, so "next year" is a
+            skipped cycle rather than a delay. No exact dates — they move annually
+            and a stale date costs more than it buys on a page claiming accuracy. */}
+        <section id="calendar" className="section pt-28 sm:pt-40">
+          <p className="label">The reverse clock</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
-            lead="The money is the smallest part."
-            trail="What lasts is who ends up knowing your work."
+            lead="Applications are decided months before they open."
+            trail="Which is why starting now is the whole trick."
           />
+          <p className="measure mt-7 text-body-lg text-haze">
+            Organisations pick contributors they already recognise. By the time a
+            proposal window opens, the people who get in have been committing to
+            that repository since autumn. Waiting a year does not delay you by a
+            year — it costs you the cycle.
+          </p>
 
-          <div className="mt-14 grid gap-x-14 gap-y-10 sm:grid-cols-2">
-            {OUTCOMES.map((o) => (
-              <div key={o.title} className="border-t border-seam pt-6">
-                <h3 className="text-body-lg font-semibold">{o.title}</h3>
-                <p className="mt-3 text-body text-haze">{o.body}</p>
-              </div>
-            ))}
+          <div className="mt-14 overflow-x-auto">
+            <table className="w-full min-w-[52rem] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-seam">
+                  {["Window", "Programme", "Opens", "Start prepping", "What you do first"].map((h) => (
+                    <th key={h} scope="col" className="px-3 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-dust">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {CALENDAR.map((r) => (
+                  <tr key={r.programme} className="border-b border-seam/60 align-top last:border-0">
+                    <td className="px-3 py-5 font-mono text-xs text-accent">{r.window}</td>
+                    <td className="px-3 py-5 font-medium text-ink">{r.programme}</td>
+                    <td className="px-3 py-5 text-haze">{r.opens}</td>
+                    <td className="px-3 py-5 font-mono text-xs text-ember">{r.prepFrom}</td>
+                    <td className="max-w-sm px-3 py-5 text-haze">{r.doingNow}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
 
@@ -435,6 +487,62 @@ export default function Home() {
           </ol>
         </section>
 
+        {/* ---- Mentors ------------------------------------------------------ */}
+        <section id="mentors" className="section pt-28 sm:pt-40">
+          <p className="label">Who reads your code</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            lead="Not professors."
+            trail="People who did this recently, under the same constraints."
+          />
+          <p className="measure mt-7 text-body-lg text-haze">
+            Every mentor here has been through one of these programmes themselves.
+            What they offer is narrow and recent: they wrote the proposal, sat
+            through the review comments and landed the patch, from this campus,
+            within the last couple of years. Each entry says what they shipped,
+            links the public record, and names the few things they are genuinely
+            useful for.
+          </p>
+          <Mentors />
+        </section>
+
+        {/* ---- Who this is not for ------------------------------------------
+            An explicit filter immediately before the ask. Stating who should not
+            join makes the invitation read as selective rather than desperate. */}
+        <section id="who-not-for" className="section pt-28 sm:pt-40">
+          <p className="label">Be honest with yourself</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            lead="This is not for everyone."
+            trail="Four reasons to walk away now."
+          />
+          <ul className="mt-12 max-w-3xl space-y-6">
+            {NOT_FOR.map((n) => (
+              <li key={n} className="flex gap-4 border-t border-seam pt-6">
+                <span aria-hidden className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-ember" />
+                <span className="text-body text-haze">{n}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ---- FAQ ---------------------------------------------------------- */}
+        <section id="faq" className="section pt-28 sm:pt-40">
+          <p className="label">Questions</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            lead="The seven things people actually ask."
+          />
+          <dl className="mt-12 max-w-3xl">
+            {FAQ.map((f) => (
+              <div key={f.q} className="border-t border-seam py-7">
+                <dt className="text-body-lg font-semibold">{f.q}</dt>
+                <dd className="measure mt-3 text-body text-haze">{f.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
         {/* ---- Join -------------------------------------------------------- */}
         <section id="join" className="section pt-28 sm:pt-40">
           <div className="seam-fade" />
@@ -465,6 +573,35 @@ export default function Home() {
                 Our GitHub
               </a>
             </div>
+          </div>
+        </section>
+
+        {/* ---- For faculty, sponsors and maintainers -------------------------
+            Two of this site's three audiences previously had nowhere to land. An
+            anonymous club reads as vaporware to a faculty member and a maintainer
+            at the same time, so this band is concrete, contactable, and makes
+            exactly one small specific ask. */}
+        <section id="institutional" className="section pt-28 sm:pt-40">
+          <div className="rounded-[10px] border border-seam bg-raise p-8 sm:p-12">
+            <p className="label">For faculty, sponsors and maintainers</p>
+            <Duo
+              className="mt-6 max-w-3xl text-display-md font-semibold text-balance"
+              lead="What this club is, in plain terms."
+            />
+            <div className="mt-10 grid gap-x-14 gap-y-8 sm:grid-cols-3">
+              {INSTITUTIONAL.map((i) => (
+                <div key={i.title}>
+                  <h3 className="text-body-lg font-semibold">{i.title}</h3>
+                  <p className="mt-3 text-sm leading-relaxed text-haze">{i.body}</p>
+                </div>
+              ))}
+            </div>
+            <a
+              href={`mailto:${LINKS.email}`}
+              className="mt-10 inline-block rounded-md border border-seam px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-accent/60"
+            >
+              Email the organisers
+            </a>
           </div>
         </section>
 

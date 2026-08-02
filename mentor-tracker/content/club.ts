@@ -606,3 +606,136 @@ export const MENTORS: Mentor[] = [];
 export function publishedMentors(): Mentor[] {
   return MENTORS.filter((m) => m.consented);
 }
+
+// ---------------------------------------------------------------------------
+// THE CALENDAR — the only honest urgency device this club owns.
+//
+// Not a logistics footer. The argument is arithmetic: organisations select
+// contributors who already have months of commits in their repo, so an
+// application written the week it opens is competing against people who started
+// in autumn. "I'll do it next year" is therefore not a delay, it is a skipped
+// cycle. That is unanswerable and it needs no countdown timer.
+//
+// Deliberately no exact dates. They move every year, and a stale date on a page
+// whose whole claim is accuracy costs more than it buys. Each row states the
+// typical window and — the part that matters — what you should already be doing
+// months before it opens.
+
+export type CalendarRow = {
+  window: string;
+  programme: string;
+  opens: string;
+  /** The month range when the work that actually gets you selected happens. */
+  prepFrom: string;
+  doingNow: string;
+};
+
+export const CALENDAR: CalendarRow[] = [
+  {
+    window: "Jan – Apr",
+    programme: "Google Summer of Code",
+    opens: "Organisations announced late Feb, proposals due late Mar",
+    prepFrom: "Sep – Dec",
+    doingNow:
+      "Pick two organisations and get one small patch merged in each. By the time proposals open, the maintainers reviewing yours should already recognise your username.",
+  },
+  {
+    window: "Rolling, three terms",
+    programme: "LFX Mentorship",
+    opens: "Terms start around Mar, Jun and Sep",
+    prepFrom: "6–8 weeks before a term",
+    doingNow:
+      "The most forgiving entry point, because a miss costs months rather than a year. Choose the term that matches what you already know instead of waiting for the perfect project.",
+  },
+  {
+    window: "Feb – Jun",
+    programme: "Code for GovTech",
+    opens: "Cohort announced early in the year",
+    prepFrom: "Nov – Jan",
+    doingNow:
+      "Read a digital public infrastructure codebase properly. These are built for national scale rather than for demos, and that is a different reading exercise.",
+  },
+  {
+    window: "Jan – Aug",
+    programme: "Summer of Bitcoin",
+    opens: "Applications early in the year, then a multi-week bootcamp",
+    prepFrom: "Oct – Dec",
+    doingNow:
+      "Start the onboarding curriculum. Almost nobody finishes it alone, which is most of the reason to do it inside a club.",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// WHO THIS IS NOT FOR.
+//
+// An explicit filter immediately before the ask. Stating who should not join
+// makes the invitation read as selective rather than desperate, and it saves
+// everyone the wasted month — including us.
+
+export const NOT_FOR: string[] = [
+  "Anyone who wants a certificate. There isn't one. The output is a public commit history, which is worth more and photographs worse.",
+  "Anyone optimising purely for the DSA round. Go to the competitive programming club — they are better at it — and come here as well if you have the hours.",
+  "Anyone who wants to be told exactly what to do each week. You get a mentor and a direction, not a syllabus.",
+  "Anyone counting pull requests. Chasing PR count is how Hacktoberfest became something maintainers publicly asked people to stop doing. We are not running that.",
+];
+
+// ---------------------------------------------------------------------------
+// FAQ.
+//
+// Seven questions, no more. Every one is a real reason somebody decides not to
+// join, and the Scaler-funnel question is the one that silently loses exactly the
+// sceptical students most worth having.
+
+export const FAQ: { q: string; a: string }[] = [
+  {
+    q: "Do I need to be good at DSA?",
+    a: "No. Different skill. Reading an unfamiliar codebase, writing a small correct change and surviving review is what this needs, and none of it is competitive programming.",
+  },
+  {
+    q: "How many hours a week?",
+    a: "Four to six once you're going, and more in the weeks around an application deadline. During exams people go quiet and nobody minds — say so and pick it back up.",
+  },
+  {
+    q: "Is this free?",
+    a: "Yes, and there is nothing to upsell you. The coffee is on the club.",
+  },
+  {
+    q: "Is this a Scaler product or a marketing funnel?",
+    a: "It is a student club at Scaler School of Technology, run by students. Nothing here is a paid programme and nothing here sells you one.",
+  },
+  {
+    q: "I'm in my final year — is it too late?",
+    a: "For this year's GSoC cycle, most likely. For LFX Mentorship, no: terms run three times a year and GSoC dropped its student-only requirement in 2022, so graduating does not end your eligibility.",
+  },
+  {
+    q: "What language or stack do I need?",
+    a: "One you can already write and run. Projects exist in Python, Go, Rust, TypeScript, C++ and more; we pick the project around you rather than the other way round.",
+  },
+  {
+    q: "What if my pull request gets rejected?",
+    a: "It will, sometimes. Ours do — 46 of 74 merged on our largest project, which is a normal ratio and the reason we publish it rather than rounding it up.",
+  },
+];
+
+// ---------------------------------------------------------------------------
+// FOR FACULTY, SPONSORS AND MAINTAINERS.
+//
+// Two of this site's three audiences previously had no real estate at all. An
+// anonymous club reads as vaporware to a faculty member and to a maintainer
+// simultaneously, so this band exists to be concrete and contactable, and to make
+// exactly one small, specific, fundable ask.
+
+export const INSTITUTIONAL: { title: string; body: string }[] = [
+  {
+    title: "What we produce",
+    body: "Public, attributable contributions to projects outside the university, plus students selected into internationally competitive mentorship programmes. Every claim on this site links to the upstream record.",
+  },
+  {
+    title: "How we run",
+    body: "Weekly working sessions, open to any student, no selection at the door. Mentors are seniors and alumni who have been through the same programmes.",
+  },
+  {
+    title: "What we need",
+    body: "A room with power and a projector, and a small budget for the domain and refreshments. Travel support for one conference would be transformative but is not the ask.",
+  },
+];

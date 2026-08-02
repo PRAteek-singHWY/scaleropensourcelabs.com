@@ -12,9 +12,10 @@ import ThemeToggle from "@/components/ThemeToggle";
 const ITEMS = [
   { href: "#hall", label: "Selected" },
   { href: "#programmes", label: "Programmes" },
-  { href: "#outcomes", label: "Why" },
-  { href: "#culture", label: "The club" },
-  { href: "#join", label: "Join" },
+  { href: "#calendar", label: "Timeline" },
+  { href: "#mentors", label: "Mentors" },
+  { href: "#faq", label: "FAQ" },
+  { href: "#apply", label: "Apply" },
 ] as const;
 
 export default function Nav() {
