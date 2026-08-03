@@ -155,7 +155,7 @@ export default function Home() {
         {/* ---- Projects ---------------------------------------------------- */}
         <section
           id="projects"
-          className="section pt-28 sm:pt-40"
+          className="band section pt-28 pb-28 sm:pt-40 sm:pb-40"
           aria-label="Upstream work"
         >
           <div className="flex flex-wrap items-end justify-between gap-6">
@@ -317,7 +317,7 @@ export default function Home() {
             already have months of commits in their repo, so "next year" is a
             skipped cycle rather than a delay. No exact dates — they move annually
             and a stale date costs more than it buys on a page claiming accuracy. */}
-        <section id="calendar" className="section pt-28 sm:pt-40">
+        <section id="calendar" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
           <p className="label">The reverse clock</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -441,7 +441,7 @@ export default function Home() {
         </section>
 
         {/* ---- How the club actually runs ----------------------------------- */}
-        <section id="culture" className="section pt-28 sm:pt-40">
+        <section id="culture" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
           <p className="label">What it&apos;s like</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -489,7 +489,7 @@ export default function Home() {
         </section>
 
         {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
-        <section id="path" className="section pt-28 sm:pt-40">
+        <section id="path" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
           <p className="label">How a first contribution actually goes</p>
           <Duo
             className="mt-6 max-w-3xl text-display-lg font-semibold text-balance"
@@ -559,7 +559,7 @@ export default function Home() {
         {/* ---- Who this is not for ------------------------------------------
             An explicit filter immediately before the ask. Stating who should not
             join makes the invitation read as selective rather than desperate. */}
-        <section id="who-not-for" className="section pt-28 sm:pt-40">
+        <section id="who-not-for" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
           <p className="label">Be honest with yourself</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -594,7 +594,7 @@ export default function Home() {
         </section>
 
         {/* ---- Join -------------------------------------------------------- */}
-        <section id="join" className="section pt-28 sm:pt-40">
+        <section id="join" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
           <div className="seam-fade" />
           <div className="pt-20 sm:pt-28">
             <Duo

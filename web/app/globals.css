@@ -38,7 +38,13 @@
 :root {
   color-scheme: light;
 
-  --bg: 251 251 253;          /* page */
+  --bg: 255 255 255;          /* page */
+  /* The alternating band. apple.com/mac uses rgb(245,245,247) nine times against
+     white three times — the grey is the dominant section colour, not the
+     exception, and the alternation is what gives a very long page rhythm. The
+     page background had to become pure white for it to be legible at all:
+     #FBFBFD against #F5F5F7 is a 1.5% lightness step nobody can see. */
+  --band: 245 245 247;
   --raise: 255 255 255;       /* cards */
   --sunk: 241 242 246;        /* recessed fills */
   --seam: 227 229 236;        /* hairlines */
@@ -75,6 +81,7 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --bg: 5 7 13;
+    --band: 10 14 22;
     --raise: 11 15 23;
     --sunk: 14 19 28;
     --seam: 26 32 44;
@@ -95,6 +102,7 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: 5 7 13;
+  --band: 10 14 22;
   --raise: 11 15 23;
   --sunk: 14 19 28;
   --seam: 26 32 44;
@@ -113,7 +121,8 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: 251 251 253;
+  --bg: 255 255 255;
+  --band: 245 245 247;
   --raise: 255 255 255;
   --sunk: 241 242 246;
   --seam: 227 229 236;
@@ -229,6 +238,35 @@ body {
 .btn-secondary:hover {
   border-color: rgb(var(--accent));
   color: rgb(var(--accent));
+}
+
+/* An alternating section band. Full-bleed by design — Apple's grey sections run
+   edge to edge while the content inside keeps its own measure, which is what
+   makes the rhythm read as structure rather than as a very wide card.
+
+   Painted with a pseudo-element rather than a background on the element itself,
+   because these sections ARE the measure container (`.section` caps at 76rem and
+   centres). A background on them would stop at that cap and read as a card. The
+   alternative was wrapping fourteen sections in an extra div, which is a lot of
+   structural churn for a colour.
+
+   The bleed uses inset:auto with symmetric negative offsets rather than 100vw:
+   100vw includes the scrollbar gutter and would push the page sideways. body
+   already sets overflow-x:hidden, so any sub-pixel overshoot is clipped rather
+   than becoming a scrollbar. */
+.band {
+  position: relative;
+}
+.band::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 50vw);
+  right: calc(50% - 50vw);
+  background: rgb(var(--band));
+  /* Behind this section's own content, in front of the page background. */
+  z-index: -1;
 }
 
 /* Scrolls, but without a bar drawn through the nav's bottom hairline. */

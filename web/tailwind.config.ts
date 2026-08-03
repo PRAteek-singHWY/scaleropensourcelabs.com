@@ -31,6 +31,7 @@ const config: Config = {
         // as a bare var(--bg) the modifier produces an invalid colour and the
         // element silently renders transparent.
         bg: "rgb(var(--bg) / <alpha-value>)",
+        band: "rgb(var(--band) / <alpha-value>)",
         raise: "rgb(var(--raise) / <alpha-value>)",
         sunk: "rgb(var(--sunk) / <alpha-value>)",
         seam: "rgb(var(--seam) / <alpha-value>)",
@@ -56,13 +57,28 @@ const config: Config = {
         //
         // Line-height likewise: theirs is 84/80 = 1.05, not the sub-1.0 crush.
         "display-xl": ["clamp(2.5rem, 6vw, 5rem)", { lineHeight: "1.05", letterSpacing: "-0.015em" }],
-        "display-lg": ["clamp(1.75rem, 3.4vw, 2.75rem)", { lineHeight: "1.08", letterSpacing: "-0.014em" }],
-        "display-md": ["clamp(1.25rem, 2vw, 1.625rem)", { lineHeight: "1.18", letterSpacing: "-0.012em" }],
-        "body-lg": ["clamp(1.0625rem, 1.5vw, 1.375rem)", { lineHeight: "1.5", letterSpacing: "-0.011em" }],
-        "body": ["1rem", { lineHeight: "1.6", letterSpacing: "-0.006em" }],
+        "display-lg": ["clamp(1.75rem, 3.4vw, 2.75rem)", { lineHeight: "1.08", letterSpacing: "-0.003em" }],
+        // Apple's tracking is POSITIVE below roughly 40px. Measured off
+        // apple.com/mac: 80px/-1.2px (-0.015em), 48px/-0.144px (-0.003em), then it
+        // crosses zero — 32px/+0.128px (+0.004em), 28px/+0.196px (+0.007em),
+        // 24px/+0.216px (+0.009em). Every step here was negative, so everything
+        // below the hero was being over-tightened. Optical sizing runs the other
+        // way at text sizes: large type needs closing up, small type needs opening
+        // out, and copying the display value downward is the usual mistake.
+        "display-md": ["clamp(1.25rem, 2vw, 1.625rem)", { lineHeight: "1.18", letterSpacing: "0.006em" }],
+        "body-lg": ["clamp(1.0625rem, 1.5vw, 1.375rem)", { lineHeight: "1.5", letterSpacing: "0.008em" }],
+        "body": ["1rem", { lineHeight: "1.6", letterSpacing: "0.009em" }],
         "label": ["0.6875rem", { lineHeight: "1.3", letterSpacing: "0.18em" }],
       },
+      // -0.015em is Apple's 80px value exactly, so it belongs on display-xl only.
       letterSpacing: { tightest: "-0.015em" },
+      borderRadius: {
+        // Apple's tiles measured 18px on /store and 28px on /mac — small cards and
+        // large feature panels respectively. Ours were 10-14px, which reads as a
+        // different, tighter system.
+        tile: "18px",
+        panel: "28px",
+      },
       transitionTimingFunction: {
         // The Apple feel lives here as much as anywhere: a long, slow ease-out
         // rather than the default's symmetric curve.
