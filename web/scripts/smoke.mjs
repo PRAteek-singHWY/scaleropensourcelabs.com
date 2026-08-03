@@ -19,11 +19,26 @@ const ok = (n, v) => {
 };
 ok("no failed requests / page errors", bad.length === 0);
 bad.slice(0, 6).forEach((l) => console.log("        " + l));
-ok("hydrated (toggle icon visible)", await pg.evaluate(() => getComputedStyle(document.querySelector("nav button span")).opacity === "1"));
+// Positional selectors rot. `nav button` used to be the theme toggle; adding the
+// outline toggle made it the first match, so this reported the theme control
+// broken when it was fine. Both are now selected by what they ARE.
+const THEME = '[aria-label^="Theme:"]';
+const OUTLINE = '[aria-controls="page-outline"]';
+
+ok("hydrated (theme icon visible)", await pg.evaluate((sel) => getComputedStyle(document.querySelector(sel).querySelector("span")).opacity === "1", THEME));
 const before = await pg.evaluate(() => document.documentElement.getAttribute("data-theme"));
-await pg.click("nav button");
+await pg.click(THEME);
 await pg.waitForTimeout(400);
-ok("toggle changes theme", before !== (await pg.evaluate(() => document.documentElement.getAttribute("data-theme"))));
+ok("theme toggle changes theme", before !== (await pg.evaluate(() => document.documentElement.getAttribute("data-theme"))));
+
+// The outline is a feature now, so it belongs in the smoke test.
+ok("outline absent until asked for", await pg.evaluate(() => !document.querySelector("#page-outline")));
+await pg.click(OUTLINE);
+await pg.waitForTimeout(400);
+ok("outline opens with all 14 sections", await pg.evaluate(() => document.querySelectorAll("#page-outline a").length === 14));
+await pg.click(OUTLINE);
+await pg.waitForTimeout(300);
+ok("outline closes again", await pg.evaluate(() => !document.querySelector("#page-outline")));
 ok("NO canvas anywhere (3D removed)", await pg.evaluate(() => document.querySelectorAll("canvas").length === 0));
 ok("nav plate composites", await pg.evaluate(() => getComputedStyle(document.querySelector("header")).backgroundColor !== "rgba(0, 0, 0, 0)"));
 const h = await pg.evaluate(() => document.body.scrollHeight);
