@@ -70,7 +70,7 @@ export default function Hero() {
       {stats.total > 0 && (
         <div className="mt-16 flex flex-wrap items-baseline gap-x-8 gap-y-4 border-t border-seam pt-8 sm:mt-20">
           <p>
-            <span className="text-display-lg font-semibold tracking-tightest tabular-nums">
+            <span className="text-display-lg font-semibold tracking-tightest">
               {stats.total}
             </span>
             <span className="ml-3 text-body text-haze">
@@ -83,7 +83,7 @@ export default function Hero() {
                 <span style={{ color: PROGRAMME_COLOUR[programme] }}>
                   {PROGRAMME_SHORT[programme]}
                 </span>
-                <span className="ml-1.5 tabular-nums text-dust">×{count}</span>
+                <span className="ml-1.5 text-dust">×{count}</span>
               </li>
             ))}
           </ul>

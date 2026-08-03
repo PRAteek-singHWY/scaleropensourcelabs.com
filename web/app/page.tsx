@@ -1,4 +1,5 @@
 import Hero from "@/components/hero/Hero";
+import ProofPanel from "@/components/ProofPanel";
 import Reveal from "@/components/Reveal";
 import StickyCTA from "@/components/StickyCTA";
 import Duo from "@/components/Duo";
@@ -189,7 +190,13 @@ export default function Home() {
               </p>
             </div>
           ) : (
-            <Carousel label="Upstream contributions" className="mt-14">
+            <>
+              {/* The section's lead visual. Apple puts an image under the headline;
+                  there is no image to put, so the evidence itself is the visual —
+                  see ProofPanel for why that is the honest substitute rather than a
+                  stock photo. */}
+              <ProofPanel />
+              <Carousel label="Upstream contributions" className="mt-14">
               {projects.map((p) => (
                 <article
                   key={p.repo}
@@ -226,7 +233,7 @@ export default function Home() {
                   {p.proof && (
                     <div className="mt-auto pt-8">
                       <Eyebrow>{p.proof.label}</Eyebrow>
-                      <p className="mt-2 font-mono text-display-md font-medium tabular-nums text-accent">
+                      <p className="mt-2 font-mono text-display-md font-medium text-accent">
                         {p.proof.value}
                       </p>
                     </div>
@@ -248,8 +255,9 @@ export default function Home() {
                     {p.language && <span>{p.language}</span>}
                   </div>
                 </article>
-              ))}
-            </Carousel>
+                ))}
+              </Carousel>
+            </>
           )}
         </section>
 
@@ -388,7 +396,7 @@ export default function Home() {
               <div key={i} className="grid gap-2 sm:grid-cols-[7rem_1fr] sm:gap-0">
                 <div className="sm:pr-8 sm:text-right">
                   {c.stat && (
-                    <p className="font-display text-display-md font-semibold tabular-nums text-accent">
+                    <p className="text-display-md font-semibold text-accent">
                       {c.stat}
                     </p>
                   )}

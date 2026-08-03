@@ -52,7 +52,7 @@ export default function Hall() {
           below it. */}
       <div className="mt-12 flex flex-wrap items-baseline gap-x-8 gap-y-4 border-t border-seam pt-10">
         <p>
-          <span className="text-display-lg font-semibold tracking-tightest tabular-nums">
+          <span className="text-display-lg font-semibold tracking-tightest">
             {stats.total}
           </span>
           <span className="ml-3 text-body-lg text-haze">
@@ -65,7 +65,7 @@ export default function Hall() {
               <span style={{ color: PROGRAMME_COLOUR[programme] }}>
                 {PROGRAMME_SHORT[programme]}
               </span>
-              <span className="ml-1.5 text-dust tabular-nums">×{count}</span>
+              <span className="ml-1.5 text-dust">×{count}</span>
             </li>
           ))}
         </ul>
