@@ -30,7 +30,7 @@ export default function Mentors() {
 
   if (mentors.length === 0) {
     return (
-      <div className="mt-14 rounded-[10px] border border-dashed border-seam px-8 py-16">
+      <div className="mt-14 rounded-tile border border-dashed border-seam px-8 py-16">
         <p className="text-display-md font-semibold">No mentors listed yet.</p>
         <p className="measure mt-4 text-body text-haze">
           Each entry needs that person&apos;s own permission, and a public link to
@@ -56,7 +56,7 @@ export default function Mentors() {
         </p>
       )}
 
-      <div className="mt-14 space-y-px overflow-hidden rounded-[10px] bg-seam">
+      <div className="mt-14 space-y-px overflow-hidden rounded-tile bg-seam">
         {mentors.map((m) => (
           <article key={m.name} className="bg-raise p-8 sm:p-10">
             <div className="grid gap-8 lg:grid-cols-[18rem_1fr] lg:gap-14">

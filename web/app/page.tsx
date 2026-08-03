@@ -70,11 +70,11 @@ export default function Home() {
                   before they have to ask. Straight from the reference, where they
                   sit under the hero as tiles. */}
               <div className="mt-10 grid max-w-lg grid-cols-2 gap-3">
-                <div className="rounded-[10px] border border-seam bg-raise px-5 py-4">
+                <div className="rounded-tile border border-seam bg-raise px-5 py-4">
                   <p className="text-body-lg font-semibold text-accent">Free</p>
                   <p className="mt-1 text-sm text-haze">No fee, ever</p>
                 </div>
-                <div className="rounded-[10px] border border-seam bg-raise px-5 py-4">
+                <div className="rounded-tile border border-seam bg-raise px-5 py-4">
                   <p className="text-body-lg font-semibold text-accent">All years</p>
                   <p className="mt-1 text-sm text-haze">No prior experience</p>
                 </div>
@@ -90,7 +90,7 @@ export default function Home() {
             named student next to "GSoC 2026" is proof somebody else ran a
             selection and picked them; everything below is elaboration. */}
         <section id="hall" aria-label="Students selected into international programmes">
-          <div className="section pt-28 sm:pt-40">
+          <div className="section pt-24 sm:pt-36">
             <p className="label">Selected</p>
             <Duo
               className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -112,7 +112,7 @@ export default function Home() {
         </section>
 
         {/* ---- Thesis ------------------------------------------------------ */}
-        <section className="section pt-28 sm:pt-40">
+        <section className="section pt-24 sm:pt-36">
           <p className="label">What this is</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -155,7 +155,7 @@ export default function Home() {
         {/* ---- Projects ---------------------------------------------------- */}
         <section
           id="projects"
-          className="band section pt-28 pb-28 sm:pt-40 sm:pb-40"
+          className="band section pt-24 pb-24 sm:pt-36 sm:pb-36"
           aria-label="Upstream work"
         >
           <div className="flex flex-wrap items-end justify-between gap-6">
@@ -177,7 +177,7 @@ export default function Home() {
           </div>
 
           {projects.length === 0 ? (
-            <div className="mt-12 rounded-[10px] border border-dashed border-seam px-8 py-16 text-center">
+            <div className="mt-12 rounded-tile border border-dashed border-seam px-8 py-16 text-center">
               <p className="text-display-md font-semibold">Nothing published yet.</p>
               <p className="measure mx-auto mt-4 text-body text-haze">
                 This fills in as members land work upstream. Each card carries a link
@@ -191,7 +191,7 @@ export default function Home() {
                   key={p.repo}
                   data-card
                   /* 18px radius, measured off Apple's cards. */
-                  className="flex w-[19rem] shrink-0 snap-start flex-col rounded-[10px] border border-seam bg-raise p-7 sm:w-[23rem]"
+                  className="flex w-[19rem] shrink-0 snap-start flex-col rounded-tile border border-seam bg-raise p-7 sm:w-[23rem]"
                 >
                   {p.tag ? (
                     <Eyebrow tone={p.tag.tone}>{p.tag.label}</Eyebrow>
@@ -250,7 +250,7 @@ export default function Home() {
         </section>
 
         {/* ---- The programmes: what they are, and what we do about it ------ */}
-        <section id="programmes" className="section pt-28 sm:pt-40">
+        <section id="programmes" className="section pt-24 sm:pt-36">
           <p className="label">The programmes</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -258,7 +258,7 @@ export default function Home() {
             trail="Most students never apply because nobody told them these exist."
           />
 
-          <div className="mt-14 space-y-px overflow-hidden rounded-[10px] bg-seam">
+          <div className="mt-14 space-y-px overflow-hidden rounded-tile bg-seam">
             {PROGRAMMES.map((pg) => (
               <div key={pg.key} className="bg-raise p-8 sm:p-10">
                 <div className="grid gap-8 lg:grid-cols-[16rem_1fr] lg:gap-14">
@@ -317,7 +317,7 @@ export default function Home() {
             already have months of commits in their repo, so "next year" is a
             skipped cycle rather than a delay. No exact dates — they move annually
             and a stale date costs more than it buys on a page claiming accuracy. */}
-        <section id="calendar" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
+        <section id="calendar" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <p className="label">The reverse clock</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -358,7 +358,7 @@ export default function Home() {
         </section>
 
         {/* ---- Why this and not the CP club --------------------------------- */}
-        <section id="why-us" className="section pt-28 sm:pt-40">
+        <section id="why-us" className="section pt-24 sm:pt-36">
           <p className="label">Choosing a club</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -423,7 +423,7 @@ export default function Home() {
           {/* The honest cost. A comparison listing only our advantages gets
               discounted wholesale; naming what we are worse at is what makes the
               rest of the section believable. */}
-          <div className="mt-16 rounded-[10px] border border-seam bg-raise p-8 sm:p-10">
+          <div className="mt-16 rounded-tile border border-seam bg-raise p-8 sm:p-10">
             <h3 className="text-display-md font-semibold">What we are worse at</h3>
             <p className="measure mt-3 text-body text-haze">
               Every one of these is a real reason to join the competitive
@@ -441,7 +441,7 @@ export default function Home() {
         </section>
 
         {/* ---- How the club actually runs ----------------------------------- */}
-        <section id="culture" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
+        <section id="culture" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <p className="label">What it&apos;s like</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -453,7 +453,7 @@ export default function Home() {
             {CULTURE.map((c) => (
               <div
                 key={c.title}
-                className="rounded-[10px] border border-seam bg-raise p-7"
+                className="rounded-tile border border-seam bg-raise p-7"
               >
                 <h3 className="text-body-lg font-semibold">{c.title}</h3>
                 <p className="mt-3 text-body text-haze">{c.body}</p>
@@ -463,7 +463,7 @@ export default function Home() {
         </section>
 
         {/* ---- Tracks ------------------------------------------------------ */}
-        <section id="tracks" className="section pt-28 sm:pt-40">
+        <section id="tracks" className="section pt-24 sm:pt-36">
           <p className="label">Three tracks</p>
           <Duo
             className="mt-6 text-display-lg font-semibold"
@@ -489,7 +489,7 @@ export default function Home() {
         </section>
 
         {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
-        <section id="path" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
+        <section id="path" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <p className="label">How a first contribution actually goes</p>
           <Duo
             className="mt-6 max-w-3xl text-display-lg font-semibold text-balance"
@@ -538,7 +538,7 @@ export default function Home() {
         </section>
 
         {/* ---- Mentors ------------------------------------------------------ */}
-        <section id="mentors" className="section pt-28 sm:pt-40">
+        <section id="mentors" className="section pt-24 sm:pt-36">
           <p className="label">Who reads your code</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -559,7 +559,7 @@ export default function Home() {
         {/* ---- Who this is not for ------------------------------------------
             An explicit filter immediately before the ask. Stating who should not
             join makes the invitation read as selective rather than desperate. */}
-        <section id="who-not-for" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
+        <section id="who-not-for" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <p className="label">Be honest with yourself</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -577,7 +577,7 @@ export default function Home() {
         </section>
 
         {/* ---- FAQ ---------------------------------------------------------- */}
-        <section id="faq" className="section pt-28 sm:pt-40">
+        <section id="faq" className="section pt-24 sm:pt-36">
           <p className="label">Questions</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
@@ -594,7 +594,7 @@ export default function Home() {
         </section>
 
         {/* ---- Join -------------------------------------------------------- */}
-        <section id="join" className="band section pt-28 pb-28 sm:pt-40 sm:pb-40">
+        <section id="join" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <div className="seam-fade" />
           <div className="pt-20 sm:pt-28">
             <Duo
@@ -631,8 +631,8 @@ export default function Home() {
             anonymous club reads as vaporware to a faculty member and a maintainer
             at the same time, so this band is concrete, contactable, and makes
             exactly one small specific ask. */}
-        <section id="institutional" className="section pt-28 sm:pt-40">
-          <div className="rounded-[10px] border border-seam bg-raise p-8 sm:p-12">
+        <section id="institutional" className="section pt-24 sm:pt-36">
+          <div className="rounded-tile border border-seam bg-raise p-8 sm:p-12">
             <p className="label">For faculty, sponsors and maintainers</p>
             <Duo
               className="mt-6 max-w-3xl text-display-md font-semibold text-balance"
@@ -656,7 +656,7 @@ export default function Home() {
         </section>
 
         {/* ---- Footer ------------------------------------------------------ */}
-        <footer className="section pb-16 pt-28 sm:pt-40">
+        <footer className="section pb-16 pt-24 sm:pt-36">
           <div className="seam-fade" />
           <div className="flex flex-wrap items-start justify-between gap-8 pt-10">
             <div>

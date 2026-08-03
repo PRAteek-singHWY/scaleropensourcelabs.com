@@ -34,7 +34,7 @@ export default function Hall() {
 
   if (people.length === 0) {
     return (
-      <div className="mt-14 rounded-[10px] border border-dashed border-seam px-8 py-16">
+      <div className="mt-14 rounded-tile border border-dashed border-seam px-8 py-16">
         <p className="text-display-md font-semibold">No selections published yet.</p>
         <p className="measure mt-4 text-body text-haze">
           Each entry needs that person&apos;s own permission, the organisation that
@@ -90,7 +90,7 @@ export default function Hall() {
                 name={p.name}
                 photo={p.photo}
                 priority={i < 2}
-                className="aspect-[4/5] w-full max-w-[26rem] rounded-[14px]"
+                className="aspect-[4/5] w-full max-w-[26rem] rounded-panel"
               />
             </div>
 

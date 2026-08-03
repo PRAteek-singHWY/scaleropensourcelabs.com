@@ -45,8 +45,12 @@ function deadlineLabel(): string | null {
   });
 }
 
+// bg-sunk, not bg-bg. Once the light page became pure white to let the section
+// bands read, --bg and --raise were both #FFFFFF — so a white field sat on a white
+// card and only its 1px border said it was an input at all. --sunk is the recessed
+// fill and exists for exactly this.
 const field =
-  "w-full rounded-md border border-seam bg-bg px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
+  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
 
 export default function ApplyForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
@@ -87,7 +91,7 @@ export default function ApplyForm() {
 
   if (state === "done") {
     return (
-      <div className="rounded-[10px] border border-seam bg-raise p-7">
+      <div className="rounded-tile border border-seam bg-raise p-7">
         <p className="text-display-md font-semibold">You&apos;re in the queue.</p>
         <p className="measure mt-3 text-body text-haze">
           Someone will message you before the next session. Nothing else to do —
@@ -98,7 +102,7 @@ export default function ApplyForm() {
   }
 
   return (
-    <div className="rounded-[10px] border border-seam bg-raise shadow-[0_13px_27px_-5px_rgba(50,50,93,0.18),0_8px_16px_-8px_rgba(0,0,0,0.25)]">
+    <div className="rounded-tile border border-seam bg-raise shadow-[0_13px_27px_-5px_rgba(50,50,93,0.18),0_8px_16px_-8px_rgba(0,0,0,0.25)]">
       <div className="border-b border-seam px-7 py-5">
         <p className="label">Open to all years</p>
         <p className="mt-1.5 text-body-lg font-semibold">Join the club</p>
@@ -151,6 +155,72 @@ export default function ApplyForm() {
             className={field}
             placeholder="A repo, a deploy, a half-finished thing"
           />
+        </div>
+
+        {/* Which programme they are aiming at, and where.
+            Asked because it is the single most useful thing to know before the
+            first conversation: someone aiming at GSoC in eight months needs a
+            different first patch than someone who wants an LFX term next quarter.
+
+            A select, not free text, because the answer has to be countable — the
+            point is to group people by target so a session can serve several at
+            once. "Not sure yet" is a real option and the DEFAULT, because most
+            people genuinely do not know and forcing a guess produces noise. It is
+            also honest: this page tells beginners they are welcome, so the form
+            must not immediately demand a plan. */}
+        <div>
+          <label htmlFor="af-target" className="label mb-2 block">
+            Which programme are you aiming at
+          </label>
+          <select id="af-target" name="target" defaultValue="unsure" className={field}>
+            <option value="unsure">Not sure yet — help me pick</option>
+            <option value="GSOC">Google Summer of Code</option>
+            <option value="LFX">LFX Mentorship</option>
+            <option value="C4GT">Code for GovTech</option>
+            <option value="SOB">Summer of Bitcoin</option>
+            <option value="OUTREACHY">Outreachy</option>
+          </select>
+        </div>
+
+        {/* Two org preferences rather than one. Nobody gets their first choice
+            reliably — the whole argument of this site is that these are
+            competitive — so asking for a second is realistic rather than
+            pessimistic, and it gives us somewhere to point them when the first
+            organisation has no tractable issues open.
+
+            Optional on purpose. A beginner who has not yet read any org's issue
+            tracker cannot answer this, and requiring it would filter out exactly
+            the people the club exists for. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* One note for the pair. Repeating "(optional)" in both labels made each
+              wrap to two lines inside the two-column grid. */}
+          <p className="text-[13px] text-dust sm:col-span-2">
+            Both optional — leave them blank if you have not looked yet.
+          </p>
+          <div>
+            <label htmlFor="af-org1" className="label mb-2 block">
+              First choice org
+            </label>
+            <input
+              id="af-org1"
+              name="org1"
+              className={field}
+              placeholder="Kubernetes, OWASP…"
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label htmlFor="af-org2" className="label mb-2 block">
+              Second choice org
+            </label>
+            <input
+              id="af-org2"
+              name="org2"
+              className={field}
+              placeholder="A backup you would be happy with"
+              autoComplete="off"
+            />
+          </div>
         </div>
 
         <label className="flex cursor-pointer gap-3 pt-1">
