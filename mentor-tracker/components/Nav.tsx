@@ -6,6 +6,13 @@
 // to announce itself; the hero is doing the announcing. Anything heavier competes
 // with the one thing you want read first.
 //
+// The frosted plate is measured off apple.com rather than approximated. Their
+// global nav computes to rgba(255,255,255,0.8) with
+// `backdrop-filter: saturate(1.8) blur(20px)`. The saturate is the part that was
+// missing here — a plain blur greys out whatever passes beneath it, and the 1.8
+// boost is what makes Apple's glass look like glass rather than frosted plastic.
+// Height 44px matches theirs exactly (h-11).
+//
 // This was briefly a client component that watched for pinned-dark sections
 // beneath it and swapped to their palette. With the 3D gone there are no
 // pinned-dark sections, so every surface under the nav now follows the reader's
@@ -25,7 +32,7 @@ const ITEMS = [
 
 export default function Nav() {
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-seam/60 bg-bg/70 backdrop-blur-xl">
+    <header className="plate fixed inset-x-0 top-0 z-50 border-b border-seam/60">
       <nav
         aria-label="Main"
         className="mx-auto flex h-11 max-w-[76rem] items-center justify-between gap-6 px-6 sm:px-8"

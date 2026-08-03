@@ -174,7 +174,7 @@ export default function ApplyForm() {
         <button
           type="submit"
           disabled={state === "sending"}
-          className="w-full rounded-md bg-accent px-4 py-3 text-sm font-semibold text-bg transition hover:brightness-110 disabled:opacity-60"
+          className="btn btn-primary w-full disabled:opacity-60"
         >
           {state === "sending" ? "Sending…" : "Apply to join"}
         </button>

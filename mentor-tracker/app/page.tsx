@@ -610,7 +610,7 @@ export default function Home() {
             <div className="mt-11 flex flex-wrap items-center gap-3">
               <a
                 href={`mailto:${LINKS.email}`}
-                className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-bg transition duration-300 ease-glide hover:bg-accent"
+                className="btn btn-primary"
               >
                 Get in touch
               </a>
@@ -618,7 +618,7 @@ export default function Home() {
                 href={LINKS.github}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-full border border-seam px-6 py-3 text-sm font-semibold text-ink transition duration-300 ease-glide hover:border-accent/60"
+                className="btn btn-secondary"
               >
                 Our GitHub
               </a>

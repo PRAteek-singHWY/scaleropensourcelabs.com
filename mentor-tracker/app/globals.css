@@ -178,6 +178,59 @@ body {
   margin-block: -14px;
 }
 
+/* The frosted nav plate, measured off apple.com: their nav is
+   rgba(255,255,255,0.8) over `saturate(1.8) blur(20px)`. Written as plain CSS
+   rather than Tailwind utilities because backdrop-filter needs both functions in
+   one declaration and `backdrop-blur-xl` emits blur alone. */
+.plate {
+  background: rgb(var(--bg) / 0.8);
+  -webkit-backdrop-filter: saturate(1.8) blur(20px);
+  backdrop-filter: saturate(1.8) blur(20px);
+}
+
+/* Buttons, also measured rather than guessed. Apple's pill computes to
+   border-radius 980px, padding 11px 21px, 17px/400 type, 44px tall. 44px is the
+   same number their nav uses and the touch-target floor, which is not a
+   coincidence — it is the unit the whole system is built on.
+
+   The primary fill is our accent, not Apple's #0071E3. Structure is worth
+   copying; their brand colour is not. `text-bg` works on both themes because the
+   accent inverts with them: dark teal on near-white in light, light cyan on
+   near-black in dark. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 11px 21px;
+  border-radius: 980px;
+  font-size: 17px;
+  font-weight: 400;
+  /* Apple's pill measures 20px leading, which is what makes 11px padding land on
+     exactly 44px. Inheriting the body's ~1.5 ratio gave 25.5px and a 48px button
+     — close enough to look right and wrong enough not to be the same system. */
+  line-height: 20px;
+  letter-spacing: -0.022em;
+  transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.btn-primary {
+  background: rgb(var(--accent));
+  color: rgb(var(--bg));
+}
+.btn-primary:hover {
+  opacity: 0.85;
+}
+.btn-secondary {
+  border: 1px solid rgb(var(--seam));
+  color: rgb(var(--ink));
+}
+.btn-secondary:hover {
+  border-color: rgb(var(--accent));
+  color: rgb(var(--accent));
+}
+
 /* Scrolls, but without a bar drawn through the nav's bottom hairline. */
 .scroll-strip {
   scrollbar-width: none;

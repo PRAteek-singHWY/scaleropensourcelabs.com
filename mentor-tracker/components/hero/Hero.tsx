@@ -52,13 +52,13 @@ export default function Hero() {
       <div className="mt-10 flex flex-wrap items-center gap-4">
         <a
           href="#hall"
-          className="rounded-full bg-ink px-7 py-3.5 text-sm font-medium text-bg transition-opacity duration-300 ease-glide hover:opacity-85"
+          className="btn btn-primary"
         >
           See who got in
         </a>
         <a
           href="#apply"
-          className="rounded-full border border-seam px-7 py-3.5 text-sm font-medium transition-colors duration-300 ease-glide hover:border-accent hover:text-accent"
+          className="btn btn-secondary"
         >
           Join the club
         </a>
