@@ -71,11 +71,11 @@ export default function Hall() {
         </ul>
       </div>
 
-      <div className="mt-20 space-y-20 sm:mt-24 sm:space-y-24">
+      <div className="mt-16 space-y-16 sm:mt-20 sm:space-y-20">
         {people.map((p, i) => (
           <article
             key={`${p.name}-${p.programme}-${p.year}`}
-            className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[26rem_minmax(0,1fr)] lg:gap-16"
+            className="grid items-center gap-8 sm:gap-12 lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-14"
           >
             {/* container-type is required, not decorative: Portrait sizes its
                 monogram in cqw so the initials scale with the frame rather than
@@ -90,7 +90,7 @@ export default function Hall() {
                 name={p.name}
                 photo={p.photo}
                 priority={i < 2}
-                className="aspect-[4/5] w-full max-w-[26rem] rounded-panel"
+                className="aspect-[4/5] w-full max-w-[22rem] rounded-panel"
               />
             </div>
 
