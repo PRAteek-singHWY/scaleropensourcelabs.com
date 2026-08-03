@@ -6,6 +6,8 @@ import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import fs from "node:fs";
 
+import { SITE, assertOurSite } from "./assert-site.mjs";
+
 const lum = ([r, g, b]) => {
   const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
   return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
@@ -16,7 +18,8 @@ const b = await chromium.launch({ args: ["--use-gl=angle", "--enable-unsafe-swif
 for (const scheme of ["light", "dark"]) {
   const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: scheme });
   const pg = await ctx.newPage();
-  await pg.goto("http://localhost:3001", { waitUntil: "networkidle" });
+  await pg.goto(SITE, { waitUntil: "networkidle" });
+await assertOurSite(pg);
   await pg.waitForTimeout(2200);
   const buf = await pg.screenshot({ clip: { x: 0, y: 0, width: 1440, height: 46 } });
   const png = PNG.sync.read(buf);

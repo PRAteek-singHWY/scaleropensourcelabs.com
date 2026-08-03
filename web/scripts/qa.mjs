@@ -18,7 +18,8 @@
 import { chromium } from "playwright";
 import { mkdirSync, writeFileSync } from "node:fs";
 
-const URL = process.argv[2] ?? "http://localhost:3001/";
+import { SITE, assertOurSite } from "./assert-site.mjs";
+const URL = process.argv[2] ?? SITE;
 const OUT = "study/qa";
 mkdirSync(OUT, { recursive: true });
 
@@ -42,6 +43,9 @@ for (const vp of VIEWPORTS) {
     });
 
     await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    // Before measuring anything, confirm this is our site and not whatever else
+    // happens to be listening. See assert-site.mjs for why.
+    await assertOurSite(page);
     await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
     await page.waitForTimeout(2500);
 

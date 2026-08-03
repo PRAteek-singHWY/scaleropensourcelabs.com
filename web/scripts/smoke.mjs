@@ -2,12 +2,15 @@
 // twice served correct HTML while 404ing its own chunks, so nothing hydrated and
 // every other check still passed.
 import { chromium } from "playwright";
+
+import { SITE, assertOurSite } from "./assert-site.mjs";
 const b = await chromium.launch();
 const pg = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
 const bad = [];
 pg.on("response", (r) => { if (r.status() >= 400) bad.push(`${r.status()} ${r.url().replace(/^.*?\/_next/, "_next")}`); });
 pg.on("pageerror", (e) => bad.push(`pageerror ${String(e).slice(0, 200)}`));
-await pg.goto("http://localhost:3001", { waitUntil: "networkidle" });
+await pg.goto(SITE, { waitUntil: "networkidle" });
+await assertOurSite(pg);
 await pg.waitForTimeout(2200);
 let failed = 0;
 const ok = (n, v) => {

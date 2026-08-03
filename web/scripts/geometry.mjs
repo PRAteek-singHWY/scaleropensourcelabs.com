@@ -2,9 +2,12 @@
 // and grid rows left half-empty. Eyeballing a screenshot cannot tell a deliberate
 // asymmetry from an accident, but the numbers can.
 import { chromium } from "playwright";
+
+import { SITE, assertOurSite } from "./assert-site.mjs";
 const b = await chromium.launch({ args: ["--use-gl=angle", "--enable-unsafe-swiftshader"] });
 const pg = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
-await pg.goto("http://localhost:3001", { waitUntil: "networkidle" });
+await pg.goto(SITE, { waitUntil: "networkidle" });
+await assertOurSite(pg);
 await pg.waitForTimeout(2000);
 
 const rows = await pg.evaluate(() => {

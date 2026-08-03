@@ -2,12 +2,15 @@
 // light theme. Sample the rendered plate at both.
 import { chromium } from "playwright";
 import { PNG } from "pngjs";
+
+import { SITE, assertOurSite } from "./assert-site.mjs";
 const lum = ([r,g,b]) => { const f=(v)=>{v/=255;return v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);}; return 0.2126*f(r)+0.7152*f(g)+0.0722*f(b); };
 const ratio = (a,b) => { const [x,y]=[lum(a),lum(b)].sort((p,q)=>q-p); return (x+0.05)/(y+0.05); };
 
 const b = await chromium.launch({ args: ["--use-gl=angle", "--enable-unsafe-swiftshader"] });
 const pg = await (await b.newContext({ viewport: { width: 1440, height: 900 }, colorScheme: "light" })).newPage();
-await pg.goto("http://localhost:3001", { waitUntil: "networkidle" });
+await pg.goto(SITE, { waitUntil: "networkidle" });
+await assertOurSite(pg);
 await pg.waitForTimeout(2200);
 
 const sample = async (label) => {

@@ -89,6 +89,19 @@ npm run qa           # accessibility + layout sweep — needs the dev server run
 overflow, text under 11px, tap targets under 44px, missing alt text, heading-order
 breaks and contrast failures. **It must report zero.**
 
+All the check scripts hit `http://localhost:3000` by default. If your dev server is
+elsewhere, set `SITE_URL`:
+
+```bash
+SITE_URL=http://localhost:3001 npm run qa
+```
+
+Each script asserts it has reached *this* site before measuring, and fails loudly
+otherwise. That guard exists because an unrelated app was once listening on 3000:
+our dev server had died with `EADDRINUSE`, curl still returned 200, and the sweep
+measured the other application and reported 32 accessibility issues against it.
+Every one was a false positive about somebody else's page.
+
 The other scripts exist because computed styles lie:
 
 | Script | What it catches |

@@ -71,11 +71,17 @@ jobs:
           echo "dev server never came up:" >&2; cat /tmp/dev.log >&2; exit 1
 
       # Must precede qa: a page serving no client JS passes most of qa's checks.
+      # SITE_URL is set explicitly rather than relying on the default, so the port
+      # is stated in one place next to the server that binds it.
       - name: Smoke (is client JS actually alive?)
         run: npm run smoke
+        env:
+          SITE_URL: http://localhost:3000
 
       - name: Accessibility and layout sweep
         run: npm run qa
+        env:
+          SITE_URL: http://localhost:3000
 
       - name: Upload QA report on failure
         if: failure()
