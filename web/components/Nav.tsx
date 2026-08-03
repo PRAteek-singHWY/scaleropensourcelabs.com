@@ -19,6 +19,7 @@
 // theme and its own tokens already match. Back to a server component.
 
 import Link from "next/link";
+import Outline from "@/components/Outline";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const ITEMS = [
@@ -73,6 +74,9 @@ export default function Nav() {
           >
             GitHub ↗
           </a>
+          {/* Renders its own toggle here and the panel as a fixed element. Only
+              appears at lg+ — there is no room for a side rail on a phone. */}
+          <Outline />
           <ThemeToggle />
         </div>
       </nav>

@@ -27,6 +27,11 @@ const VIEWPORTS = [
   { name: "mobile", width: 390, height: 844 },
   { name: "tablet", width: 834, height: 1112 },
   { name: "desktop", width: 1440, height: 900 },
+  // The outline panel is a whole UI surface — a frosted plate with fourteen links
+  // — that only exists at lg+ and only when the reader opts in. Swept as its own
+  // combination, because a panel nothing checks is a panel whose contrast and
+  // target sizes are unknown.
+  { name: "desktop+outline", width: 1440, height: 900, outline: true },
 ];
 const THEMES = ["light", "dark"];
 
@@ -42,6 +47,9 @@ for (const vp of VIEWPORTS) {
       hasTouch: vp.name === "mobile",
     });
 
+    if (vp.outline) {
+      await page.addInitScript(() => localStorage.setItem("osc-outline", "1"));
+    }
     await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
     // Before measuring anything, confirm this is our site and not whatever else
     // happens to be listening. See assert-site.mjs for why.
