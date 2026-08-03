@@ -20,7 +20,7 @@ anyone can run the whole thing locally with two commands and no credentials.
 ## Run it
 
 ```bash
-cd mentor-tracker
+cd web
 npm install
 npm run dev          # http://localhost:3000
 ```
@@ -132,7 +132,7 @@ There is no pinned-dark section any more — every section follows the reader's 
 ### Directory map
 
 ```
-mentor-tracker/
+web/
   app/
     globals.css        theme tokens — read the comment block at the top first
     layout.tsx         fonts, metadata, pre-paint anti-flash script

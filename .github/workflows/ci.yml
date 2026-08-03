@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: mentor-tracker
+        working-directory: web
 
     steps:
       - uses: actions/checkout@v4
@@ -28,7 +28,7 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: mentor-tracker/package-lock.json
+          cache-dependency-path: web/package-lock.json
 
       - run: npm ci
 
@@ -82,5 +82,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: qa-report
-          path: mentor-tracker/study/qa/
+          path: web/study/qa/
           if-no-files-found: ignore

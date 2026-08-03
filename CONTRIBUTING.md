@@ -9,7 +9,7 @@ you through it.
 
 ```bash
 git clone https://github.com/<org>/<repo>.git
-cd <repo>/mentor-tracker
+cd <repo>/web
 npm install
 npm run dev          # http://localhost:3000
 ```
@@ -19,7 +19,7 @@ beyond those commands, that is a bug — please open an issue.
 
 ## The one file that matters
 
-Almost every contribution is an edit to **`mentor-tracker/content/club.ts`**. It
+Almost every contribution is an edit to **`web/content/club.ts`**. It
 holds all the site's content as typed arrays. You do not need to touch a React
 component to add a person, a project, or an answer.
 
