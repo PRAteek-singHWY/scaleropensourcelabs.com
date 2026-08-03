@@ -1,5 +1,6 @@
 import Hero from "@/components/hero/Hero";
 import Reveal from "@/components/Reveal";
+import StickyCTA from "@/components/StickyCTA";
 import Duo from "@/components/Duo";
 import Nav from "@/components/Nav";
 import Carousel from "@/components/Carousel";
@@ -672,6 +673,9 @@ export default function Home() {
           </div>
         </footer>
       </main>
+
+      {/* Appears once past the hero, hides over the apply form. */}
+      <StickyCTA />
     </>
   );
 }

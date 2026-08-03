@@ -240,6 +240,12 @@ body {
   color: rgb(var(--accent));
 }
 
+/* The sticky CTA reserves its own height rather than covering the last section.
+   A fixed bar that permanently occludes the footer is a bug dressed as a feature. */
+:root[data-cta="1"] body {
+  padding-bottom: 4.5rem;
+}
+
 /* Scroll reveals, at apple.com's measured values: their sections carry
    `transition: opacity, transform 0.32s ease` on 31 elements. This page had no
    motion at all — it left with the 3D — and a completely static 26,000px page
