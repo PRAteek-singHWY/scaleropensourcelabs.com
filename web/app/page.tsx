@@ -1,4 +1,5 @@
 import Hero from "@/components/hero/Hero";
+import Reveal from "@/components/Reveal";
 import Duo from "@/components/Duo";
 import Nav from "@/components/Nav";
 import Carousel from "@/components/Carousel";
@@ -41,6 +42,8 @@ export default function Home() {
   return (
     <>
       <Nav />
+      {/* Renders nothing; opts the document in to the scroll reveals. */}
+      <Reveal />
       <Hero />
 
       <main>

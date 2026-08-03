@@ -83,6 +83,10 @@ const config: Config = {
         // The Apple feel lives here as much as anywhere: a long, slow ease-out
         // rather than the default's symmetric curve.
         glide: "cubic-bezier(0.16, 1, 0.3, 1)",
+        // Measured off apple.com/mac: their interaction transform runs
+        // `transform 0.3s cubic-bezier(0, 0, 0.5, 1)` on 47 elements. Flatter out
+        // of the gate than `glide` and it stops dead rather than easing in.
+        apple: "cubic-bezier(0, 0, 0.5, 1)",
       },
       keyframes: {
         rise: {

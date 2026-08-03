@@ -240,6 +240,44 @@ body {
   color: rgb(var(--accent));
 }
 
+/* Scroll reveals, at apple.com's measured values: their sections carry
+   `transition: opacity, transform 0.32s ease` on 31 elements. This page had no
+   motion at all — it left with the 3D — and a completely static 26,000px page
+   reads as a document rather than a designed thing.
+
+   GATED ON A CLASS THAT ONLY JAVASCRIPT CAN ADD, and this is the whole point of
+   the arrangement. The obvious implementation puts opacity:0 in the stylesheet and
+   reveals with script; if the script then fails to load — which happened on this
+   project twice, once for a whole session — every section is permanently
+   invisible and the page is blank. Here the default is visible, and JS opts in to
+   animating. A failure degrades to "no animation", never to "no content".
+
+   12px, not 40px. Apple's reveal is a settle, not an entrance; a large travel
+   distance turns a long page into a fairground. */
+:root.reveal-on [data-reveal] {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 0.32s ease,
+    transform 0.32s ease;
+}
+:root.reveal-on [data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* The global reduced-motion block below zeroes durations, which would make the
+   reveal instantaneous but still start from opacity:0 — so state it explicitly:
+   nothing hides, nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  :root.reveal-on [data-reveal],
+  :root.reveal-on [data-reveal].is-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* With the outline panel open, the page reserves room for it rather than being
    covered by it. Written as a root-level attribute so one flag moves everything —
    the panel is 13.5rem plus its right offset, so 15rem clears it with margin.

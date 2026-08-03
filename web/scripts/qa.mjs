@@ -45,6 +45,15 @@ for (const vp of VIEWPORTS) {
       deviceScaleFactor: 2,
       isMobile: vp.name === "mobile",
       hasTouch: vp.name === "mobile",
+      // Measure the SETTLED page. Scroll reveals mean sections below the fold sit
+      // at opacity 0 until observed, and a sweep that lands mid-fade could read
+      // differently run to run. Reduced motion makes Reveal not participate at
+      // all, so what is measured is what the reader ends up looking at.
+      //
+      // This does not lose coverage: computed colour and bounding boxes ignore an
+      // ancestor's opacity, so the numbers were the same either way — 434 text
+      // nodes measured in both. It buys determinism, not reach.
+      reducedMotion: "reduce",
     });
 
     if (vp.outline) {
@@ -57,10 +66,14 @@ for (const vp of VIEWPORTS) {
     await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
     await page.waitForTimeout(2500);
 
-    const issues = await page.evaluate(
+    const result = await page.evaluate(
       ({ vpWidth, isMobile }) => {
         const out = [];
         const seen = new Set();
+        // How many text nodes the contrast pass examined. Reported so a future
+        // filter cannot quietly reduce the sweep to a handful of elements while
+        // still printing "clean".
+        let examined = 0;
         const add = (kind, detail, el) => {
           const key = `${kind}|${detail}`;
           if (seen.has(key)) return;
@@ -148,20 +161,22 @@ for (const vp of VIEWPORTS) {
           const ratio = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
           const size = parseFloat(cs.fontSize);
           const large = size >= 24 || (size >= 18.66 && Number(cs.fontWeight) >= 700);
+          examined++;
           const floor = large ? 3 : 4.5;
           if (ratio < floor) {
             add("contrast", `${ratio.toFixed(2)}:1 (need ${floor}) ${size}px "${t.slice(0, 30)}"`, el);
           }
         }
 
-        return out;
+        return { out, examined };
       },
       { vpWidth: vp.width, isMobile: vp.name === "mobile" },
     );
+    const issues = result.out;
 
     const tag = `${vp.name}-${theme}`;
     await page.screenshot({ path: `${OUT}/${tag}.png`, fullPage: false });
-    report.push({ viewport: vp.name, theme, issues });
+    report.push({ viewport: vp.name, theme, examined: result.examined, issues });
 
     const byKind = issues.reduce((m, i) => ((m[i.kind] = (m[i.kind] || 0) + 1), m), {});
     const summary = Object.entries(byKind).map(([k, v]) => `${k}:${v}`).join("  ") || "clean";
@@ -174,9 +189,23 @@ for (const vp of VIEWPORTS) {
 await browser.close();
 writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 2));
 
+// Guard against a silent collapse in coverage. A sweep that examines four
+// elements and finds nothing wrong also reports "0 issues"; this makes the
+// difference visible. The floor is deliberately well below the ~434 currently
+// examined, so it catches a collapse rather than tracking normal drift.
+const FLOOR = 250;
+const thin = report.filter((r) => (r.examined ?? Infinity) < FLOOR);
+if (thin.length > 0) {
+  console.log(
+    `\n  !! coverage collapsed: ${thin
+      .map((r) => `${r.viewport}-${r.theme} examined ${r.examined}`)
+      .join(", ")} (floor ${FLOOR})`,
+  );
+}
+
 const total = report.reduce((n, r) => n + r.issues.length, 0);
 console.log(`\n  ${total} issue(s) across ${report.length} combinations → ${OUT}/report.json`);
 
 // Exit non-zero so CI actually fails. Printing "12 issues" and returning 0 makes
 // every pipeline green regardless of what was found.
-if (total > 0) process.exitCode = 1;
+if (total > 0 || thin.length > 0) process.exitCode = 1;
