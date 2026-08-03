@@ -5,10 +5,18 @@
 //
 // This matters more here than on an avatar in a table. These portraits are the
 // hero of the page, so a missing image cannot be allowed to read as broken — the
-// fallback has to look like a deliberate treatment. So it is: the initials set in
-// the display face over a soft plasma field, at the same aspect and radius as a
-// real photograph. A wall of them reads as a considered graphic choice; a wall of
-// grey boxes reads as an unfinished website.
+// fallback has to look like a deliberate treatment. So it is: the initials set
+// large in the display face over a soft tinted field, at the same aspect and
+// radius as a real photograph. A wall of them reads as a considered graphic
+// choice; a wall of grey boxes reads as an unfinished website.
+//
+// The tint is derived from the name but composited at low alpha over the theme's
+// own recessed surface, which is what makes it survive both grounds. The first
+// version hardcoded two dark HSL stops because the hall was pinned dark; when the
+// hall started following the reader's theme, that fallback rendered on white as a
+// bottom-heavy dark green blob with the initials nearly invisible over it — the
+// precise failure this component exists to prevent. Nothing here may assume the
+// surface behind it is dark.
 //
 // The failure detection is the same lesson learned earlier in this project:
 // `onError` alone never fires for an image the browser already finished failing
@@ -53,7 +61,7 @@ export default function Portrait({
     const h = tilt(name);
     return (
       <div
-        className={`relative flex items-center justify-center overflow-hidden bg-raise ${className}`}
+        className={`relative flex items-center justify-center overflow-hidden bg-sunk ring-1 ring-inset ring-seam ${className}`}
         role="img"
         aria-label={name}
       >
@@ -61,13 +69,16 @@ export default function Portrait({
           aria-hidden
           className="absolute inset-0"
           style={{
-            background: `radial-gradient(115% 95% at 50% 118%, hsl(${h} 68% 30%), hsl(${h} 60% 12%) 62%, transparent 78%)`,
+            background: `radial-gradient(125% 105% at 50% 118%, hsl(${h} 62% 50% / 0.30), hsl(${h} 62% 50% / 0.08) 58%, transparent 76%)`,
           }}
         />
+        {/* 8cqw put the initials at a fraction of the frame and they read as a
+            mistake in a 750px-tall card. They are the whole graphic — size them
+            like it. */}
         <span
           aria-hidden
-          className="relative select-none font-semibold tracking-tightest text-ink/70"
-          style={{ fontSize: "clamp(1.75rem, 8cqw, 5rem)" }}
+          className="relative select-none font-semibold tracking-tightest text-ink/40"
+          style={{ fontSize: "clamp(2.5rem, 26cqw, 7rem)" }}
         >
           {initials(name)}
         </span>

@@ -158,7 +158,7 @@ export default function ApplyForm() {
           <input
             type="checkbox"
             name="updates"
-            className="mt-0.5 h-4 w-4 shrink-0 accent-[var(--accent)]"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
           />
           <span className="text-[13px] leading-relaxed text-haze">
             Message me about sessions and application deadlines.

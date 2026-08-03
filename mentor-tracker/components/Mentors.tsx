@@ -82,7 +82,7 @@ export default function Mentors() {
                     href={m.credential.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-2 inline-block font-mono text-xs text-accent hover:brightness-125"
+                    className="tap mt-2 inline-block font-mono text-xs text-accent hover:brightness-125"
                   >
                     Official record ↗
                   </a>

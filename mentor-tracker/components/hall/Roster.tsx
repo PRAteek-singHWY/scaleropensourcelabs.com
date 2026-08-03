@@ -54,7 +54,7 @@ export default function Roster() {
                 <th
                   key={h || i}
                   scope="col"
-                  className="px-3 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-dust"
+                  className="px-3 py-3 text-left font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-dust"
                 >
                   {h}
                 </th>

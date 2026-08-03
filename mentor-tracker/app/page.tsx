@@ -89,7 +89,7 @@ export default function Home() {
             Placed first because it is the strongest thing the club can say. A
             named student next to "GSoC 2026" is proof somebody else ran a
             selection and picked them; everything below is elaboration. */}
-        <section id="hall" className="night" aria-label="Students selected into international programmes">
+        <section id="hall" aria-label="Students selected into international programmes">
           <div className="section pt-28 sm:pt-40">
             <p className="label">Selected</p>
             <Duo
@@ -102,7 +102,12 @@ export default function Home() {
               organisations. Getting in is not something a club can award itself.
             </p>
           </div>
-          <Hall />
+          {/* Hall used to sit outside the container because the WebGL stage was
+              full-bleed. It is a normal grid now, so it belongs inside the same
+              measure as every other section. */}
+          <div className="section">
+            <Hall />
+          </div>
           <Roster />
         </section>
 
@@ -198,7 +203,7 @@ export default function Home() {
                     href={p.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="group mt-3 inline-flex items-baseline gap-2 font-mono text-body-lg text-ink transition-colors duration-300 ease-glide hover:text-accent"
+                    className="tap group mt-3 inline-flex items-baseline gap-2 font-mono text-body-lg text-ink transition-colors duration-300 ease-glide hover:text-accent"
                   >
                     {p.repo}
                     <span
@@ -229,7 +234,7 @@ export default function Home() {
                         href={p.memberUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-haze transition-colors hover:text-accent"
+                        className="tap inline-block text-haze transition-colors hover:text-accent"
                       >
                         {p.member}
                       </a>
@@ -275,7 +280,7 @@ export default function Home() {
                       href={pg.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-4 inline-block font-mono text-xs text-accent hover:brightness-125"
+                      className="tap mt-4 inline-block font-mono text-xs text-accent hover:brightness-125"
                     >
                       Official site ↗
                     </a>
@@ -331,7 +336,7 @@ export default function Home() {
               <thead>
                 <tr className="border-b border-seam">
                   {["Window", "Programme", "Opens", "Start prepping", "What you do first"].map((h) => (
-                    <th key={h} scope="col" className="px-3 py-3 text-left font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-dust">
+                    <th key={h} scope="col" className="px-3 py-3 text-left font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-dust">
                       {h}
                     </th>
                   ))}
@@ -361,18 +366,41 @@ export default function Home() {
             trail="Open source does not."
           />
 
-          <div className="mt-14 space-y-10 border-t border-seam pt-10">
+          {/* Two kinds of row live here, and the first layout treated them as one:
+              claims that cite a figure, and the reasoning that connects them. Rows
+              without a `stat` were rendered into the same stat column as an empty
+              cell, so a reader scanning the numbers hit blank space where a figure
+              should be and read it as missing data.
+
+              Now a single hairline runs the height of the section and the figures
+              are pinned along it, right-aligned against it. A row with no figure
+              does not break the line — it continues it, which is what "this is the
+              argument between two pieces of evidence" should look like. Cited rows
+              carry full-strength ink; the connective rows step down one level to
+              haze, so the hierarchy says which sentences have a source behind
+              them. The structure now encodes the distinction instead of losing it. */}
+          <div className="mt-14 border-t border-seam pt-10">
             {POSITIONING.map((c, i) => (
-              <div key={i} className="grid gap-5 sm:grid-cols-[7rem_1fr] sm:gap-10">
-                <div>
+              <div key={i} className="grid gap-2 sm:grid-cols-[7rem_1fr] sm:gap-0">
+                <div className="sm:pr-8 sm:text-right">
                   {c.stat && (
                     <p className="font-display text-display-md font-semibold tabular-nums text-accent">
                       {c.stat}
                     </p>
                   )}
                 </div>
-                <div>
-                  <p className="measure text-body-lg text-ink">{c.line}</p>
+                <div
+                  className={`sm:border-l sm:border-seam sm:pl-8 ${
+                    i === POSITIONING.length - 1 ? "pb-0" : "pb-10"
+                  }`}
+                >
+                  <p
+                    className={`measure text-body-lg ${
+                      c.stat ? "text-ink" : "text-haze"
+                    }`}
+                  >
+                    {c.line}
+                  </p>
                   {/* Every claim terminates in a third-party link. With no
                       testimonials and no placement data, external verifiability is
                       the substitute for social proof — and it is the only thing
@@ -382,7 +410,7 @@ export default function Home() {
                       href={c.source.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="mt-3 inline-block font-mono text-xs text-accent hover:brightness-125"
+                      className="tap mt-3 inline-block font-mono text-xs text-accent hover:brightness-125"
                     >
                       {c.source.label} ↗
                     </a>
@@ -469,16 +497,38 @@ export default function Home() {
             trail="The third is the one people skip."
           />
 
-          <ol className="mt-14 grid gap-x-12 gap-y-10 sm:grid-cols-2">
+          {/* Numbered markers are usually decoration, and were nearly cut for that
+              reason. They stay because here the order is the content: the headline
+              points at "the third", so a reader has to be able to find which step
+              that is.
+
+              Which is exactly what the previous 2x2 grid prevented. Four numbered
+              items in two columns can be read across (01, 02 / 03, 04) or down
+              (01, 03 / 02, 04), and nothing on screen said which — so the one
+              sentence above it that depends on position was unresolvable. A single
+              column has one reading order. It also costs nothing: these are four
+              short steps, not a dense grid needing the horizontal room. */}
+          <ol className="mt-14 max-w-3xl">
             {PATH.map((s, i) => (
-              <li key={s.step} className="flex gap-5">
+              <li
+                key={s.step}
+                className="grid gap-x-8 gap-y-2 sm:grid-cols-[3rem_1fr]"
+              >
                 <span
-                  className="mt-1 shrink-0 font-mono text-xs tabular-nums text-accent"
+                  className="font-mono text-xs tabular-nums text-accent sm:pt-1 sm:text-right"
                   aria-hidden
                 >
                   {String(i + 1).padStart(2, "0")}
                 </span>
-                <div>
+                {/* The gap has to live INSIDE the bordered element. With the padding
+                    on the <li> the rule only spanned each text block and broke in
+                    every gap between steps — four detached ticks instead of one
+                    line through the sequence. */}
+                <div
+                  className={`sm:border-l sm:border-seam sm:pl-8 ${
+                    i === PATH.length - 1 ? "pb-0" : "pb-9"
+                  }`}
+                >
                   <h3 className="text-body-lg font-semibold">{s.step}</h3>
                   <p className="mt-2 text-body text-haze">{s.body}</p>
                 </div>
@@ -560,7 +610,7 @@ export default function Home() {
             <div className="mt-11 flex flex-wrap items-center gap-3">
               <a
                 href={`mailto:${LINKS.email}`}
-                className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-void transition duration-300 ease-glide hover:bg-accent"
+                className="rounded-full bg-ink px-6 py-3 text-sm font-semibold text-bg transition duration-300 ease-glide hover:bg-accent"
               >
                 Get in touch
               </a>

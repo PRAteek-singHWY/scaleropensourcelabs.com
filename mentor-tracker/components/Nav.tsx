@@ -5,6 +5,11 @@
 // weight. It works because a nav's job on a page like this is to be findable, not
 // to announce itself; the hero is doing the announcing. Anything heavier competes
 // with the one thing you want read first.
+//
+// This was briefly a client component that watched for pinned-dark sections
+// beneath it and swapped to their palette. With the 3D gone there are no
+// pinned-dark sections, so every surface under the nav now follows the reader's
+// theme and its own tokens already match. Back to a server component.
 
 import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -27,17 +32,24 @@ export default function Nav() {
       >
         <Link
           href="/"
-          className="text-xs font-medium tracking-tight text-ink transition-colors duration-300 ease-glide hover:text-accent"
+          className="-my-3 inline-block shrink-0 py-3 text-xs font-medium tracking-tight text-ink transition-colors duration-300 ease-glide hover:text-accent"
         >
           OSC
         </Link>
 
-        <ul className="flex items-center gap-7">
+        {/* Six 12px links plus a logo and a toggle do not fit across 390px. They
+            previously overflowed and were clipped by the body's overflow-x:hidden,
+            which took Apply — the one action on the page — and the theme control
+            off-screen entirely, silently: nothing reported an overflow because
+            nothing could scroll. The strip now scrolls, so every item stays
+            reachable, and the logo and toggle stay pinned either side of it. A
+            partially-cut last item is the scroll affordance. */}
+        <ul className="scroll-strip flex min-w-0 flex-1 items-center gap-6 overflow-x-auto sm:flex-none sm:justify-center sm:gap-7">
           {ITEMS.map((i) => (
             <li key={i.href}>
               <a
                 href={i.href}
-                className="text-xs text-haze transition-colors duration-300 ease-glide hover:text-ink"
+                className="-my-3 inline-block whitespace-nowrap py-3 text-xs text-haze transition-colors duration-300 ease-glide hover:text-ink"
               >
                 {i.label}
               </a>
@@ -45,12 +57,12 @@ export default function Nav() {
           ))}
         </ul>
 
-        <div className="flex items-center gap-4">
+        <div className="flex shrink-0 items-center gap-4">
           <a
             href="https://github.com/PRAteek-singHWY"
             target="_blank"
             rel="noreferrer"
-            className="hidden text-xs text-haze transition-colors duration-300 ease-glide hover:text-ink sm:block"
+            className="-my-3 hidden py-3 text-xs text-haze transition-colors duration-300 ease-glide hover:text-ink sm:inline-block"
           >
             GitHub ↗
           </a>

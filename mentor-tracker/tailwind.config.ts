@@ -25,25 +25,22 @@ const config: Config = {
         // Every colour resolves through a CSS variable, so a component never knows
         // which theme is active and light/dark can never drift apart. The variables
         // and their per-theme values live in app/globals.css.
-        bg: "var(--bg)",
-        raise: "var(--raise)",
-        sunk: "var(--sunk)",
-        seam: "var(--seam)",
-        ink: "var(--ink)",
-        haze: "var(--haze)",
-        dust: "var(--dust)",
-        accent: "var(--accent)",
-        "accent-soft": "var(--accent-soft)",
-        ember: "var(--ember)",
+        //
+        // The rgb(... / <alpha-value>) wrapper is required, not stylistic: Tailwind
+        // substitutes the alpha into that slot for modifiers like bg-bg/70. Written
+        // as a bare var(--bg) the modifier produces an invalid colour and the
+        // element silently renders transparent.
+        bg: "rgb(var(--bg) / <alpha-value>)",
+        raise: "rgb(var(--raise) / <alpha-value>)",
+        sunk: "rgb(var(--sunk) / <alpha-value>)",
+        seam: "rgb(var(--seam) / <alpha-value>)",
+        ink: "rgb(var(--ink) / <alpha-value>)",
+        haze: "rgb(var(--haze) / <alpha-value>)",
+        dust: "rgb(var(--dust) / <alpha-value>)",
+        accent: "rgb(var(--accent) / <alpha-value>)",
+        "accent-soft": "rgb(var(--accent-soft) / <alpha-value>)",
+        ember: "rgb(var(--ember) / <alpha-value>)",
 
-        // The always-dark set, for sections that stay night in both themes.
-        void: "var(--void)",
-        "void-raise": "var(--void-raise)",
-        "void-seam": "var(--void-seam)",
-        "void-ink": "var(--void-ink)",
-        "void-haze": "var(--void-haze)",
-        "void-dust": "var(--void-dust)",
-        "void-accent": "var(--void-accent)",
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

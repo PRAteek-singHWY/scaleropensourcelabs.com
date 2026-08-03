@@ -16,82 +16,118 @@
                                      directions (a light-mode toggle has to work
                                      on a machine set to dark)
 
-   Light is the default because the reference — apple.com — is light. Dark is a
-   full peer, not an inversion: the neutrals are re-picked with a blue cast and
-   the accent is darkened for the light ground, because #5FD4FF on white is
-   unreadable.
+   Tokens are stored as SPACE-SEPARATED RGB CHANNELS ("251 251 253"), not hex, and
+   Tailwind consumes them as rgb(var(--x) / <alpha-value>). This is load-bearing:
+   with a hex value, Tailwind's alpha modifier has nothing to substitute into, so
+   `bg-bg/70` compiled to an invalid colour and the element rendered FULLY
+   TRANSPARENT. It failed silently in 18 places — the nav plate, the active hall
+   card, the carousel — and only showed up as 1.11:1 dark-ink-on-dark-hero when the
+   rendered pixels were sampled. Consuming a token as a whole colour in plain CSS
+   therefore needs rgb(var(--x)).
+
+   Light is the default because both references — apple.com and Scaler's School of
+   Business — are light. Dark is a full peer, not an inversion: the neutrals are
+   re-picked with a blue cast and the accent is darkened for the light ground,
+   because #5FD4FF on white is unreadable.
+
+   There is no longer a pinned-dark set. The hero and hall held one because a
+   solar system on a white page is nonsense; with the 3D removed every section
+   follows the reader's theme, which is the simpler and more honest system.
    --------------------------------------------------------------------------- */
 
 :root {
   color-scheme: light;
 
-  --bg: #FBFBFD;          /* page */
-  --raise: #FFFFFF;       /* cards */
-  --sunk: #F1F2F6;        /* recessed fills */
-  --seam: #E3E5EC;        /* hairlines */
-  --ink: #14161C;         /* primary text */
-  --haze: #565C6B;        /* secondary text */
-  --dust: #868C9B;        /* tertiary text */
+  --bg: 251 251 253;          /* page */
+  --raise: 255 255 255;       /* cards */
+  --sunk: 241 242 246;        /* recessed fills */
+  --seam: 227 229 236;        /* hairlines */
+  --ink: 20 22 28;         /* primary text */
+  --haze: 86 92 107;        /* secondary text */
+  /* 4.68:1 against --bg. The previous #868C9B measured 3.26:1, which put 46 of
+     this page's small labels under the AA floor — .label is 11px, so it needs
+     4.5:1, not the 3:1 that large text is allowed. */
+  --dust: 107 114 128;        /* tertiary text */
 
   /* Cyan at #5FD4FF fails against white, so light mode steps it down to a
      teal-blue that holds contrast without changing hue family. */
-  --accent: #0A7EA4;
-  --accent-soft: #E4F4FA;
-  --ember: #B4551A;
+  --accent: 10 118 153;
+  --accent-soft: 228 244 250;
+  --ember: 180 85 26;
 
-  /* The space sections are pinned dark in BOTH themes — a solar system on a
-     white page is nonsense. These never vary. */
-  --void: #05070D;
-  --void-raise: #0B0F17;
-  --void-seam: #1A202C;
-  --void-ink: #F2F5FA;
-  --void-haze: #8B95A6;
-  --void-dust: #5A6376;
-  --void-accent: #5FD4FF;
+  /* Programme colours, LIGHT theme.
+     Not simply darkened versions of the dark set — that failed. Darkening
+     compressed green and amber together: worst adjacent CVD separation fell to
+     5.8 (deuteranopia) and normal-vision to 14.1, both under the floor. This set
+     was found by searching hue/saturation/lightness within each programme's
+     family under three simultaneous constraints — >=4.5:1 on white, >=15 normal
+     ΔE, >=6 CVD ΔE — and lands at 21.9 and 13.3, better separation than the dark
+     palette manages. C4GT reads teal rather than green and SoB burnt orange
+     rather than olive; both stay recognisable and both buy the separation. */
+  --prog-gsoc: #1148D0;
+  --prog-lfx: #77225D;
+  --prog-c4gt: #03817D;
+  --prog-sob: #B35605;
+  --prog-outreachy: #6B3FBF;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #05070D;
-    --raise: #0B0F17;
-    --sunk: #0E131C;
-    --seam: #1A202C;
-    --ink: #F2F5FA;
-    --haze: #8B95A6;
-    --dust: #5A6376;
-    --accent: #5FD4FF;
-    --accent-soft: #10222C;
-    --ember: #FF8A3D;
+    --bg: 5 7 13;
+    --raise: 11 15 23;
+    --sunk: 14 19 28;
+    --seam: 26 32 44;
+    --ink: 242 245 250;
+    --haze: 139 149 166;
+    --dust: 121 131 154;
+    --accent: 95 212 255;
+    --accent-soft: 16 34 44;
+    --ember: 255 138 61;
+    --prog-gsoc: #4A86E8;
+    --prog-lfx: #D64FA0;
+    --prog-c4gt: #1F9D6B;
+    --prog-sob: #B8871F;
+    --prog-outreachy: #8B6DE8;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #05070D;
-  --raise: #0B0F17;
-  --sunk: #0E131C;
-  --seam: #1A202C;
-  --ink: #F2F5FA;
-  --haze: #8B95A6;
-  --dust: #5A6376;
-  --accent: #5FD4FF;
-  --accent-soft: #10222C;
-  --ember: #FF8A3D;
+  --bg: 5 7 13;
+  --raise: 11 15 23;
+  --sunk: 14 19 28;
+  --seam: 26 32 44;
+  --ink: 242 245 250;
+  --haze: 139 149 166;
+  --dust: 121 131 154;
+  --accent: 95 212 255;
+  --accent-soft: 16 34 44;
+  --ember: 255 138 61;
+  --prog-gsoc: #4A86E8;
+  --prog-lfx: #D64FA0;
+  --prog-c4gt: #1F9D6B;
+  --prog-sob: #B8871F;
+  --prog-outreachy: #8B6DE8;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #FBFBFD;
-  --raise: #FFFFFF;
-  --sunk: #F1F2F6;
-  --seam: #E3E5EC;
-  --ink: #14161C;
-  --haze: #565C6B;
-  --dust: #868C9B;
-  --accent: #0A7EA4;
-  --accent-soft: #E4F4FA;
-  --ember: #B4551A;
+  --bg: 251 251 253;
+  --raise: 255 255 255;
+  --sunk: 241 242 246;
+  --seam: 227 229 236;
+  --ink: 20 22 28;
+  --haze: 86 92 107;
+  --dust: 107 114 128;
+  --accent: 10 118 153;
+  --accent-soft: 228 244 250;
+  --ember: 180 85 26;
+  --prog-gsoc: #1148D0;
+  --prog-lfx: #77225D;
+  --prog-c4gt: #03817D;
+  --prog-sob: #B35605;
+  --prog-outreachy: #6B3FBF;
 }
 
 html {
@@ -108,23 +144,8 @@ body {
   transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* A section that is always night, whatever the theme. Scopes the dark token set
-   locally so children keep using the same names. */
-.night {
-  --bg: var(--void);
-  --raise: var(--void-raise);
-  --sunk: var(--void-raise);
-  --seam: var(--void-seam);
-  --ink: var(--void-ink);
-  --haze: var(--void-haze);
-  --dust: var(--void-dust);
-  --accent: var(--void-accent);
-  @apply bg-void text-void-ink;
-  color-scheme: dark;
-}
-
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid rgb(var(--accent));
   outline-offset: 3px;
   border-radius: 2px;
 }
@@ -141,26 +162,51 @@ body {
   max-width: 34em;
 }
 
+/* Grows a STANDALONE link's touch target to 44px without moving it.
+   A one-line 12px link is a 16px-tall target — under the 24x24 WCAG 2.5.8 asks
+   at AA, and well under the 44px both Apple's HIG and WCAG 2.5.5 want. The
+   padding is what a finger actually hits; the matching negative margin puts the
+   text back exactly where it was, so no layout shifts and no neighbouring
+   target is displaced.
+
+   Only for links that stand alone. A link inside a sentence is explicitly
+   exempt from 2.5.8 (its size is constrained by the line-height around it), and
+   padding one would overlap the lines above and below — a bigger box that
+   swallows taps meant for its neighbours is worse than a small one. */
+.tap {
+  padding-block: 14px;
+  margin-block: -14px;
+}
+
+/* Scrolls, but without a bar drawn through the nav's bottom hairline. */
+.scroll-strip {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-strip::-webkit-scrollbar {
+  display: none;
+}
+
 .seam-fade {
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--seam) 12%, var(--seam) 88%, transparent);
+  background: linear-gradient(90deg, transparent, rgb(var(--seam)) 12%, rgb(var(--seam)) 88%, transparent);
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--accent) 28%, transparent);
-  color: var(--ink);
+  background: color-mix(in srgb, rgb(var(--accent)) 28%, transparent);
+  color: rgb(var(--ink));
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--seam) transparent;
+  scrollbar-color: rgb(var(--seam)) transparent;
 }
 *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 *::-webkit-scrollbar-thumb {
-  background: var(--seam);
+  background: rgb(var(--seam));
   border-radius: 9999px;
 }
 

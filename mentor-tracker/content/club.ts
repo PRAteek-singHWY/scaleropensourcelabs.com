@@ -174,7 +174,24 @@ export const PROGRAMME_NAME: Record<Programme, string> = {
  * colourblind viewer. Blue and violet are adjacent hues; magenta buys the
  * separation that violet cannot.
  */
+/* Programme colours resolve through CSS custom properties rather than literals,
+   because the same hue cannot serve both themes: the dark set was validated
+   against #05070D and measures 3.22–3.83:1 on white, i.e. all four fail AA as
+   the 11px text they are used for. The variables are defined per theme in
+   globals.css. Anything drawn in the DOM must use this map so it follows the
+   theme. */
 export const PROGRAMME_COLOUR: Record<Programme, string> = {
+  GSOC: "var(--prog-gsoc)",
+  LFX: "var(--prog-lfx)",
+  C4GT: "var(--prog-c4gt)",
+  SOB: "var(--prog-sob)",
+  OUTREACHY: "var(--prog-outreachy)",
+};
+
+/* WebGL cannot read custom properties — a shader uniform needs a real number. The
+   solar system is inside .night in both themes, so it always wants the dark set,
+   which is exactly what these are. Do not use these in the DOM. */
+export const PROGRAMME_COLOUR_HEX: Record<Programme, string> = {
   GSOC: "#4A86E8",
   LFX: "#D64FA0",
   C4GT: "#1F9D6B",
