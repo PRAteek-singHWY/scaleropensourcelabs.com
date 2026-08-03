@@ -231,13 +231,17 @@ body {
 .btn-primary:hover {
   opacity: 0.85;
 }
+/* Apple's outlined pill is accent-on-accent, not grey-on-ink. Read off the live
+   page in Chrome: color rgb(0,102,204) with border 1px rgb(0,102,204) over a
+   transparent fill. Ours had a --seam border with --ink text, which is wrong on
+   both counts and is why the two CTAs read as unrelated controls rather than a
+   pair — one filled accent, one outlined accent, same family. */
 .btn-secondary {
-  border: 1px solid rgb(var(--seam));
-  color: rgb(var(--ink));
+  border: 1px solid rgb(var(--accent));
+  color: rgb(var(--accent));
 }
 .btn-secondary:hover {
-  border-color: rgb(var(--accent));
-  color: rgb(var(--accent));
+  background: rgb(var(--accent) / 0.08);
 }
 
 /* The sticky CTA reserves its own height rather than covering the last section.
@@ -291,6 +295,21 @@ body {
 @media (min-width: 1024px) {
   :root[data-outline="1"] main {
     padding-right: 15rem;
+  }
+
+  /* The band's full-bleed offsets assume the section is centred in the viewport:
+     `50% - 50vw` equals minus its own left inset only when the gaps either side
+     are equal. Reserving 15rem on the right breaks that, so the band stopped
+     15rem short of the right edge and left a strip of page background beside it.
+     Caught by looking at it in Chrome — no automated check here measures whether
+     a decorative band reaches the edge.
+
+     Derivation: with padding-right P the section's left inset becomes
+     (V - P - W)/2, which is P/2 less than the centred case, so each offset shifts
+     by P/2 = 7.5rem — left inward, right outward. */
+  :root[data-outline="1"] .band::before {
+    left: calc(50% - 50vw + 7.5rem);
+    right: calc(50% - 50vw - 7.5rem);
   }
 }
 

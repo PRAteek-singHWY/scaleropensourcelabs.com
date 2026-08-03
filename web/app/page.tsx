@@ -600,18 +600,29 @@ export default function Home() {
         {/* ---- Join -------------------------------------------------------- */}
         <section id="join" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <div className="seam-fade" />
-          <div className="pt-20 sm:pt-28">
+          {/* Centred, unlike every other section here, because this one is
+              structurally an Apple tile rather than an argument: short headline,
+              one supporting line, two pills. Seen in Chrome on their homepage —
+              the iPhone tile is exactly this shape, centred, with a filled and an
+              outlined pill side by side.
+
+              The other thirteen sections stay left-aligned deliberately. Apple
+              centres short tile copy, not paragraphs; our headlines are two-clause
+              arguments over three lines and centred ragged text is measurably
+              harder to read. Copying the alignment everywhere would be copying the
+              look without the reason. */}
+          <div className="pt-20 text-center sm:pt-28">
             <Duo
-              className="max-w-3xl text-display-lg font-semibold text-balance"
+              className="mx-auto max-w-3xl text-display-lg font-semibold text-balance"
               lead="Want your name in the commit log?"
               trail="Start here."
             />
-            <p className="measure mt-7 text-body-lg text-haze">
+            <p className="measure mx-auto mt-7 text-body-lg text-haze">
               Bring a laptop and a GitHub account. You do not need to be good yet —
               a first contribution is mostly about learning how the process works.
             </p>
 
-            <div className="mt-11 flex flex-wrap items-center gap-3">
+            <div className="mt-11 flex flex-wrap items-center justify-center gap-3">
               <a
                 href={`mailto:${LINKS.email}`}
                 className="btn btn-primary"
