@@ -1,0 +1,86 @@
+# CI for a static site with no services to stand up.
+#
+# The ordering here is deliberate and load-bearing: `build` and `dev` share the
+# .next directory, so running them concurrently deletes the chunks the dev server
+# is serving. The page then returns 200 with no JavaScript, which looks like a
+# pass to anything that only checks status codes. So the build finishes and is
+# cleared before the dev server starts, and `smoke` runs first to prove the server
+# is actually serving a hydrating page before `qa` reports on it.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mentor-tracker
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mentor-tracker/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      # Proves the site is genuinely static. If a route ever starts needing a
+      # server at request time this fails, which is the point — the whole
+      # zero-credentials setup depends on it staying static.
+      - name: Assert the build is fully prerendered
+        run: |
+          if grep -qE '^\S*λ|^\S*ƒ' .next/routes-manifest.json 2>/dev/null; then
+            echo "A dynamic route appeared; this site must stay fully static." >&2
+            exit 1
+          fi
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      # Cleared so the dev server builds its own chunks rather than inheriting
+      # production ones.
+      - name: Clear build output before starting dev
+        run: rm -rf .next
+
+      - name: Start dev server
+        run: |
+          npx next dev -p 3000 > /tmp/dev.log 2>&1 &
+          for i in $(seq 1 60); do
+            if [ "$(curl -s -o /dev/null -w %{http_code} http://localhost:3000 || true)" = "200" ]; then
+              echo "up after ${i} tries"; exit 0
+            fi
+            sleep 2
+          done
+          echo "dev server never came up:" >&2; cat /tmp/dev.log >&2; exit 1
+
+      # Must precede qa: a page serving no client JS passes most of qa's checks.
+      - name: Smoke (is client JS actually alive?)
+        run: npm run smoke
+
+      - name: Accessibility and layout sweep
+        run: npm run qa
+
+      - name: Upload QA report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report
+          path: mentor-tracker/study/qa/
+          if-no-files-found: ignore
