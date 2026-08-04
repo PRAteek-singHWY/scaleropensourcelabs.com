@@ -31,12 +31,24 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-/** Deterministic hue offset per person, so a wall of monograms isn't uniform. */
-function tilt(name: string): number {
+/** Stable per-person index, so the same name always gets the same treatment. */
+function pick(name: string, n: number): number {
   let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360;
-  return h;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 9973;
+  return h % n;
 }
+
+/* The fallback tint comes from the BRAND, not from an arbitrary hue.
+   The first version derived a hue from the name across the full 360 degrees, which
+   was right for a neutral palette and wrong for this one: against cobalt and yellow,
+   a wall of random pastels reads as a rendering accident. Rendered, they came out as
+   washed-out yellow-greens that belonged to no part of the design.
+   Two brand tints, chosen deterministically per name, gives a grid that varies
+   without leaving the palette. Both are tints of tokens, so both follow the theme. */
+const TINTS = [
+  "rgb(var(--accent) / 0.22)",
+  "rgb(var(--pop) / 0.34)",
+] as const;
 
 export default function Portrait({
   name,
@@ -58,7 +70,7 @@ export default function Portrait({
   }, []);
 
   if (failed) {
-    const h = tilt(name);
+    const tint = TINTS[pick(name, TINTS.length)];
     return (
       <div
         className={`relative flex items-center justify-center overflow-hidden bg-sunk ring-1 ring-inset ring-seam ${className}`}
@@ -69,7 +81,7 @@ export default function Portrait({
           aria-hidden
           className="absolute inset-0"
           style={{
-            background: `radial-gradient(125% 105% at 50% 118%, hsl(${h} 62% 50% / 0.30), hsl(${h} 62% 50% / 0.08) 58%, transparent 76%)`,
+            background: `radial-gradient(125% 105% at 50% 118%, ${tint}, transparent 74%)`,
           }}
         />
         {/* 8cqw put the initials at a fraction of the frame and they read as a

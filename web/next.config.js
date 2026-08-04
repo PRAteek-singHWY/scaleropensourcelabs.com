@@ -7,6 +7,19 @@
 //
 // This is a static, credential-free page with one outbound form POST, so the policy
 // can be genuinely strict rather than the permissive boilerplate that usually ships.
+// Next's dev server compiles with eval for HMR. Blocking 'unsafe-eval' therefore
+// does not merely warn in dev — it stops the dev bundle executing, so nothing
+// hydrates and every contributor running `npm run dev` gets a dead page.
+//
+// I saw this violation, confirmed production was clean, and concluded the policy was
+// safe. Production being clean was true; "therefore safe" was not. Dev is where all
+// the work happens.
+//
+// So the exception is scoped to development and production keeps the strict policy.
+// The CI pipeline would also have caught this — it boots `next dev` and runs the
+// smoke test, which asserts hydration — but it should not have had to.
+const isDev = process.env.NODE_ENV === "development";
+
 const CSP = [
   "default-src 'self'",
   // next/font self-hosts its files at build time, so no font CDN is needed.
@@ -15,11 +28,11 @@ const CSP = [
   // Next injects inline bootstrap and hydration scripts, so 'unsafe-inline' cannot
   // be dropped without nonces — and nonces need a server we deliberately do not
   // have. Constrained to self otherwise.
-  "script-src 'self' 'unsafe-inline'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   // Tailwind emits one stylesheet; the inline styles are the theme tokens and the
   // handful of computed values in components.
   "style-src 'self' 'unsafe-inline'",
-  "connect-src 'self'",
+  `connect-src 'self'${isDev ? " ws: http://localhost:*" : ""}`,
   // Where a <form> is allowed to submit. This is the one that matters: with it set,
   // a script injected into the page cannot repoint the join form somewhere else and
   // harvest applications. Derived from the configured endpoint so it stays correct.
