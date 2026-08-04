@@ -319,6 +319,35 @@ body {
   box-shadow: 0 0 0 0 rgb(var(--ink));
 }
 
+/* The step number, as a filled blue block. Theirs sets 01/02/03/04 in a solid
+   blue square above each card heading, which does two things a bare numeral in the
+   margin did not: it survives being scanned at speed, and it makes the sequence
+   visible without a connecting rule.
+
+   Fixed size rather than padded to content so 01 and 04 are identical blocks —
+   tabular figures because these DO align in a column, which is the one place the
+   figure spec asks for them. White on blue is 6.98:1. */
+.step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.4rem;
+  height: 1.9rem;
+  padding: 0 0.5rem;
+  border-radius: 6px;
+  background: rgb(var(--accent));
+  /* --bg, not white. The accent inverts between themes — #0038FF is dark, its
+     dark-theme step #5C82FF is light — so a hardcoded white measured 6.98:1 on one
+     and 3.45:1 on the other. --bg already inverts in exactly the right direction
+     and lands at 6.98 light / 5.63 dark, which is why .btn-primary uses it too. */
+  color: rgb(var(--bg));
+  font-family: var(--font-label), system-ui, sans-serif;
+  font-size: 1.0625rem;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
 /* Buttons, also measured rather than guessed. Apple's pill computes to
    border-radius 980px, padding 11px 21px, 17px/400 type, 44px tall. 44px is the
    same number their nav uses and the touch-target floor, which is not a

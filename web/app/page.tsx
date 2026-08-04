@@ -1,4 +1,6 @@
 import Hero from "@/components/hero/Hero";
+import Banner from "@/components/Banner";
+import Doodle from "@/components/Doodle";
 import ProofPanel from "@/components/ProofPanel";
 import Reveal from "@/components/Reveal";
 import StickyCTA from "@/components/StickyCTA";
@@ -61,7 +63,7 @@ export default function Home() {
             <div>
               <p className="label">Applications open</p>
               <Duo
-                className="mt-6 max-w-2xl text-display-lg font-semibold text-balance"
+                className="mt-6 max-w-2xl text-display-lg"
                 lead="You do not need to be good yet."
                 trail="You need a laptop and a GitHub account."
               />
@@ -96,9 +98,12 @@ export default function Home() {
             selection and picked them; everything below is elaboration. */}
         <section id="hall" aria-label="Students selected into international programmes">
           <div className="section pt-24 sm:pt-36">
-            <p className="chip">Selected</p>
+            <p className="flex items-center gap-2">
+              <span className="chip">Selected</span>
+              <Doodle kind="sparkle" className="h-5 w-5 text-accent" />
+            </p>
             <Duo
-              className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+              className="mt-6 max-w-4xl text-display-lg"
               lead="Somebody else picked them."
               trail="GSoC, LFX Mentorship, C4GT, Summer of Bitcoin."
             />
@@ -120,7 +125,7 @@ export default function Home() {
         <section className="section pt-24 sm:pt-36">
           <p className="chip">What this is</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-lg"
             lead="A club is easy to start."
             trail="Getting a stranger to merge your code is not."
           />
@@ -142,7 +147,7 @@ export default function Home() {
               in the same breath as it. */}
           <p className="label mt-20">Beyond the stipend</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-md font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-md"
             lead="The money is the smallest part."
             trail="What lasts is who ends up knowing your work."
           />
@@ -168,7 +173,7 @@ export default function Home() {
               <p className="label">Upstream work</p>
               <Duo
                 as="h2"
-                className="mt-6 text-display-lg font-semibold"
+                className="mt-6 text-display-lg"
                 lead="Where our code went."
                 trail="Every line links upstream."
               />
@@ -265,7 +270,7 @@ export default function Home() {
         <section id="programmes" className="section pt-24 sm:pt-36">
           <p className="chip">The programmes</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-lg"
             lead="Paid, competitive, and open to beginners."
             trail="Most students never apply because nobody told them these exist."
           />
@@ -332,7 +337,7 @@ export default function Home() {
         <section id="calendar" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <p className="chip">The reverse clock</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-lg"
             lead="Applications are decided months before they open."
             trail="Which is why starting now is the whole trick."
           />
@@ -373,7 +378,7 @@ export default function Home() {
         <section id="why-us" className="section pt-24 sm:pt-36">
           <p className="chip">Choosing a club</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-lg"
             lead="Competitive programming has a fixed number of winners."
             trail="Open source does not."
           />
@@ -456,7 +461,7 @@ export default function Home() {
         <section id="culture" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <p className="chip">What it&apos;s like</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-lg"
             lead="It is mostly people arguing about code with Maggi."
             trail="Which is the point."
           />
@@ -478,17 +483,25 @@ export default function Home() {
         <section id="tracks" className="section pt-24 sm:pt-36">
           <p className="chip">Three tracks</p>
           <Duo
-            className="mt-6 text-display-lg font-semibold"
+            className="mt-6 text-display-lg"
             lead="What you can work on."
             trail="Three tracks, three difficulties."
           />
 
           <div className="mt-14 space-y-px overflow-hidden rounded-2xl bg-seam">
-            {TRACKS.map((track) => (
+            {TRACKS.map((track, i) => (
               <div key={track.name} className="bg-raise p-8 sm:p-10">
                 <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:gap-12">
                   <div>
-                    <h3 className="text-display-md font-semibold">{track.name}</h3>
+                    {/* Numbered because the three tracks ARE ordered by difficulty —
+                        the section headline says "three difficulties", so the order
+                        carries the information. */}
+                    <span className="step" aria-hidden>
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <h3 className="mt-4 font-display text-display-md uppercase leading-none tracking-[-0.005em]">
+                      {track.name}
+                    </h3>
                     <p className="mt-3 font-mono text-xs text-accent">
                       {track.summary}
                     </p>
@@ -504,7 +517,7 @@ export default function Home() {
         <section id="path" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <p className="chip">How a first contribution actually goes</p>
           <Duo
-            className="mt-6 max-w-3xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-3xl text-display-lg"
             lead="Four steps."
             trail="The third is the one people skip."
           />
@@ -524,12 +537,13 @@ export default function Home() {
             {PATH.map((s, i) => (
               <li
                 key={s.step}
-                className="grid gap-x-8 gap-y-2 sm:grid-cols-[3rem_1fr]"
+                className="grid gap-x-6 gap-y-3 sm:grid-cols-[3.2rem_1fr]"
               >
-                <span
-                  className="font-mono text-xs tabular-nums text-accent sm:pt-1 sm:text-right"
-                  aria-hidden
-                >
+                {/* The numeral was 12px mono in the margin. It is a filled blue
+                    block now — the sequence has to survive being scanned, and the
+                    headline above it points at "the third", so finding step three
+                    at a glance is the whole job. */}
+                <span className="step sm:justify-self-end" aria-hidden>
                   {String(i + 1).padStart(2, "0")}
                 </span>
                 {/* The gap has to live INSIDE the bordered element. With the padding
@@ -541,19 +555,28 @@ export default function Home() {
                     i === PATH.length - 1 ? "pb-0" : "pb-9"
                   }`}
                 >
-                  <h3 className="text-body-lg font-semibold">{s.step}</h3>
-                  <p className="mt-2 text-body text-haze">{s.body}</p>
+                  <h3 className="font-display text-display-md uppercase leading-none tracking-[-0.005em]">
+                    {s.step}
+                  </h3>
+                  <p className="mt-3 text-body text-haze">{s.body}</p>
                 </div>
               </li>
             ))}
           </ol>
         </section>
 
+        {/* A deliberate stop, placed where the argument has just finished: the
+            reader has learned how a first contribution goes, so "start one" lands
+            here. See Banner for why this is not redundant with the sticky bar. */}
+        <div className="pt-24 sm:pt-36">
+          <Banner />
+        </div>
+
         {/* ---- Mentors ------------------------------------------------------ */}
         <section id="mentors" className="section pt-24 sm:pt-36">
           <p className="chip">Who reads your code</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-lg"
             lead="Not professors."
             trail="People who did this recently, under the same constraints."
           />
@@ -574,7 +597,7 @@ export default function Home() {
         <section id="who-not-for" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
           <p className="chip">Be honest with yourself</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-lg"
             lead="This is not for everyone."
             trail="Four reasons to walk away now."
           />
@@ -592,7 +615,7 @@ export default function Home() {
         <section id="faq" className="section pt-24 sm:pt-36">
           <p className="chip">Questions</p>
           <Duo
-            className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
+            className="mt-6 max-w-4xl text-display-lg"
             lead="The seven things people actually ask."
           />
           <dl className="mt-12 max-w-3xl">
@@ -621,7 +644,7 @@ export default function Home() {
               look without the reason. */}
           <div className="pt-20 text-center sm:pt-28">
             <Duo
-              className="mx-auto max-w-3xl text-display-lg font-semibold text-balance"
+              className="mx-auto max-w-3xl text-display-lg"
               lead="Want your name in the commit log?"
               trail="Start here."
             />
@@ -658,7 +681,7 @@ export default function Home() {
           <div className="rounded-tile border border-seam bg-raise p-8 sm:p-12">
             <p className="chip">For faculty, sponsors and maintainers</p>
             <Duo
-              className="mt-6 max-w-3xl text-display-md font-semibold text-balance"
+              className="mt-6 max-w-3xl text-display-md"
               lead="What this club is, in plain terms."
             />
             <div className="mt-10 grid gap-x-14 gap-y-8 sm:grid-cols-3">
