@@ -378,6 +378,47 @@ export function selectionStats() {
 }
 
 // ---------------------------------------------------------------------------
+// WHAT THE CLUB LOOKS FOR.
+//
+// Added on the founder's suggestion, and it is the highest-value thing on the page
+// after the selections themselves — because it removes the one belief that stops
+// people applying: "I am not good enough at coding yet."
+//
+// The claim was already here, buried as FAQ item twelve ("Do I need to be good at
+// DSA? No. Different skill."). Nobody reaching a decision reads to item twelve.
+//
+// Worded as what the club VALUES, not as a test it administers. Nothing else on
+// this site claims a screening process — the form is an application, not an exam —
+// so "we assess your reasoning" would be inventing a mechanic that does not exist.
+// The distinction matters: one is a statement of what predicts success here, the
+// other is a promise about a process nobody has designed.
+//
+// Both columns are concrete and checkable against a real first contribution. That
+// is the test for anything in this list: if a line could sit on any club's page, it
+// is too vague to be here.
+
+export type LookingFor = { not: string; yes: string };
+
+export const LOOKING_FOR: LookingFor[] = [
+  {
+    not: "A contest rating, or fluency in DSA",
+    yes: "Reading code you did not write and working out what it does",
+  },
+  {
+    not: "Knowing a particular framework already",
+    yes: "Turning a vague problem into one small change you can defend",
+  },
+  {
+    not: "Prior open-source experience, or any merged work",
+    yes: "Following a review thread and understanding why a change was refused",
+  },
+  {
+    not: "A tidy GitHub profile with a streak",
+    yes: "Saying \"I do not understand this yet\" early instead of late",
+  },
+];
+
+// ---------------------------------------------------------------------------
 // PROGRAMMES — the product line.
 //
 // The site's job is not only to show that members got selected; it is to explain

@@ -14,6 +14,7 @@ import Mentors from "@/components/Mentors";
 import Roster from "@/components/hall/Roster";
 import {
   CULTURE,
+  LOOKING_FOR,
   LINKS,
   OUTCOMES,
   PATH,
@@ -119,6 +120,68 @@ export default function Home() {
             <Hall />
           </div>
           <Roster />
+        </section>
+
+        {/* ---- What we look for ---------------------------------------------
+            Placed directly after the hall on purpose. Fourteen named students
+            selected into international programmes is the page's strongest claim
+            AND its biggest deterrent — the immediate private thought is "they must
+            already be brilliant, I could never". This answers that at the exact
+            moment it occurs, rather than in an FAQ nobody scrolls to. */}
+        <section
+          id="looking-for"
+          className="band section pt-24 pb-24 sm:pt-36 sm:pb-36"
+          aria-label="What the club looks for"
+        >
+          <p className="flex items-center gap-2">
+            <span className="chip">What we look for</span>
+            <Doodle kind="squiggle" className="h-5 w-8 text-accent" />
+          </p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg"
+            lead="We are not checking whether you can already code."
+            trail="We are checking how you think."
+          />
+          <p className="measure mt-7 text-body-lg text-haze">
+            Syntax is a few weeks of work. Reading somebody else&apos;s codebase and
+            reasoning about it is the part that actually decides whether your first
+            patch gets merged — and it is{" "}
+            <span className="mark">not what any exam measures</span>. There is no
+            test to pass here and no interview to prepare for. This is simply what
+            the work turns out to reward.
+          </p>
+
+          {/* A contrast rather than a list. "We value reasoning" alone is the kind
+              of thing every club says; setting each value against the credential it
+              replaces is what makes it specific enough to be believed. */}
+          <ul className="mt-14 space-y-px overflow-hidden rounded-panel bg-seam">
+            {LOOKING_FOR.map((r) => (
+              <li
+                key={r.yes}
+                className="grid gap-4 bg-raise p-6 sm:grid-cols-2 sm:gap-10 sm:p-8"
+              >
+                <div className="flex items-start gap-3">
+                  {/* Not a red cross. These are not failures — they are simply the
+                      wrong measure, and colouring them as errors would insult the
+                      people who have them. */}
+                  <span
+                    aria-hidden
+                    className="mt-1 h-px w-4 shrink-0 bg-dust sm:mt-2.5"
+                  />
+                  <p className="text-body text-dust line-through decoration-dust/40">
+                    {r.not}
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Doodle
+                    kind="sparkle"
+                    className="mt-0.5 h-4 w-4 shrink-0 text-accent sm:mt-1.5"
+                  />
+                  <p className="text-body-lg font-medium text-ink">{r.yes}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* ---- Thesis ------------------------------------------------------ */}

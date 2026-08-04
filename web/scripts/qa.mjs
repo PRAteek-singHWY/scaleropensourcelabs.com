@@ -185,19 +185,13 @@ for (const vp of VIEWPORTS) {
           if (painted) {
             // Defer rather than guess or excuse. Node samples the rendered pixels
             // for these below, which is the only way to know what the eye gets.
-            const r = el.getBoundingClientRect();
-            deferred.push({
-              text: t.slice(0, 24),
-              size,
-              large,
-              fg,
-              box: {
-                x: Math.max(0, Math.round(r.x)),
-                y: Math.max(0, Math.round(r.y)),
-                width: Math.max(1, Math.round(r.width)),
-                height: Math.max(1, Math.round(r.height)),
-              },
-            });
+            // Addressed by attribute rather than by box. A clip rectangle can
+            // only capture inside the current viewport, and these elements sit
+            // twenty thousand pixels down — every one failed with "could not
+            // capture". A locator screenshot scrolls to its own target.
+            const id = String(deferred.length);
+            el.setAttribute("data-qa-defer", id);
+            deferred.push({ id, text: t.slice(0, 24), size, large, fg });
             continue;
           }
 
@@ -220,7 +214,9 @@ for (const vp of VIEWPORTS) {
     for (const d of result.deferred) {
       let png;
       try {
-        png = PNG.sync.read(await page.screenshot({ clip: d.box }));
+        png = PNG.sync.read(
+          await page.locator(`[data-qa-defer="${d.id}"]`).screenshot(),
+        );
       } catch {
         issues.push({ kind: "unmeasurable-bg", detail: `${d.size}px "${d.text}" (could not capture)`, tag: "?" });
         continue;

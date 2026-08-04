@@ -35,7 +35,17 @@ ok("theme toggle changes theme", before !== (await pg.evaluate(() => document.do
 ok("outline absent until asked for", await pg.evaluate(() => !document.querySelector("#page-outline")));
 await pg.click(OUTLINE);
 await pg.waitForTimeout(400);
-ok("outline opens with all 14 sections", await pg.evaluate(() => document.querySelectorAll("#page-outline a").length === 14));
+// Derived, not hardcoded. This asserted 14 and failed the moment a fifteenth
+// section was legitimately added — the point is that the outline matches the page,
+// not that the page has a particular number of sections.
+ok(
+  "outline lists every section on the page",
+  await pg.evaluate(() => {
+    const sections = document.querySelectorAll("section[id]").length;
+    const links = document.querySelectorAll("#page-outline a").length;
+    return sections > 0 && links === sections;
+  }),
+);
 await pg.click(OUTLINE);
 await pg.waitForTimeout(300);
 ok("outline closes again", await pg.evaluate(() => !document.querySelector("#page-outline")));
