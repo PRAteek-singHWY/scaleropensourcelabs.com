@@ -1,14 +1,42 @@
 import type { Metadata } from "next";
-import { Instrument_Sans, JetBrains_Mono } from "next/font/google";
+import { Anton, JetBrains_Mono, Poppins, Staatliches } from "next/font/google";
 import "./globals.css";
 
-// One family across the whole site, self-hosted at build time. Instrument Sans
-// rather than Inter: it has a tighter, more deliberate character and hasn't yet
-// become the default every dark developer site reaches for.
-const sans = Instrument_Sans({
+// Three faces, each with one job — the type system read off notyourcollege.com,
+// which is the reference for this pass. All self-hosted at build time by
+// next/font, so there is no third-party request and no layout shift.
+//
+// Body. Their body face, and the right call for the register: Poppins is
+// geometric and friendly where Instrument Sans was cool and neutral. The whole
+// point of this direction is warmth.
+const sans = Poppins({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600"],
   variable: "--font-sans",
+  display: "swap",
+});
+
+// Display. Their hero uses `kapra-italic`, a commercial face I will not pirate,
+// so this is a deliberate substitution rather than a match: Anton is the closest
+// free equivalent for that heavy condensed poster-caps voice.
+//
+// It has no true italic, and I am NOT faking one with skewX — a synthetically
+// slanted face at 100px+ shows its sheared verticals immediately, which would
+// look cheap at exactly the size where it matters most. Upright and heavy is a
+// worse imitation and a better typeface.
+const display = Anton({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-display",
+  display: "swap",
+});
+
+// Labels, buttons, eyebrows. Theirs, and it does the job an all-caps condensed
+// face does well: high energy at small sizes without shouting in body copy.
+const label = Staatliches({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-label",
   display: "swap",
 });
 
@@ -50,7 +78,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${display.variable} ${label.variable} ${mono.variable}`}>
       <body>
         {/* Anti-flash for the theme toggle.
             Must be the first node in <body>, NOT in <head>: the App Router hoists

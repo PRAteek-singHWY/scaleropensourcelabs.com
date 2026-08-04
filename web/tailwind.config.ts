@@ -32,6 +32,7 @@ const config: Config = {
         // element silently renders transparent.
         bg: "rgb(var(--bg) / <alpha-value>)",
         band: "rgb(var(--band) / <alpha-value>)",
+        pop: "rgb(var(--pop) / <alpha-value>)",
         raise: "rgb(var(--raise) / <alpha-value>)",
         sunk: "rgb(var(--sunk) / <alpha-value>)",
         seam: "rgb(var(--seam) / <alpha-value>)",
@@ -45,6 +46,10 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        // Heavy condensed poster caps, for headlines only.
+        display: ["var(--font-display)", "system-ui", "sans-serif"],
+        // Condensed caps for eyebrows, buttons and chips.
+        label: ["var(--font-label)", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
       // A real scale, not arbitrary clamps scattered through the markup.

@@ -16,6 +16,7 @@
 // actual computed background.
 
 import { chromium } from "playwright";
+import { PNG } from "pngjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 
 import { SITE, assertOurSite } from "./assert-site.mjs";
@@ -74,6 +75,8 @@ for (const vp of VIEWPORTS) {
         // filter cannot quietly reduce the sweep to a handful of elements while
         // still printing "clean".
         let examined = 0;
+        // Text painted over a gradient: measured from pixels in Node, not here.
+        const deferred = [];
         const add = (kind, detail, el) => {
           const key = `${kind}|${detail}`;
           if (seen.has(key)) return;
@@ -162,17 +165,92 @@ for (const vp of VIEWPORTS) {
           const size = parseFloat(cs.fontSize);
           const large = size >= 24 || (size >= 18.66 && Number(cs.fontWeight) >= 700);
           examined++;
+
+          // A background-IMAGE is invisible to this walk. The loop above resolves
+          // an effective background by climbing ancestors reading
+          // backgroundColor — so an element painted by a gradient reports
+          // "transparent", the walk keeps climbing, and the ratio gets computed
+          // against a surface that is not what the eye receives.
+          //
+          // That is not hypothetical: the yellow highlighter is a gradient, and
+          // this check passed near-white text on it at 1.30:1 because it measured
+          // the near-black section behind instead. Rather than guess at the
+          // painted colour, say so — an unmeasurable pair is a finding, not a pass.
+          let painted = null;
+          for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+            const bi = getComputedStyle(n).backgroundImage;
+            if (bi && bi !== "none") { painted = bi.slice(0, 40); break; }
+            if (getComputedStyle(n).backgroundColor !== "rgba(0, 0, 0, 0)") break;
+          }
+          if (painted) {
+            // Defer rather than guess or excuse. Node samples the rendered pixels
+            // for these below, which is the only way to know what the eye gets.
+            const r = el.getBoundingClientRect();
+            deferred.push({
+              text: t.slice(0, 24),
+              size,
+              large,
+              fg,
+              box: {
+                x: Math.max(0, Math.round(r.x)),
+                y: Math.max(0, Math.round(r.y)),
+                width: Math.max(1, Math.round(r.width)),
+                height: Math.max(1, Math.round(r.height)),
+              },
+            });
+            continue;
+          }
+
           const floor = large ? 3 : 4.5;
           if (ratio < floor) {
             add("contrast", `${ratio.toFixed(2)}:1 (need ${floor}) ${size}px "${t.slice(0, 30)}"`, el);
           }
         }
 
-        return { out, examined };
+        return { out, examined, deferred };
       },
       { vpWidth: vp.width, isMobile: vp.name === "mobile" },
     );
     const issues = result.out;
+
+    // Pixel pass for the gradient-backed text the in-page walk cannot resolve.
+    // Cheap: there are only ever a handful, and it converts a silent false pass
+    // into a real number. The marker fills most of its own box behind short text,
+    // so the modal colour in that box IS the painted background.
+    for (const d of result.deferred) {
+      let png;
+      try {
+        png = PNG.sync.read(await page.screenshot({ clip: d.box }));
+      } catch {
+        issues.push({ kind: "unmeasurable-bg", detail: `${d.size}px "${d.text}" (could not capture)`, tag: "?" });
+        continue;
+      }
+      const tally = new Map();
+      for (let i = 0; i < png.data.length; i += 4) {
+        const k = `${png.data[i]},${png.data[i + 1]},${png.data[i + 2]}`;
+        tally.set(k, (tally.get(k) ?? 0) + 1);
+      }
+      const modal = [...tally.entries()].sort((a, z) => z[1] - a[1])[0][0].split(",").map(Number);
+      // Already a parsed [r,g,b] triple from the in-page pass.
+      const fg = d.fg.slice(0, 3);
+      const L = (c) => {
+        const [r, g, bl] = c.map((v) => {
+          v /= 255;
+          return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+      };
+      const [hi, lo] = [L(fg), L(modal)].sort((a, z) => z - a);
+      const ratio = (hi + 0.05) / (lo + 0.05);
+      const floor = d.large ? 3 : 4.5;
+      if (ratio < floor) {
+        issues.push({
+          kind: "contrast",
+          detail: `${ratio.toFixed(2)}:1 (need ${floor}) ${d.size}px "${d.text}" on painted rgb(${modal})`,
+          tag: "gradient",
+        });
+      }
+    }
 
     const tag = `${vp.name}-${theme}`;
     await page.screenshot({ path: `${OUT}/${tag}.png`, fullPage: false });

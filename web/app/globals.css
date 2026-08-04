@@ -39,26 +39,18 @@
   color-scheme: light;
 
   --bg: 255 255 255;          /* page */
-  /* The alternating band. apple.com/mac uses rgb(245,245,247) nine times against
-     white three times — the grey is the dominant section colour, not the
-     exception, and the alternation is what gives a very long page rhythm. The
-     page background had to become pure white for it to be legible at all:
-     #FBFBFD against #F5F5F7 is a 1.5% lightness step nobody can see. */
-  --band: 245 245 247;
+  --band: 255 253 242;        /* the cream alternating band */
   --raise: 255 255 255;       /* cards */
-  --sunk: 241 242 246;        /* recessed fills */
-  --seam: 227 229 236;        /* hairlines */
-  --ink: 20 22 28;         /* primary text */
-  --haze: 86 92 107;        /* secondary text */
-  /* 4.68:1 against --bg. The previous #868C9B measured 3.26:1, which put 46 of
-     this page's small labels under the AA floor — .label is 11px, so it needs
-     4.5:1, not the 3:1 that large text is allowed. */
-  --dust: 107 114 128;        /* tertiary text */
-
-  /* Cyan at #5FD4FF fails against white, so light mode steps it down to a
-     teal-blue that holds contrast without changing hue family. */
-  --accent: 10 118 153;
-  --accent-soft: 228 244 250;
+  --sunk: 246 246 240;        /* recessed fills */
+  --seam: 226 226 218;        /* hairlines */
+  --ink: 17 17 17;            /* primary text */
+  --haze: 74 74 82;           /* secondary text */
+  --dust: 106 106 114;        /* tertiary text */
+  --accent: 0 56 255;         /* the brand blue */
+  --accent-soft: 232 237 255;
+  /* The yellow. NEVER text on a light ground — #FFD600 on white measures 1.41:1.
+     It is a fill and a highlight only, and ink sits on it at 13.37:1. */
+  --pop: 255 214 0;
   --ember: 180 85 26;
 
   /* Programme colours, LIGHT theme.
@@ -80,16 +72,20 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: 5 7 13;
-    --band: 10 14 22;
-    --raise: 11 15 23;
-    --sunk: 14 19 28;
-    --seam: 26 32 44;
-    --ink: 242 245 250;
-    --haze: 139 149 166;
-    --dust: 121 131 154;
-    --accent: 95 212 255;
-    --accent-soft: 16 34 44;
+    --bg: 11 13 20;
+    --band: 17 20 29;
+    --raise: 20 24 34;
+    --sunk: 15 18 26;
+    --seam: 38 43 56;
+    --ink: 244 245 250;
+    --haze: 156 162 178;
+    --dust: 130 137 154;
+    /* #0038FF only reaches 2.78:1 on this ground, so dark gets its own step of the
+       same hue at 5.63:1. Not an inversion — a re-pick. */
+    --accent: 92 130 255;
+    --accent-soft: 22 30 56;
+    /* Yellow IS text-safe here (13.74:1), unlike on white. Useful asymmetry. */
+    --pop: 255 214 0;
     --ember: 255 138 61;
     --prog-gsoc: #4A86E8;
     --prog-lfx: #D64FA0;
@@ -101,16 +97,20 @@
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: 5 7 13;
-  --band: 10 14 22;
-  --raise: 11 15 23;
-  --sunk: 14 19 28;
-  --seam: 26 32 44;
-  --ink: 242 245 250;
-  --haze: 139 149 166;
-  --dust: 121 131 154;
-  --accent: 95 212 255;
-  --accent-soft: 16 34 44;
+  --bg: 11 13 20;
+  --band: 17 20 29;
+  --raise: 20 24 34;
+  --sunk: 15 18 26;
+  --seam: 38 43 56;
+  --ink: 244 245 250;
+  --haze: 156 162 178;
+  --dust: 130 137 154;
+  /* #0038FF only reaches 2.78:1 on this ground, so dark gets its own step of the
+     same hue at 5.63:1. Not an inversion — a re-pick. */
+  --accent: 92 130 255;
+  --accent-soft: 22 30 56;
+  /* Yellow IS text-safe here (13.74:1), unlike on white. Useful asymmetry. */
+  --pop: 255 214 0;
   --ember: 255 138 61;
   --prog-gsoc: #4A86E8;
   --prog-lfx: #D64FA0;
@@ -121,16 +121,19 @@
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: 255 255 255;
-  --band: 245 245 247;
-  --raise: 255 255 255;
-  --sunk: 241 242 246;
-  --seam: 227 229 236;
-  --ink: 20 22 28;
-  --haze: 86 92 107;
-  --dust: 107 114 128;
-  --accent: 10 118 153;
-  --accent-soft: 228 244 250;
+  --bg: 255 255 255;          /* page */
+  --band: 255 253 242;        /* the cream alternating band */
+  --raise: 255 255 255;       /* cards */
+  --sunk: 246 246 240;        /* recessed fills */
+  --seam: 226 226 218;        /* hairlines */
+  --ink: 17 17 17;            /* primary text */
+  --haze: 74 74 82;           /* secondary text */
+  --dust: 106 106 114;        /* tertiary text */
+  --accent: 0 56 255;         /* the brand blue */
+  --accent-soft: 232 237 255;
+  /* The yellow. NEVER text on a light ground — #FFD600 on white measures 1.41:1.
+     It is a fill and a highlight only, and ink sits on it at 13.37:1. */
+  --pop: 255 214 0;
   --ember: 180 85 26;
   --prog-gsoc: #1148D0;
   --prog-lfx: #77225D;
@@ -159,8 +162,17 @@ body {
   border-radius: 2px;
 }
 
+/* The quiet label — small field and card labels. Condensed caps rather than mono
+   now, so it belongs to the same voice as the buttons and chips. Section eyebrows
+   use .chip instead; this is for the ones inside cards, where fourteen yellow
+   blocks would be a fairground. */
 .label {
-  @apply font-mono text-label uppercase text-dust;
+  font-family: var(--font-label), system-ui, sans-serif;
+  font-size: 0.875rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: rgb(var(--dust));
+  line-height: 1.2;
 }
 
 .section {
@@ -197,6 +209,116 @@ body {
   backdrop-filter: saturate(1.8) blur(20px);
 }
 
+/* ---------------------------------------------------------------------------
+   THE DEVICES
+   Read off notyourcollege.com, which is the reference for this pass. Each one is
+   a mechanic rather than a decoration, and each is here because it does a job
+   that type alone was not doing.
+   --------------------------------------------------------------------------- */
+
+/* Eyebrow chip. Their section labels sit in a yellow block rather than floating
+   as grey mono caps. Same information, far more energy, and it gives every
+   section a visible entry point on a page this long. Ink on yellow is 13.37:1. */
+.chip {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  background: rgb(var(--pop));
+  color: rgb(17 17 17);
+  font-family: var(--font-label), system-ui, sans-serif;
+  font-size: 0.9375rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Highlighter. Their body copy marks the load-bearing phrase in yellow instead
+   of bolding it. Drawn as a background gradient sitting on the text baseline so
+   it reads as a marker stroke rather than a filled box, and left inset slightly
+   so descenders are not clipped.
+
+   The mark is behind TEXT that stays ink-coloured — the yellow never carries the
+   meaning, which is what keeps it legible for a colourblind reader and at 1.41:1
+   would otherwise be unreadable. */
+.mark {
+  /* Light theme: a yellow marker stroke behind ink text — the device as their site
+     uses it. The stroke covers the lower two-thirds of the x-height, so ink is on
+     yellow at 13.37:1 where it overlaps and on white at 18.89:1 above it. Both
+     fine, because the page under it is light.
+
+     Dark theme is a DIFFERENT MECHANIC, not this one inverted, and that is the
+     whole point. A marker only covers part of the glyph height, so ink text over
+     it leaves the ascenders standing on the page — on a near-black ground that is
+     1.03:1 and the letter tops simply vanish. Making the stroke tall enough to
+     cover them stops it being a marker and becomes a filled block.
+
+     So on dark the emphasis is carried by the yellow itself as TEXT. #FFD600 on
+     this ground is 13.74:1, brilliant and unambiguous, and needs no stroke at all.
+     Same brand signal, mechanic chosen for the surface. */
+  background: linear-gradient(
+    to top,
+    transparent 0.16em,
+    rgb(var(--pop) / 0.85) 0.16em,
+    rgb(var(--pop) / 0.85) 0.78em,
+    transparent 0.78em
+  );
+  padding: 0 0.08em;
+  color: rgb(17 17 17);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .mark {
+    background: none;
+    padding: 0;
+    color: rgb(var(--pop));
+    font-weight: 600;
+  }
+}
+:root[data-theme="dark"] .mark {
+  background: none;
+  padding: 0;
+  color: rgb(var(--pop));
+  font-weight: 600;
+}
+:root[data-theme="light"] .mark {
+  background: linear-gradient(
+    to top,
+    transparent 0.16em,
+    rgb(var(--pop) / 0.85) 0.16em,
+    rgb(var(--pop) / 0.85) 0.78em,
+    transparent 0.78em
+  );
+  padding: 0 0.08em;
+  color: rgb(17 17 17);
+  font-weight: inherit;
+}
+
+/* Two-tone headline. Their display lines alternate ink and blue mid-sentence,
+   which is what stops a 100px headline reading as a wall. */
+.tone {
+  color: rgb(var(--accent));
+}
+
+/* Hard offset shadow on the primary action. Theirs puts a solid black rectangle
+   behind the yellow button with no blur — a poster device, not a soft elevation.
+   Offset in the token colour rather than pure black so it survives dark mode. */
+.btn-pop {
+  background: rgb(var(--pop));
+  color: rgb(17 17 17);
+  box-shadow: 5px 5px 0 0 rgb(var(--ink));
+  transition:
+    transform 300ms cubic-bezier(0, 0, 0.5, 1),
+    box-shadow 300ms cubic-bezier(0, 0, 0.5, 1);
+}
+.btn-pop:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 0 rgb(var(--ink));
+}
+.btn-pop:active {
+  transform: translate(5px, 5px);
+  box-shadow: 0 0 0 0 rgb(var(--ink));
+}
+
 /* Buttons, also measured rather than guessed. Apple's pill computes to
    border-radius 980px, padding 11px 21px, 17px/400 type, 44px tall. 44px is the
    same number their nav uses and the touch-target floor, which is not a
@@ -210,10 +332,17 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* 44px survives from the Apple pass and is unchanged here: theirs is 44px too,
+     and it is the touch-target floor either way. The radius is what changed —
+     8px rectangles, not pills. A pill reads as software; a hard-cornered block in
+     condensed caps reads as a poster, which is the register now. */
   min-height: 44px;
   padding: 11px 21px;
-  border-radius: 980px;
-  font-size: 17px;
+  border-radius: 8px;
+  font-family: var(--font-label), system-ui, sans-serif;
+  font-size: 1.0625rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   font-weight: 400;
   /* Apple's pill measures 20px leading, which is what makes 11px padding land on
      exactly 44px. Inheriting the body's ~1.5 ratio gave 25.5px and a 48px button

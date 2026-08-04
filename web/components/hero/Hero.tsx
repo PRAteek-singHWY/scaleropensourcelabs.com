@@ -30,31 +30,32 @@ export default function Hero() {
       className="section relative pb-24 pt-32 sm:pb-32 sm:pt-44"
       aria-label="Scaler Open Source Club"
     >
-      <p className="label">Scaler School of Technology</p>
+      <p className="chip">Scaler School of Technology</p>
 
-      {/* The largest type on the page, and the only place the accent appears at
-          display size. Everything below it stays quiet — the restraint is what
-          makes one accent read as deliberate. */}
-      <h1 className="mt-7 text-display-xl font-semibold tracking-tightest text-balance">
-        Open <span className="text-accent">Source</span>
+      {/* Heavy condensed caps in the display face, with the second word in blue.
+          Two tones mid-headline is what stops display type at this size reading as
+          a wall of letters — and it is the device their whole page is built on. */}
+      <h1 className="mt-7 font-display text-[clamp(3.25rem,10vw,8rem)] uppercase leading-[0.86] tracking-[-0.01em]">
+        Open <span className="tone">Source</span>
       </h1>
 
-      <p className="mt-8 max-w-3xl text-display-lg font-medium tracking-tight text-balance">
-        We put student names in the commit log.
+      <p className="mt-8 max-w-3xl text-display-lg font-semibold tracking-tight text-balance">
+        We put student names in the{" "}
+        {/* The marker carries emphasis; the text itself stays ink, so the yellow is
+            never what conveys the meaning. */}
+        <span className="mark">commit log</span>.
       </p>
 
       <p className="measure mt-6 text-body-lg text-haze">
-        Members contribute to the projects the world already runs on, and get paid by
-        Google, the Linux Foundation and others to do it. Every claim on this page is
-        a link you can open.
+        Members contribute to the projects the world already runs on, and{" "}
+        <span className="mark font-medium text-ink">get paid</span> by Google, the
+        Linux Foundation and others to do it. Every claim on this page is a link you
+        can open.
       </p>
 
       <div className="mt-10 flex flex-wrap items-center gap-4">
-        <a
-          href="#hall"
-          className="btn btn-primary"
-        >
-          See who got in
+        <a href="#hall" className="btn btn-pop">
+          See who got in →
         </a>
         <a
           href="#apply"

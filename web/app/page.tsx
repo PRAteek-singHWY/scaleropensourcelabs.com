@@ -96,7 +96,7 @@ export default function Home() {
             selection and picked them; everything below is elaboration. */}
         <section id="hall" aria-label="Students selected into international programmes">
           <div className="section pt-24 sm:pt-36">
-            <p className="label">Selected</p>
+            <p className="chip">Selected</p>
             <Duo
               className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
               lead="Somebody else picked them."
@@ -118,7 +118,7 @@ export default function Home() {
 
         {/* ---- Thesis ------------------------------------------------------ */}
         <section className="section pt-24 sm:pt-36">
-          <p className="label">What this is</p>
+          <p className="chip">What this is</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
             lead="A club is easy to start."
@@ -263,7 +263,7 @@ export default function Home() {
 
         {/* ---- The programmes: what they are, and what we do about it ------ */}
         <section id="programmes" className="section pt-24 sm:pt-36">
-          <p className="label">The programmes</p>
+          <p className="chip">The programmes</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
             lead="Paid, competitive, and open to beginners."
@@ -330,7 +330,7 @@ export default function Home() {
             skipped cycle rather than a delay. No exact dates — they move annually
             and a stale date costs more than it buys on a page claiming accuracy. */}
         <section id="calendar" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <p className="label">The reverse clock</p>
+          <p className="chip">The reverse clock</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
             lead="Applications are decided months before they open."
@@ -371,7 +371,7 @@ export default function Home() {
 
         {/* ---- Why this and not the CP club --------------------------------- */}
         <section id="why-us" className="section pt-24 sm:pt-36">
-          <p className="label">Choosing a club</p>
+          <p className="chip">Choosing a club</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
             lead="Competitive programming has a fixed number of winners."
@@ -454,7 +454,7 @@ export default function Home() {
 
         {/* ---- How the club actually runs ----------------------------------- */}
         <section id="culture" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <p className="label">What it&apos;s like</p>
+          <p className="chip">What it&apos;s like</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
             lead="It is mostly people arguing about code with Maggi."
@@ -476,7 +476,7 @@ export default function Home() {
 
         {/* ---- Tracks ------------------------------------------------------ */}
         <section id="tracks" className="section pt-24 sm:pt-36">
-          <p className="label">Three tracks</p>
+          <p className="chip">Three tracks</p>
           <Duo
             className="mt-6 text-display-lg font-semibold"
             lead="What you can work on."
@@ -502,7 +502,7 @@ export default function Home() {
 
         {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
         <section id="path" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <p className="label">How a first contribution actually goes</p>
+          <p className="chip">How a first contribution actually goes</p>
           <Duo
             className="mt-6 max-w-3xl text-display-lg font-semibold text-balance"
             lead="Four steps."
@@ -551,7 +551,7 @@ export default function Home() {
 
         {/* ---- Mentors ------------------------------------------------------ */}
         <section id="mentors" className="section pt-24 sm:pt-36">
-          <p className="label">Who reads your code</p>
+          <p className="chip">Who reads your code</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
             lead="Not professors."
@@ -572,7 +572,7 @@ export default function Home() {
             An explicit filter immediately before the ask. Stating who should not
             join makes the invitation read as selective rather than desperate. */}
         <section id="who-not-for" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <p className="label">Be honest with yourself</p>
+          <p className="chip">Be honest with yourself</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
             lead="This is not for everyone."
@@ -590,7 +590,7 @@ export default function Home() {
 
         {/* ---- FAQ ---------------------------------------------------------- */}
         <section id="faq" className="section pt-24 sm:pt-36">
-          <p className="label">Questions</p>
+          <p className="chip">Questions</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg font-semibold text-balance"
             lead="The seven things people actually ask."
@@ -656,7 +656,7 @@ export default function Home() {
             exactly one small specific ask. */}
         <section id="institutional" className="section pt-24 sm:pt-36">
           <div className="rounded-tile border border-seam bg-raise p-8 sm:p-12">
-            <p className="label">For faculty, sponsors and maintainers</p>
+            <p className="chip">For faculty, sponsors and maintainers</p>
             <Duo
               className="mt-6 max-w-3xl text-display-md font-semibold text-balance"
               lead="What this club is, in plain terms."
