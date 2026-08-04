@@ -86,8 +86,14 @@ export default function Hall() {
           cubic-bezier(0, 0, 0.5, 1) — and only at the pointer, never on touch. */}
       <ul className="mt-14 grid gap-x-7 gap-y-12 sm:mt-16 sm:grid-cols-2 lg:grid-cols-3">
         {people.map((p, i) => (
-          <li key={`${p.name}-${p.programme}-${p.year}`}>
-            <article className="group">
+          <li key={`${p.name}-${p.programme}-${p.year}`} className="flex">
+            {/* Full-height flex column so the action row can be pinned to the
+                bottom. Grid already stretches the cells to equal height, which made
+                the card BOTTOMS align and hid the real problem: with sentences of
+                realistic length the "See the work" links floated at a 77px spread
+                across a row of three. The placeholder data all being the same
+                length made it measure as perfectly aligned. */}
+            <article className="group flex w-full flex-col">
               <div className="[container-type:inline-size] overflow-hidden rounded-panel">
                 <Portrait
                   name={p.name}
@@ -107,7 +113,10 @@ export default function Hall() {
                 </span>
               </p>
 
-              <h3 className="mt-3.5 font-display text-display-md uppercase leading-[0.95] tracking-[-0.005em]">
+              {/* Reserves two lines. Anton is condensed enough that most names fit
+                  on one, but a long one would otherwise push everything below it
+                  down in that card alone. */}
+              <h3 className="mt-3.5 min-h-[2lh] font-display text-display-md uppercase leading-[0.95] tracking-[-0.005em]">
                 {p.name}
               </h3>
 
@@ -115,7 +124,9 @@ export default function Hall() {
 
               <p className="mt-3 text-body text-haze">{p.work}</p>
 
-              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
+              {/* mt-auto: the actions sit on the card's baseline, so a row of them
+                  reads as one line regardless of how long each sentence runs. */}
+              <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-5">
                 {p.url && (
                   <a
                     href={p.url}
