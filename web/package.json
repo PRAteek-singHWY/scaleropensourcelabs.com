@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "qa": "node scripts/qa.mjs",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "browsers": "node scripts/browsers.mjs"
   },
   "dependencies": {
     "next": "14.2.5",

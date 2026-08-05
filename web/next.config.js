@@ -45,7 +45,16 @@ const CSP = [
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
-  "upgrade-insecure-requests",
+  // Production only. WebKit honours this on localhost where Chromium and Firefox
+  // exempt it, so in dev over http every asset request was upgraded to
+  // https://localhost, hit a TLS error, and Safari got no CSS, no fonts and no
+  // JavaScript at all — a completely blank-looking page. Found by finally running
+  // the suite in WebKit rather than Chromium alone.
+  //
+  // It costs nothing to drop here: every sub-resource on this site is same-origin,
+  // so over https they are already https, and CSP restricts everything to 'self'
+  // anyway. Kept in production as standard hardening.
+  ...(isDev ? [] : ["upgrade-insecure-requests"]),
 ].join("; ");
 
 const nextConfig = {
