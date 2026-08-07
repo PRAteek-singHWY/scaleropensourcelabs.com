@@ -73,13 +73,23 @@ export default function Outline() {
   useEffect(() => {
     const found: Item[] = [];
     for (const s of document.querySelectorAll<HTMLElement>("section[id]")) {
-      // The eyebrow is the section's own short name and already reads as a label.
-      // aria-label and a prettified id are fallbacks so a section can never be
-      // missing from the outline just because it has no eyebrow.
-      const eyebrow = s.querySelector(".label")?.textContent?.trim();
+      // aria-label FIRST, then the eyebrow. The eyebrow usually is the section's
+      // own short name, which is why it was preferred originally — but
+      // `querySelector(".label")` takes the first match anywhere inside, and
+      // `.label` is also the class on field labels INSIDE cards. So a section whose
+      // eyebrow is a `.chip` rather than a `.label` gets named after whatever card
+      // label happens to come first: #team listed itself as "President", and
+      // #mentors becomes "Ask them about" as soon as MENTORS has entries.
+      //
+      // An aria-label is an explicit statement by the author about what a section
+      // is called; a `.label` found by descendant search is an inference. When both
+      // exist the explicit one should win, which also means a bad outline entry is
+      // now always fixable by naming the section rather than by reordering its
+      // internals. A section with neither still falls through to its heading.
       const aria = s.getAttribute("aria-label")?.trim();
+      const eyebrow = s.querySelector(".label")?.textContent?.trim();
       const heading = s.querySelector("h2, h3")?.textContent?.trim();
-      const label = eyebrow || aria || heading || prettify(s.id);
+      const label = aria || eyebrow || heading || prettify(s.id);
       found.push({ id: s.id, label: label.length > 34 ? `${label.slice(0, 33)}…` : label });
     }
     setItems(found);

@@ -797,3 +797,60 @@ export const INSTITUTIONAL: { title: string; body: string }[] = [
     body: "A room with power and a projector, and a small budget for the domain and refreshments. Travel support for one conference would be transformative but is not the ask.",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// THE TEAM — who actually runs the club.
+//
+// Distinct from MENTORS, and the distinction is load-bearing. A mentor's entry is
+// justified by a public artifact: a merged patch, an official selection record. A
+// team entry is justified by nothing except holding the office, so it claims
+// nothing except the office. No "passionate about", no "shipped X" — that belongs
+// in MENTORS, where there is a link to prove it. This list is org structure, and
+// org structure is the one thing a club can legitimately assert about itself.
+//
+// Three tiers, because the club genuinely has three: the two officers, the four
+// functional leads, and the shadows. A shadow is an understudy attached to one
+// specific role who is being trained to take it over at handover — which is the
+// only reason a student club survives its founders graduating, and therefore worth
+// showing on the chart rather than hiding in a handbook.
+//
+// `shadowOf` holds the DESIGNATION, not the person. Roles outlast the people in
+// them: when Rushab hands over, the shadow relationship should not need re-pointing
+// at a new name. Team.tsx resolves it against the tier above and positions the
+// card in that role's column, so a typo here surfaces as a missing connector
+// rather than a silently wrong one.
+
+export type TeamMember = {
+  name: string;
+  /** The office, not a description of the person. Rendered above the name. */
+  designation: string;
+  /** Square crop — the frame is a circle. See public/people/README.md. */
+  photo?: string;
+  github?: string;
+  /** Designation of the role this person shadows. Shadows only. */
+  shadowOf?: string;
+};
+
+/** Tier 1. The two officers. */
+export const TEAM_OFFICERS: TeamMember[] = [
+  { name: "Abhinav Jha", designation: "President" },
+  { name: "Rushab Mistry", designation: "Vice President" },
+];
+
+/** Tier 2. Functional leads. Order is left-to-right on the chart, not a ranking. */
+export const TEAM_LEADS: TeamMember[] = [
+  { name: "Mehul Agarwal", designation: "Training Head" },
+  { name: "Prateek Singh", designation: "Mentorship Lead" },
+  { name: "Bhumi N Deshpande", designation: "Repo Maintainer" },
+  { name: "Kunal Saini", designation: "Events Lead" },
+];
+
+/** Tier 3. Each one attaches to exactly one role in a tier above. */
+export const TEAM_SHADOWS: TeamMember[] = [
+  { name: "Arnav Singh", designation: "Shadow", shadowOf: "Training Head" },
+  { name: "Yash Virulkar", designation: "Shadow", shadowOf: "Vice President" },
+];
+
+export function teamSize(): number {
+  return TEAM_OFFICERS.length + TEAM_LEADS.length + TEAM_SHADOWS.length;
+}
