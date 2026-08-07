@@ -30,7 +30,8 @@ the radius.
   `object-fit: cover` crops from the centre outward in both.
 - **`.jpg` for photographs**, `.webp` if you have it. Not `.png` — a portrait as
   PNG is several times the bytes for no visible gain.
-- Keep each file **under ~300 KB**. Fourteen of these load on one page.
+- Keep each file **under ~300 KB**. The whole hall loads on one page — at
+  twenty-five portraits, 300 KB each is already a 7.5 MB page.
 
 ## What is not needed
 

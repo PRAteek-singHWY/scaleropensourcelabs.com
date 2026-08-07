@@ -125,7 +125,7 @@ export default function Home() {
         </section>
 
         {/* ---- What we look for ---------------------------------------------
-            Placed directly after the hall on purpose. Fourteen named students
+            Placed directly after the hall on purpose. A grid of named students
             selected into international programmes is the page's strongest claim
             AND its biggest deterrent — the immediate private thought is "they must
             already be brilliant, I could never". This answers that at the exact
