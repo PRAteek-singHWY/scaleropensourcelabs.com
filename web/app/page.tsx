@@ -29,7 +29,6 @@ import {
   NOT_FOR,
   POSITIONING,
   TRACKS,
-  TRADE_OFFS,
   totals,
 } from "@/content/club";
 
@@ -498,25 +497,6 @@ export default function Home() {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* The honest cost. A comparison listing only our advantages gets
-              discounted wholesale; naming what we are worse at is what makes the
-              rest of the section believable. */}
-          <div className="mt-16 rounded-tile border border-seam bg-raise p-8 sm:p-10">
-            <h3 className="text-display-md font-semibold">What we are worse at</h3>
-            <p className="measure mt-3 text-body text-haze">
-              Every one of these is a real reason to join the competitive
-              programming club instead.
-            </p>
-            <ul className="mt-8 space-y-5">
-              {TRADE_OFFS.map((t) => (
-                <li key={t} className="flex gap-4">
-                  <span aria-hidden className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-ember" />
-                  <span className="text-body text-haze">{t}</span>
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
 
