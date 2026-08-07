@@ -26,7 +26,7 @@ const ITEMS = [
   { href: "#hall", label: "Selected" },
   { href: "#programmes", label: "Programmes" },
   { href: "#calendar", label: "Timeline" },
-  { href: "#mentors", label: "Mentors" },
+  { href: "#team", label: "Team" },
   { href: "#faq", label: "FAQ" },
   { href: "#apply", label: "Apply" },
 ] as const;

@@ -83,8 +83,19 @@ export default function Hall() {
           space rather than inside a panel.
 
           Hover lifts the card on their measured curve — transform 0.3s
-          cubic-bezier(0, 0, 0.5, 1) — and only at the pointer, never on touch. */}
-      <ul className="mt-14 grid gap-x-7 gap-y-12 sm:mt-16 sm:grid-cols-2 lg:grid-cols-3">
+          cubic-bezier(0, 0, 0.5, 1) — and only at the pointer, never on touch.
+
+          Five across at the top end, which is what the client asked for and what a
+          list this long wants: at three columns twenty-five people is nine rows and
+          the count stops reading as a single set. The step to five happens at xl,
+          not lg. The container caps at 76rem, so xl gives each card 208px — enough
+          for a two-word name at display-md — whereas five columns at lg would be
+          170px and start breaking names mid-word. The ladder below it steps one
+          column at a time — a two-column jump halves the card width in a single
+          breakpoint and the text visibly reflows as the window resizes. Mobile stays
+          at one, unchanged: two 155px cards side by side is where the name and the
+          work sentence stop being readable at all. */}
+      <ul className="mt-14 grid gap-x-7 gap-y-12 sm:mt-16 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {people.map((p, i) => (
           <li key={`${p.name}-${p.programme}-${p.year}`} className="flex">
             {/* Full-height flex column so the action row can be pinned to the
@@ -120,34 +131,49 @@ export default function Hall() {
                 {p.name}
               </h3>
 
-              <p className="mt-2 font-mono text-xs text-dust">{p.org}</p>
+              {/* Year of study and organisation share one mono line, because they
+                  are the same kind of fact — small, factual, subordinate to the
+                  name. Joined rather than stacked so an entry with only one of them
+                  does not leave a visible gap where the other would sit. */}
+              {(p.studyYear || p.org) && (
+                <p className="mt-2 font-mono text-xs text-dust">
+                  {[p.studyYear, p.org].filter(Boolean).join(" · ")}
+                </p>
+              )}
 
-              <p className="mt-3 text-body text-haze">{p.work}</p>
+              {p.work && <p className="mt-3 text-body text-haze">{p.work}</p>}
 
               {/* mt-auto: the actions sit on the card's baseline, so a row of them
-                  reads as one line regardless of how long each sentence runs. */}
-              <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-5">
-                {p.url && (
-                  <a
-                    href={p.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tap inline-block font-label text-sm uppercase tracking-[0.04em] text-accent hover:brightness-110"
-                  >
-                    See the work →
-                  </a>
-                )}
-                {p.github && (
-                  <a
-                    href={`https://github.com/${p.github}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tap inline-block font-mono text-xs text-haze hover:text-accent"
-                  >
-                    @{p.github}
-                  </a>
-                )}
-              </div>
+                  reads as one line regardless of how long each sentence runs.
+
+                  Rendered only when there is something in it. An entry awaiting its
+                  proof link has neither, and an empty flex row still contributes its
+                  pt-5 — which reads as an unexplained gap under every card in the
+                  cohort rather than as nothing. */}
+              {(p.url || p.github) && (
+                <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-2 pt-5">
+                  {p.url && (
+                    <a
+                      href={p.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tap inline-block font-label text-sm uppercase tracking-[0.04em] text-accent hover:brightness-110"
+                    >
+                      See the work →
+                    </a>
+                  )}
+                  {p.github && (
+                    <a
+                      href={`https://github.com/${p.github}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tap inline-block font-mono text-xs text-haze hover:text-accent"
+                    >
+                      @{p.github}
+                    </a>
+                  )}
+                </div>
+              )}
             </article>
           </li>
         ))}

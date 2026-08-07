@@ -11,6 +11,7 @@ import Eyebrow from "@/components/Eyebrow";
 import Hall from "@/components/hall/Hall";
 import ApplyForm from "@/components/ApplyForm";
 import Mentors from "@/components/Mentors";
+import Team from "@/components/Team";
 import Roster from "@/components/hall/Roster";
 import {
   CULTURE,
@@ -28,8 +29,9 @@ import {
   INSTITUTIONAL,
   NOT_FOR,
   POSITIONING,
+  TEAM_SHADOWS,
   TRACKS,
-  TRADE_OFFS,
+  teamSize,
   totals,
 } from "@/content/club";
 
@@ -123,7 +125,7 @@ export default function Home() {
         </section>
 
         {/* ---- What we look for ---------------------------------------------
-            Placed directly after the hall on purpose. Fourteen named students
+            Placed directly after the hall on purpose. A grid of named students
             selected into international programmes is the page's strongest claim
             AND its biggest deterrent — the immediate private thought is "they must
             already be brilliant, I could never". This answers that at the exact
@@ -499,25 +501,6 @@ export default function Home() {
               </div>
             ))}
           </div>
-
-          {/* The honest cost. A comparison listing only our advantages gets
-              discounted wholesale; naming what we are worse at is what makes the
-              rest of the section believable. */}
-          <div className="mt-16 rounded-tile border border-seam bg-raise p-8 sm:p-10">
-            <h3 className="text-display-md font-semibold">What we are worse at</h3>
-            <p className="measure mt-3 text-body text-haze">
-              Every one of these is a real reason to join the competitive
-              programming club instead.
-            </p>
-            <ul className="mt-8 space-y-5">
-              {TRADE_OFFS.map((t) => (
-                <li key={t} className="flex gap-4">
-                  <span aria-hidden className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-ember" />
-                  <span className="text-body text-haze">{t}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
         </section>
 
         {/* ---- How the club actually runs ----------------------------------- */}
@@ -636,7 +619,13 @@ export default function Home() {
         </div>
 
         {/* ---- Mentors ------------------------------------------------------ */}
-        <section id="mentors" className="section pt-24 sm:pt-36">
+        {/* aria-label because this section no longer has a nav link — "Team" took
+            that slot — so the outline panel is how it gets reached. */}
+        <section
+          id="mentors"
+          className="section pt-24 sm:pt-36"
+          aria-label="Mentors"
+        >
           <p className="chip">Who reads your code</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg"
@@ -652,6 +641,39 @@ export default function Home() {
             useful for.
           </p>
           <Mentors />
+        </section>
+
+        {/* ---- The team -------------------------------------------------------
+            Directly after Mentors, and that adjacency is the point: both sections
+            answer "who are the humans here", so they belong in one spread rather
+            than scattered either side of an argument. Mentors goes first because a
+            prospective member cares more about who reviews their patch than who
+            books the room.
+
+            Deliberately NOT near the top. Eight named office-holders ahead of the
+            hall would be the club introducing itself before it has shown that
+            anybody outside it agreed — the same reason the hall leads the page.
+            Placed here it also sets up #institutional below, which asks a faculty
+            member to email organisers this section has just named.
+
+            aria-label, despite the section having a visible eyebrow: Outline names
+            a section from its aria-label first, then a `.label` eyebrow, then its
+            heading — and this eyebrow is a `.chip`. Without this the outline entry
+            would be the Duo headline cut at 33 characters ("8 people run this club.
+            2 are sha…"). It is also the landmark's accessible name, and matches the
+            nav link that points here. */}
+        <section id="team" className="section pt-24 sm:pt-36" aria-label="Team">
+          <p className="chip">Who runs it</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg"
+            lead={`${teamSize()} people run this club.`}
+            trail={`${TEAM_SHADOWS.length} are shadows, training to take over.`}
+          />
+          <p className="measure mt-7 text-body-lg text-haze">
+            This page exists to answer one
+            question: <span className="mark">who to ask</span>. 
+          </p>
+          <Team />
         </section>
 
         {/* ---- Who this is not for ------------------------------------------

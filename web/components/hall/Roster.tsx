@@ -85,8 +85,24 @@ export default function Roster() {
                 <td className="px-3 py-3.5 font-mono text-xs tabular-nums text-haze">
                   {s.year}
                 </td>
-                <td className="px-3 py-3.5 text-ink">{s.name}</td>
-                <td className="px-3 py-3.5 text-haze">{s.org}</td>
+                <td className="px-3 py-3.5 text-ink">
+                  {s.name}
+                  {/* Year of study rides in the Student cell rather than claiming a
+                      column of its own. It qualifies the person, not the selection,
+                      and a fifth column of two-character values would widen the
+                      table's min-width for very little. */}
+                  {s.studyYear && (
+                    <span className="ml-2 font-mono text-[11px] text-dust">
+                      {s.studyYear}
+                    </span>
+                  )}
+                </td>
+                {/* An em dash, not an empty cell: blank reads as a rendering fault,
+                    whereas the dash says the organisation is genuinely not recorded
+                    yet — the same thing the Proof column already does. */}
+                <td className="px-3 py-3.5 text-haze">
+                  {s.org ?? <span className="font-mono text-xs text-dust">—</span>}
+                </td>
                 <td className="px-3 py-3.5 text-right">
                   {s.url ? (
                     <a
