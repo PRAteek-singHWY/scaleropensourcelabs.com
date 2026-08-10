@@ -25,121 +25,114 @@
    rendered pixels were sampled. Consuming a token as a whole colour in plain CSS
    therefore needs rgb(var(--x)).
 
-   Light is the default because both references — apple.com and Scaler's School of
-   Business — are light. Dark is a full peer, not an inversion: the neutrals are
-   re-picked with a blue cast and the accent is darkened for the light ground,
-   because #5FD4FF on white is unreadable.
+   VALUES ARE MEASURED OFF THE OSC FIGMA, NOT CHOSEN. The file defines no Figma
+   variables (`get_variable_defs` returns {}), so there was no token list to read:
+   the hex values below come from the design context's own CSS and from sampling
+   the rendered frames pixel by pixel down an empty right-hand column, where
+   whatever colour appears IS the section's ground rather than a glyph.
 
-   There is no longer a pinned-dark set. The hero and hall held one because a
-   solar system on a white page is nonsense; with the 3D removed every section
-   follows the reader's theme, which is the simpler and more honest system.
+   Light is the default, and here dark IS very nearly a true inversion — that is
+   what the frames do, and it is unusual enough to be worth stating: bg and ink
+   swap exactly (#fbfaf7 <-> #0b0b0c), and the inverted full-bleed sections on the
+   home page flip with them. The one thing that is re-picked rather than swapped is
+   the accent, for the usual reason: #1b1bff reaches 7.60:1 on the light ground but
+   only 2.48:1 on the dark one, so dark gets its own lighter step of the same hue
+   at 5.53:1. Both measured, both AA.
    --------------------------------------------------------------------------- */
 
 :root {
   color-scheme: light;
 
-  --bg: 255 255 255;          /* page */
-  --band: 255 253 242;        /* the cream alternating band */
-  --raise: 255 255 255;       /* cards */
-  --sunk: 246 246 240;        /* recessed fills */
-  --seam: 226 226 218;        /* hairlines */
-  --ink: 17 17 17;            /* primary text */
-  --haze: 74 74 82;           /* secondary text */
-  --dust: 106 106 114;        /* tertiary text */
-  --accent: 0 56 255;         /* the brand blue */
-  --accent-soft: 232 237 255;
-  /* The yellow. NEVER text on a light ground — #FFD600 on white measures 1.41:1.
-     It is a fill and a highlight only, and ink sits on it at 13.37:1. */
-  --pop: 255 214 0;
+  --bg: 251 250 247;          /* #fbfaf7 — warm off-white, not pure white */
+  --band: 255 252 239;        /* #fffcef — the cream alternating band */
+  --raise: 255 255 255;       /* cards sit slightly above the warm page */
+  --sunk: 245 244 239;        /* recessed fills */
+  --seam: 224 222 214;        /* hairlines */
+  --ink: 11 11 12;            /* #0b0b0c */
+  /* The frames set secondary and tertiary text as ink at 62% and 42%. Flattened to
+     opaque values here rather than kept translucent, so they stay correct on cards
+     and bands — a translucent ink shifts with whatever is behind it, and the design
+     uses these on four different grounds.
+
+     DARKENED FROM THE FIGMA'S LITERAL VALUES, and this is a deliberate deviation.
+     Ink at 42% over this page measures 2.87:1, and the QA sweep found 162 nodes of
+     real body copy using it — language chips, card captions, the trademark note.
+     The design does use 42% legitimately, but only for the DECORATIVE placeholder
+     text inside the dashed "repository slot" and "mentor slot" cards, where the grey
+     is the point. Applied to actual prose it is simply below AA.
+
+     So both steps are pinned to the contrast floor instead: every value below clears
+     4.5:1 on all four grounds (bg, band, raise, sunk) with the worst case measured,
+     not assumed. --dust bottoms out at 4.62:1 on --sunk. */
+  --haze: 92 92 95;           /* 6.05:1 worst ground */
+  --dust: 110 110 113;        /* 4.62:1 worst ground */
+  --accent: 27 27 255;        /* #1b1bff — 7.60:1 here */
+  --accent-soft: 232 232 255;
+  /* The yellow. NEVER text on a light ground — #ffe01a on #fbfaf7 is 1.50:1.
+     Fill and highlight only; ink sits on it at 15.6:1. */
+  --pop: 255 224 26;
   --ember: 180 85 26;
 
-  /* Programme colours, LIGHT theme.
-     Not simply darkened versions of the dark set — that failed. Darkening
-     compressed green and amber together: worst adjacent CVD separation fell to
-     5.8 (deuteranopia) and normal-vision to 14.1, both under the floor. This set
-     was found by searching hue/saturation/lightness within each programme's
-     family under three simultaneous constraints — >=4.5:1 on white, >=15 normal
-     ΔE, >=6 CVD ΔE — and lands at 21.9 and 13.3, better separation than the dark
-     palette manages. C4GT reads teal rather than green and SoB burnt orange
-     rather than olive; both stay recognisable and both buy the separation. */
-  --prog-gsoc: #1148D0;
-  --prog-lfx: #77225D;
-  --prog-c4gt: #03817D;
-  --prog-sob: #B35605;
-  --prog-outreachy: #6B3FBF;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: 11 13 20;
-    --band: 17 20 29;
-    --raise: 20 24 34;
-    --sunk: 15 18 26;
-    --seam: 38 43 56;
-    --ink: 244 245 250;
-    --haze: 156 162 178;
-    --dust: 130 137 154;
-    /* #0038FF only reaches 2.78:1 on this ground, so dark gets its own step of the
-       same hue at 5.63:1. Not an inversion — a re-pick. */
-    --accent: 92 130 255;
-    --accent-soft: 22 30 56;
-    /* Yellow IS text-safe here (13.74:1), unlike on white. Useful asymmetry. */
-    --pop: 255 214 0;
+    --bg: 11 11 12;
+    --band: 20 20 20;
+    --raise: 24 24 25;
+    --sunk: 15 15 16;
+    --seam: 42 42 44;
+    --ink: 251 250 247;
+    --haze: 155 154 153;
+    --dust: 132 132 131;
+    /* #1b1bff only reaches 2.48:1 on this ground, so dark gets its own step of the
+       same hue at 5.53:1. Sampled from the dark frames, not computed — the design
+       already made this call. */
+    --accent: 107 123 255;
+    --accent-soft: 26 28 56;
+    /* Yellow IS text-safe here (16.4:1), unlike on the light ground. Useful
+       asymmetry, and the frames rely on it. */
+    --pop: 255 224 26;
     --ember: 255 138 61;
-    --prog-gsoc: #4A86E8;
-    --prog-lfx: #D64FA0;
-    --prog-c4gt: #1F9D6B;
-    --prog-sob: #B8871F;
-    --prog-outreachy: #8B6DE8;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: 11 13 20;
-  --band: 17 20 29;
-  --raise: 20 24 34;
-  --sunk: 15 18 26;
-  --seam: 38 43 56;
-  --ink: 244 245 250;
-  --haze: 156 162 178;
-  --dust: 130 137 154;
-  /* #0038FF only reaches 2.78:1 on this ground, so dark gets its own step of the
-     same hue at 5.63:1. Not an inversion — a re-pick. */
-  --accent: 92 130 255;
-  --accent-soft: 22 30 56;
-  /* Yellow IS text-safe here (13.74:1), unlike on white. Useful asymmetry. */
-  --pop: 255 214 0;
+  --bg: 11 11 12;
+  --band: 20 20 20;
+  --raise: 24 24 25;
+  --sunk: 15 15 16;
+  --seam: 42 42 44;
+  --ink: 251 250 247;
+  /* Same contrast-floor treatment as the light set above; --dust bottoms out at
+     4.74:1 on --raise, which is the worst ground on this side. */
+  --haze: 155 154 153;
+  --dust: 132 132 131;
+  /* #1b1bff only reaches 2.48:1 on this ground, so dark gets its own step of the
+     same hue at 5.53:1. Sampled from the dark frames, not computed. */
+  --accent: 107 123 255;
+  --accent-soft: 26 28 56;
+  /* Yellow IS text-safe here (16.4:1), unlike on the light ground. */
+  --pop: 255 224 26;
   --ember: 255 138 61;
-  --prog-gsoc: #4A86E8;
-  --prog-lfx: #D64FA0;
-  --prog-c4gt: #1F9D6B;
-  --prog-sob: #B8871F;
-  --prog-outreachy: #8B6DE8;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: 255 255 255;          /* page */
-  --band: 255 253 242;        /* the cream alternating band */
-  --raise: 255 255 255;       /* cards */
-  --sunk: 246 246 240;        /* recessed fills */
-  --seam: 226 226 218;        /* hairlines */
-  --ink: 17 17 17;            /* primary text */
-  --haze: 74 74 82;           /* secondary text */
-  --dust: 106 106 114;        /* tertiary text */
-  --accent: 0 56 255;         /* the brand blue */
-  --accent-soft: 232 237 255;
-  /* The yellow. NEVER text on a light ground — #FFD600 on white measures 1.41:1.
-     It is a fill and a highlight only, and ink sits on it at 13.37:1. */
-  --pop: 255 214 0;
+  --bg: 251 250 247;          /* #fbfaf7 */
+  --band: 255 252 239;        /* #fffcef */
+  --raise: 255 255 255;
+  --sunk: 245 244 239;
+  --seam: 224 222 214;
+  --ink: 11 11 12;            /* #0b0b0c */
+  --haze: 92 92 95;
+  --dust: 110 110 113;
+  --accent: 27 27 255;        /* #1b1bff */
+  --accent-soft: 232 232 255;
+  --pop: 255 224 26;          /* #ffe01a */
   --ember: 180 85 26;
-  --prog-gsoc: #1148D0;
-  --prog-lfx: #77225D;
-  --prog-c4gt: #03817D;
-  --prog-sob: #B35605;
-  --prog-outreachy: #6B3FBF;
 }
 
 html {
@@ -150,13 +143,19 @@ html {
      of this file — a smooth scroll is exactly the kind of large-field movement that
      preference exists to suppress.
 
-     scroll-padding-top is load-bearing alongside it: the nav is `fixed` at h-11
-     (2.75rem), which is outside flow, so an anchor target would otherwise come to
-     rest with its first 44px behind the plate. The browser applies this offset to
-     every scroll-into-view — the nav links, the outline rail, the sticky CTA and a
-     deep link pasted into the address bar all land in the same place. */
+     scroll-padding-top is load-bearing alongside it: the nav is `fixed`, which is
+     outside flow, so an anchor target would otherwise come to rest with its first
+     nav-height behind the plate. The browser applies this offset to every
+     scroll-into-view — the nav links, the outline rail, and a deep link pasted into
+     the address bar all land in the same place.
+
+     KEEP THIS EQUAL TO THE NAV HEIGHT. It is h-14 (3.5rem) in components/Nav.tsx,
+     up from the h-11 it was written against; `.page-top` further down this file
+     carries the same 3.5rem for the same reason, so the two move together. A stale
+     value here does not fail loudly — it just parks every anchor a few pixels under
+     the plate, which is easy to look straight past. */
   scroll-behavior: smooth;
-  scroll-padding-top: 2.75rem;
+  scroll-padding-top: 3.5rem;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -174,21 +173,30 @@ body {
   border-radius: 2px;
 }
 
-/* The quiet label — small field and card labels. Condensed caps rather than mono
-   now, so it belongs to the same voice as the buttons and chips. Section eyebrows
-   use .chip instead; this is for the ones inside cards, where fourteen yellow
-   blocks would be a fairground. */
+/* The quiet label — small field and card labels, 12px mono caps per the frames.
+   Section eyebrows use .chip, which is now the same face at the same size and
+   differs only in that it is not indented inside a card; the two are kept separate
+   because the Figma treats a section's eyebrow and a card's field label as different
+   objects, and they have drifted apart before. */
 .label {
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
-  letter-spacing: 0.07em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(var(--dust));
+  /* --haze, not --dust. The frames set card and field labels at ink 62%, which is the
+     secondary step; --dust is 42% and was failing AA on the cream band at 3.9:1. */
+  color: rgb(var(--haze));
   line-height: 1.2;
 }
 
+/* The measure. WIDENED from 76rem to match the Figma, which lays every page out on
+   a 1440 canvas with 40px gutters — so content runs 40..1400 and the container is the
+   full canvas width, not a narrower centred column. 90rem = 1440px, and the 40px
+   gutter is `px-10` from sm up. Below sm the gutter drops to 24px, which the frames
+   do not specify because they are desktop-only; 40px on a 390px phone would spend a
+   fifth of the screen on margin. */
 .section {
-  @apply mx-auto w-full max-w-[76rem] px-6 sm:px-8;
+  @apply mx-auto w-full max-w-[90rem] px-6 sm:px-10;
 }
 
 .measure {
@@ -205,7 +213,19 @@ body {
    Only for links that stand alone. A link inside a sentence is explicitly
    exempt from 2.5.8 (its size is constrained by the line-height around it), and
    padding one would overlap the lines above and below — a bigger box that
-   swallows taps meant for its neighbours is worse than a small one. */
+   swallows taps meant for its neighbours is worse than a small one.
+
+   NEVER COMBINE THIS WITH A MARGIN OR PADDING UTILITY ON THE SAME ELEMENT.
+   `margin-block` here is declared after `@tailwind utilities`, so at equal
+   specificity it WINS on source order — `mt-6`, `mt-3` and `mt-auto` all silently
+   lose to it, and `pt-6` silently breaks the -14px compensation instead. This was
+   live on seven links across four pages: every one had dead spacing, and the
+   `mt-auto` on the home page's cards meant a row of cards had their links at
+   different heights. Nothing failed; it just looked slightly wrong, which is the
+   hardest kind of bug to find in a screenshot.
+
+   Put the spacing on a wrapper element instead. scripts/qa.mjs fails the build if
+   the two are ever combined again. */
 .tap {
   padding-block: 14px;
   margin-block: -14px;
@@ -228,18 +248,24 @@ body {
    that type alone was not doing.
    --------------------------------------------------------------------------- */
 
-/* Eyebrow chip. Their section labels sit in a yellow block rather than floating
-   as grey mono caps. Same information, far more energy, and it gives every
-   section a visible entry point on a page this long. Ink on yellow is 13.37:1. */
+/* Section eyebrow. THIS REVERSED DIRECTION and the reversal is the design's, not a
+   simplification: the previous pass put every section label in a filled yellow
+   block, read off notyourcollege.com. The OSC Figma sets all of them — PROJECTS,
+   PROGRAMMES, HALL OF FAME, UPSTREAM WORK, INDEX, JOIN — as plain 12px mono caps in
+   secondary grey, and uses yellow only for the primary action and a small number of
+   accents. Fourteen yellow blocks per page was the louder system; this is the one
+   in the file.
+
+   Kept as `.chip` rather than renamed. The class is applied across six routes, and
+   a rename would be a large diff whose only content is a word — the selector is the
+   seam between "section label" and its styling, which is exactly what should absorb
+   a change of mind about the styling. */
 .chip {
   display: inline-block;
-  padding: 0.35rem 0.7rem;
-  border-radius: 6px;
-  background: rgb(var(--pop));
-  color: rgb(17 17 17);
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.9375rem;
-  letter-spacing: 0.06em;
+  color: rgb(var(--haze));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   line-height: 1;
 }
@@ -311,23 +337,29 @@ body {
   color: rgb(var(--accent));
 }
 
-/* Hard offset shadow on the primary action. Theirs puts a solid black rectangle
-   behind the yellow button with no blur — a poster device, not a soft elevation.
-   Offset in the token colour rather than pure black so it survives dark mode. */
+/* The yellow primary action, with a hard offset shadow and no blur. The Figma keeps
+   this device from the previous pass but smaller — measured off the frames, the
+   offset is ~3px rather than 5px, which at a pill radius reads as a printed second
+   impression rather than a drop shadow.
+
+   Ink is hardcoded rather than tokenised, deliberately: the fill is the SAME yellow
+   in both themes, so text on it must not invert with the theme. `color: rgb(var(--ink))`
+   would put #fbfaf7 on #ffe01a in dark mode — 1.06:1, invisible. The shadow does
+   use the token, because it sits on the page rather than on the yellow. */
 .btn-pop {
   background: rgb(var(--pop));
-  color: rgb(17 17 17);
-  box-shadow: 5px 5px 0 0 rgb(var(--ink));
+  color: rgb(11 11 12);
+  box-shadow: 3px 3px 0 0 rgb(var(--ink));
   transition:
     transform 300ms cubic-bezier(0, 0, 0.5, 1),
     box-shadow 300ms cubic-bezier(0, 0, 0.5, 1);
 }
 .btn-pop:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 3px 3px 0 0 rgb(var(--ink));
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 0 rgb(var(--ink));
 }
 .btn-pop:active {
-  transform: translate(5px, 5px);
+  transform: translate(3px, 3px);
   box-shadow: 0 0 0 0 rgb(var(--ink));
 }
 
@@ -353,7 +385,7 @@ body {
      and 3.45:1 on the other. --bg already inverts in exactly the right direction
      and lands at 6.98 light / 5.63 dark, which is why .btn-primary uses it too. */
   color: rgb(var(--bg));
-  font-family: var(--font-label), system-ui, sans-serif;
+  font-family: var(--font-mono), ui-monospace, monospace;
   font-size: 1.0625rem;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
@@ -373,16 +405,21 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* 44px survives from the Apple pass and is unchanged here: theirs is 44px too,
-     and it is the touch-target floor either way. The radius is what changed —
-     8px rectangles, not pills. A pill reads as software; a hard-cornered block in
-     condensed caps reads as a poster, which is the register now. */
+  /* 44px survives every pass and is not a style choice — it is the touch-target
+     floor, and the nav bar is sized so a 44px control fits inside it.
+
+     BACK TO PILLS. The previous pass moved to 8px rectangles on the argument that
+     "a pill reads as software, a hard-cornered block reads as a poster". The Figma
+     is unambiguous: every button in all fourteen frames is fully rounded — the JOIN
+     action, the LGHT toggle, SEE WHO GOT IN, BACK/NEXT. Type came down from 17px to
+     12px mono to match, which is also why the horizontal padding tightens: 21px
+     around 12px type looks like a mistake. */
   min-height: 44px;
-  padding: 11px 21px;
-  border-radius: 8px;
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 1.0625rem;
-  letter-spacing: 0.04em;
+  padding: 11px 18px;
+  border-radius: 9999px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 400;
   /* Apple's pill measures 20px leading, which is what makes 11px padding land on
@@ -414,10 +451,22 @@ body {
   background: rgb(var(--accent) / 0.08);
 }
 
-/* The sticky CTA reserves its own height rather than covering the last section.
-   A fixed bar that permanently occludes the footer is a bug dressed as a feature. */
-:root[data-cta="1"] body {
-  padding-bottom: 4.5rem;
+/* The nav's compact action. The default .btn is 17px type at 11px/21px padding,
+   which is right for a button in a section and far too heavy for a 56px bar.
+   min-height stays at 44px — that is the touch-target floor, not a style choice,
+   and the bar is 56px tall precisely so a 44px control fits inside it. Only the
+   type and the horizontal padding come down. */
+.btn-compact {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 0.9375rem;
+}
+
+/* Every page starts under a fixed 56px nav. Stated once here rather than as a
+   pt-* utility repeated on six pages, because the number has to match the bar's
+   height and a copy of it on each page is six chances to drift. */
+.page-top {
+  padding-top: 3.5rem;
 }
 
 /* Scroll reveals, at apple.com's measured values: their sections carry
@@ -463,7 +512,19 @@ body {
    the panel is 13.5rem plus its right offset, so 15rem clears it with margin.
    Only at lg+, which is the only place the panel can appear at all. */
 @media (min-width: 1024px) {
-  :root[data-outline="1"] main {
+  /* The padding is on BODY, not on `main`, and that changed for a real bug. With it
+     on `main`, the footer sat outside the padded box — but the compensation rule
+     below applies to every `.band::before` on the page, and the footer IS a band.
+     So the footer's band had its right edge pushed 7.5rem outward with no 15rem of
+     padding to pay for it, which put it 120px past the viewport edge and gave the
+     document a horizontal scroll on all six pages with the panel open. Measured as
+     scrollWidth 1560 against a 1440 viewport, on every route, in both themes.
+
+     Padding the body instead means every band — in `main` or in the footer — sits
+     inside the same reserved box, so one compensation rule is correct for all of
+     them. The fixed nav is positioned against the viewport rather than the body, so
+     it correctly keeps spanning the full width. */
+  :root[data-outline="1"] body {
     padding-right: 15rem;
   }
 
@@ -510,6 +571,80 @@ body {
   background: rgb(var(--band));
   /* Behind this section's own content, in front of the page background. */
   z-index: -1;
+}
+
+/* ---------------------------------------------------------------------------
+   THE INVERTED SURFACE
+
+   The Figma runs several full-bleed sections in the opposite theme to the page —
+   the footer on every route, and the "what we are worse at" band on the home page.
+   Sampled down an empty column: on the light frames those regions are #0b0b0c, and
+   on the dark frames the SAME regions are #fbfaf7. They invert with the theme
+   rather than being permanently dark.
+
+   Implemented by REDEFINING THE TOKENS on the subtree instead of setting colours.
+   Custom properties inherit, so every descendant — cards, hairlines, labels, links,
+   the accent — flips correctly with no per-element overrides and no `dark:` variants.
+   A component dropped inside `.inverse` needs no knowledge that it is there, which
+   is the same property that keeps the two themes from drifting.
+
+   The accent flips too, and that is the load-bearing part: #1b1bff is 7.60:1 on the
+   light ground but 2.48:1 on the dark one, so an inverted section that kept the
+   page's accent would put unreadable links inside it. Each block therefore takes the
+   OTHER theme's accent step, not just the other theme's neutrals.
+   --------------------------------------------------------------------------- */
+.inverse {
+  --bg: 11 11 12;
+  --band: 20 20 20;
+  --raise: 24 24 25;
+  --sunk: 15 15 16;
+  --seam: 42 42 44;
+  --ink: 251 250 247;
+  /* Same contrast-floor treatment as the light set above; --dust bottoms out at
+     4.74:1 on --raise, which is the worst ground on this side. */
+  --haze: 155 154 153;
+  --dust: 132 132 131;
+  --accent: 107 123 255;
+  --accent-soft: 26 28 56;
+  background: rgb(var(--bg));
+  color: rgb(var(--ink));
+}
+
+/* On a dark page the inverted surface is the LIGHT one. Both the OS-preference and
+   the explicit-choice cases, in the same order and for the same reason as the tokens
+   at the top of this file. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .inverse {
+    --bg: 251 250 247;
+    --band: 255 252 239;
+    --raise: 255 255 255;
+    --sunk: 245 244 239;
+    --seam: 224 222 214;
+    --ink: 11 11 12;
+    --haze: 92 92 95;
+    --dust: 110 110 113;
+    --accent: 27 27 255;
+    --accent-soft: 232 232 255;
+  }
+}
+:root[data-theme="dark"] .inverse {
+  --bg: 251 250 247;
+  --band: 255 252 239;
+  --raise: 255 255 255;
+  --sunk: 245 244 239;
+  --seam: 224 222 214;
+  --ink: 11 11 12;
+  --haze: 92 92 95;
+  --dust: 110 110 113;
+  --accent: 27 27 255;
+  --accent-soft: 232 232 255;
+}
+
+/* Full-bleed, for an inverted section that must reach both edges. Same mechanic as
+   `.band::before` and it inherits that rule's fix for the outline panel, because it
+   IS a `.band` — this class only overrides the colour the pseudo-element paints. */
+.band-inverse::before {
+  background: rgb(var(--bg));
 }
 
 /* Scrolls, but without a bar drawn through the nav's bottom hairline. */

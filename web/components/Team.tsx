@@ -51,7 +51,7 @@ import {
   TEAM_OFFICERS,
   TEAM_SHADOWS,
   type TeamMember,
-} from "@/content/club";
+} from "@/content/people";
 
 // One column per lead. The officers split the same width evenly above them, which
 // is what puts their centres on column boundaries — see the header note. This
@@ -143,13 +143,15 @@ const DASHED = "border-dashed border-dust/50";
    `.label` put this section in the page outline as "President". These are the same
    declarations that class carries (0.875rem / 0.07em / dust), just under a selector
    Outline does not treat as a section title.
-   Note the size: the `label` FONT-SIZE token in tailwind.config is 0.6875rem/0.18em,
-   which is a different thing from the `.label` class in globals.css. Matching the
-   class means spelling both values out.
+   Note the size: the `label` FONT-SIZE token in tailwind.config sets its own
+   line-height, which is a different thing from the `.label` class in globals.css.
+   Matching the class means spelling the values out. They were re-measured off the
+   OSC Figma along with everything else — 0.75rem at 0.08em, up from 0.875rem at
+   0.07em — so these track the class rather than the values it used to have.
    It also removes a workaround — with no `.label` specificity to beat, the officer
    tint is a plain `text-accent` rather than an inline style. */
 const CAPTION =
-  "font-label text-[0.875rem] uppercase leading-[1.2] tracking-[0.07em]";
+  "font-label text-[0.75rem] uppercase leading-[1.2] tracking-[0.08em]";
 
 function VLine({
   x,

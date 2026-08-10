@@ -1,808 +1,365 @@
-import Hero from "@/components/hero/Hero";
-import Banner from "@/components/Banner";
-import Doodle from "@/components/Doodle";
-import ProofPanel from "@/components/ProofPanel";
-import Reveal from "@/components/Reveal";
-import StickyCTA from "@/components/StickyCTA";
-import Duo from "@/components/Duo";
-import Nav from "@/components/Nav";
-import Carousel from "@/components/Carousel";
-import Eyebrow from "@/components/Eyebrow";
-import Hall from "@/components/hall/Hall";
-import ApplyForm from "@/components/ApplyForm";
-import Mentors from "@/components/Mentors";
-import Team from "@/components/Team";
-import Roster from "@/components/hall/Roster";
-import {
-  CULTURE,
-  LOOKING_FOR,
-  LINKS,
-  OUTCOMES,
-  PATH,
-  PROGRAMMES,
-  PROGRAMME_COLOUR,
-  PROGRAMME_NAME,
-  PROGRAMME_SHORT,
-  PROJECTS,
-  CALENDAR,
-  FAQ,
-  INSTITUTIONAL,
-  NOT_FOR,
-  POSITIONING,
-  TEAM_SHADOWS,
-  TRACKS,
-  teamSize,
-  totals,
-} from "@/content/club";
-
-// Fully static. No database, no auth, no API routes — the site is HTML plus one
-// lazily-loaded WebGL scene, so it renders identically anywhere and there is
-// nothing to attack.
+// PAGE 1 — ESSENCE.
 //
-// Everything after the hero is deliberately quiet. The 3D moment only reads as
-// premium if what follows it is disciplined; a second spectacle cancels the first.
+// The flow is fixed and the order is the argument: what open source IS, then what it
+// does to your life, then the club's own numbers, then one person saying it in their
+// own words, then the ask. Moving the ask earlier is the obvious temptation and it
+// would break the page — nobody joins a club for a thing they cannot yet describe.
+//
+// Fully static. No database, no API routes, no client JavaScript on this page beyond
+// the shared nav and the scroll settle, so it renders identically anywhere.
 
-export default function Home() {
-  const t = totals();
-  const projects = PROJECTS.filter((p) => p.published);
+import Hero from "@/components/hero/Hero";
+import CommitGraph from "@/components/CommitGraph";
+import Duo from "@/components/Duo";
+import Doodle from "@/components/Doodle";
+import NumbersStrip from "@/components/NumbersStrip";
+import MemberStory from "@/components/MemberStory";
+import NextAction from "@/components/NextAction";
+import {
+  EVERYDAY,
+  GLOSSARY,
+  IMPACT,
+  MAINTAINERS,
+  MAINTAINERS_SOURCE,
+  POSITIONING,
+  WHAT_IT_IS,
+} from "@/content/essence";
+import { JOIN_HREF } from "@/content/site";
 
+export default function Essence() {
   return (
     <>
-      <Nav />
-      {/* Renders nothing; opts the document in to the scroll reveals. */}
-      <Reveal />
       <Hero />
 
-      <main>
-        {/* ---- Apply, immediately below the hero ----------------------------
-            The form cannot live INSIDE the hero: that hero is sticky and
-            scroll-scrubbed, and animating a background under someone who is
-            filling in fields is hostile. Scaler's hero carries its form because
-            their hero is static. So the form gets the very next band instead —
-            one scroll, still the second thing you meet, and it keeps both
-            mechanics intact. */}
-        <section id="apply" className="section pt-24 sm:pt-32">
-          <div className="grid gap-12 lg:grid-cols-[1fr_26rem] lg:gap-20">
-            <div>
-              <p className="label">Applications open</p>
-              <Duo
-                className="mt-6 max-w-2xl text-display-lg"
-                lead="You do not need to be good yet."
-                trail="You need a laptop and a GitHub account."
-              />
-              <p className="measure mt-7 text-body-lg text-haze">
-                Most people arrive having never opened a pull request. That is the
-                normal starting point, not a disqualification — every name further
-                down this page began there.
-              </p>
-
-              {/* The two questions every prospective member asks first, answered
-                  before they have to ask. Straight from the reference, where they
-                  sit under the hero as tiles. */}
-              <div className="mt-10 grid max-w-lg grid-cols-2 gap-3">
-                <div className="rounded-tile border border-seam bg-raise px-5 py-4">
-                  <p className="text-body-lg font-semibold text-accent">Free</p>
-                  <p className="mt-1 text-sm text-haze">No fee, ever</p>
-                </div>
-                <div className="rounded-tile border border-seam bg-raise px-5 py-4">
-                  <p className="text-body-lg font-semibold text-accent">All years</p>
-                  <p className="mt-1 text-sm text-haze">No prior experience</p>
-                </div>
-              </div>
-            </div>
-
-            <ApplyForm />
-          </div>
-        </section>
-
-        {/* ---- The hall: selections into international programmes ----------
-            Placed first because it is the strongest thing the club can say. A
-            named student next to "GSoC 2026" is proof somebody else ran a
-            selection and picked them; everything below is elaboration. */}
-        <section id="hall" aria-label="Students selected into international programmes">
-          <div className="section pt-24 sm:pt-36">
-            <p className="flex items-center gap-2">
-              <span className="chip">Selected</span>
-              <Doodle kind="sparkle" className="h-5 w-5 text-accent" />
-            </p>
-            <Duo
-              className="mt-6 max-w-4xl text-display-lg"
-              lead="Somebody else picked them."
-              trail="GSoC, LFX Mentorship, C4GT, Summer of Bitcoin."
-            />
-            <p className="measure mt-7 text-body-lg text-haze">
-              These are competitive, international selection processes run by other
-              organisations. Getting in is not something a club can award itself.
-            </p>
-          </div>
-          {/* Hall used to sit outside the container because the WebGL stage was
-              full-bleed. It is a normal grid now, so it belongs inside the same
-              measure as every other section. */}
-          <div className="section">
-            <Hall />
-          </div>
-          <Roster />
-        </section>
-
-        {/* ---- What we look for ---------------------------------------------
-            Placed directly after the hall on purpose. A grid of named students
-            selected into international programmes is the page's strongest claim
-            AND its biggest deterrent — the immediate private thought is "they must
-            already be brilliant, I could never". This answers that at the exact
-            moment it occurs, rather than in an FAQ nobody scrolls to. */}
-        <section
-          id="looking-for"
-          className="band section pt-24 pb-24 sm:pt-36 sm:pb-36"
-          aria-label="What the club looks for"
-        >
+      <main id="main">
+        {/* ---- 1. What open source actually is ---------------------------------
+            Opening with the reader's own laptop rather than a definition. "Software
+            built in public" is abstract; "the editor you have open on the other
+            monitor is one of these, here is its source" is not, and it does the
+            convincing before the definition arrives. */}
+        <section id="what-it-is" className="section pt-24 sm:pt-32" aria-label="What open source is">
           <p className="flex items-center gap-2">
-            <span className="chip">What we look for</span>
+            <span className="chip">What it is</span>
             <Doodle kind="squiggle" className="h-5 w-8 text-accent" />
           </p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg"
-            lead="We are not checking whether you can already code."
-            trail="We are checking how you think."
+            lead="You have been using it all day."
+            trail="Nobody told you that you could change it."
           />
           <p className="measure mt-7 text-body-lg text-haze">
-            Syntax is a few weeks of work. Reading somebody else&apos;s codebase and
-            reasoning about it is the part that actually decides whether your first
-            patch gets merged — and it is{" "}
-            <span className="mark">not what any exam measures</span>. There is no
-            test to pass here and no interview to prepare for. This is simply what
-            the work turns out to reward.
+            Open source is software written in public, by anyone, for everyone to use.
+            Not a niche category — the things below are four of the most widely used
+            pieces of software on earth, and you can read every line of all of them
+            right now.
           </p>
 
-          {/* A contrast rather than a list. "We value reasoning" alone is the kind
-              of thing every club says; setting each value against the credential it
-              replaces is what makes it specific enough to be believed. */}
-          <ul className="mt-14 space-y-px overflow-hidden rounded-panel bg-seam">
-            {LOOKING_FOR.map((r) => (
+          <ul className="mt-14 grid gap-4 sm:grid-cols-2">
+            {EVERYDAY.map((e) => (
               <li
-                key={r.yes}
-                className="grid gap-4 bg-raise p-6 sm:grid-cols-2 sm:gap-10 sm:p-8"
+                key={e.name}
+                className="flex flex-col rounded-tile border border-seam bg-raise p-7"
               >
-                <div className="flex items-start gap-3">
-                  {/* Not a red cross. These are not failures — they are simply the
-                      wrong measure, and colouring them as errors would insult the
-                      people who have them. */}
+                <div className="flex items-baseline justify-between gap-4">
+                  <h3 className="font-display text-display-md uppercase leading-none tracking-[-0.005em]">
+                    {e.name}
+                  </h3>
+                  {/* Same reason as the build-day cards: shrink-0 on text from a
+                      data file is a viewport overflow waiting for a longer value. */}
+                  <span className="min-w-0 text-right font-mono text-[11px] uppercase tracking-[0.16em] text-dust">
+                    {e.language}
+                  </span>
+                </div>
+                <p className="mt-4 text-body text-haze">{e.what}</p>
+                <p className="mt-4 text-body text-ink">{e.fact}</p>
+                {/* The spacing lives on the wrapper, not on the link. `.tap` sets
+                    margin-block and padding-block to build a 44px target, so a
+                    margin or padding utility on the same element either loses to it
+                    or breaks its compensation. See the note on .tap in globals.css. */}
+                <div className="mt-auto pt-6">
+                <a
+                  href={e.repo}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="tap group inline-flex items-baseline gap-2 font-mono text-xs text-accent transition hover:brightness-125"
+                >
+                  Read the source
                   <span
                     aria-hidden
-                    className="mt-1 h-px w-4 shrink-0 bg-dust sm:mt-2.5"
-                  />
-                  <p className="text-body text-dust line-through decoration-dust/40">
-                    {r.not}
-                  </p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Doodle
-                    kind="sparkle"
-                    className="mt-0.5 h-4 w-4 shrink-0 text-accent sm:mt-1.5"
-                  />
-                  <p className="text-body-lg font-medium text-ink">{r.yes}</p>
+                    className="transition-transform duration-300 ease-glide group-hover:translate-x-1"
+                  >
+                    ↗
+                  </span>
+                </a>
                 </div>
               </li>
             ))}
           </ul>
-        </section>
 
-        {/* ---- Thesis ------------------------------------------------------ */}
-        <section className="section pt-24 sm:pt-36">
-          <p className="chip">What this is</p>
-          <Duo
-            className="mt-6 max-w-4xl text-display-lg"
-            lead="A club is easy to start."
-            trail="Getting a stranger to merge your code is not."
-          />
-          <div className="measure mt-8 space-y-5 text-body-lg text-haze">
-            <p>
-              Most student open-source groups measure attendance. We measure pull
-              requests a maintainer accepted, because that is the only number
-              somebody outside the room had to agree to.
-            </p>
-            <p>
-              Everything on this page links to the upstream repository. If a claim
-              here cannot be checked in one click, it should not be here.
-            </p>
-          </div>
-
-          {/* Outcomes merged in here rather than living as its own section. Two
-              philosophy blocks separated by Programmes broke the momentum twice,
-              and this argument is the evidence for the claim above — it belongs
-              in the same breath as it. */}
-          <p className="label mt-20">Beyond the stipend</p>
-          <Duo
-            className="mt-6 max-w-4xl text-display-md"
-            lead="The money is the smallest part."
-            trail="What lasts is who ends up knowing your work."
-          />
-          <div className="mt-14 grid gap-x-14 gap-y-10 sm:grid-cols-2">
-            {OUTCOMES.map((o) => (
-              <div key={o.title} className="border-t border-seam pt-6">
-                <h3 className="text-body-lg font-semibold">{o.title}</h3>
-                <p className="mt-3 text-body text-haze">{o.body}</p>
+          {/* The definition, arriving after the examples have done the work. */}
+          <div className="mt-20 grid gap-x-14 gap-y-9 sm:grid-cols-3">
+            {WHAT_IT_IS.map((w) => (
+              <div key={w.title} className="border-t border-seam pt-6">
+                <h3 className="text-body-lg font-semibold">{w.title}</h3>
+                <p className="mt-3 text-body text-haze">{w.body}</p>
               </div>
             ))}
           </div>
 
+          {/* And the mechanic, drawn. This is the one idea that is genuinely hard to
+              say in a sentence, which is the test for whether a diagram earns space. */}
+          <div className="mt-20 rounded-panel border border-seam bg-raise p-8 sm:p-12">
+            <p className="label">How a change actually gets in</p>
+            <Duo
+              className="mt-5 max-w-2xl text-display-md"
+              lead="You do not edit the project."
+              trail="You propose a change to it."
+            />
+            <CommitGraph className="mt-12" />
+          </div>
         </section>
 
-        {/* ---- Projects ---------------------------------------------------- */}
+        {/* ---- 1b. Who actually maintains it ----------------------------------
+            Placed before the career argument on purpose. A page that only ever says
+            "this is good for your resume" produces the contributor maintainers
+            complain about — four pull requests in October and never seen again. This
+            is the counterweight, and it is what makes the section after it readable
+            as a consequence rather than as the point. */}
         <section
-          id="projects"
-          className="band section pt-24 pb-24 sm:pt-36 sm:pb-36"
-          aria-label="Upstream work"
+          id="maintainers"
+          className="section pt-24 sm:pt-32"
+          aria-label="Who maintains open source"
         >
-          <div className="flex flex-wrap items-end justify-between gap-6">
-            <div>
-              <p className="label">Upstream work</p>
-              <Duo
-                as="h2"
-                className="mt-6 text-display-lg"
-                lead="Where our code went."
-                trail="Every line links upstream."
-              />
-            </div>
-            {t.projects > 0 && (
-              <p className="font-mono text-sm tabular-nums text-dust">
-                {t.projects} project{t.projects === 1 ? "" : "s"} · {t.members}{" "}
-                member{t.members === 1 ? "" : "s"}
-              </p>
-            )}
-          </div>
-
-          {projects.length === 0 ? (
-            <div className="mt-12 rounded-tile border border-dashed border-seam px-8 py-16 text-center">
-              <p className="text-display-md font-semibold">Nothing published yet.</p>
-              <p className="measure mx-auto mt-4 text-body text-haze">
-                This fills in as members land work upstream. Each card carries a link
-                to the merged pull request.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* The section's lead visual. Apple puts an image under the headline;
-                  there is no image to put, so the evidence itself is the visual —
-                  see ProofPanel for why that is the honest substitute rather than a
-                  stock photo. */}
-              <ProofPanel />
-              <Carousel label="Upstream contributions" className="mt-14">
-              {projects.map((p) => (
-                <article
-                  key={p.repo}
-                  data-card
-                  /* 18px radius, measured off Apple's cards. */
-                  className="flex w-[19rem] shrink-0 snap-start flex-col rounded-tile border border-seam bg-raise p-7 sm:w-[23rem]"
-                >
-                  {p.tag ? (
-                    <Eyebrow tone={p.tag.tone}>{p.tag.label}</Eyebrow>
-                  ) : (
-                    <Eyebrow>Contribution</Eyebrow>
-                  )}
-
-                  <a
-                    href={p.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tap group mt-3 inline-flex items-baseline gap-2 font-mono text-body-lg text-ink transition-colors duration-300 ease-glide hover:text-accent"
-                  >
-                    {p.repo}
-                    <span
-                      aria-hidden
-                      className="text-dust transition-transform duration-300 ease-glide group-hover:translate-x-1"
-                    >
-                      ↗
-                    </span>
-                  </a>
-
-                  <p className="mt-4 text-sm leading-relaxed text-haze">{p.what}</p>
-                  <p className="mt-4 text-sm leading-relaxed text-ink">{p.did}</p>
-
-                  {/* The proof, given the weight it deserves, pinned to the base
-                      so cards of differing text length still align. */}
-                  {p.proof && (
-                    <div className="mt-auto pt-8">
-                      <Eyebrow>{p.proof.label}</Eyebrow>
-                      <p className="mt-2 font-mono text-display-md font-medium text-accent">
-                        {p.proof.value}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="mt-6 flex flex-wrap items-center gap-x-4 border-t border-seam pt-4 font-mono text-xs text-dust">
-                    {p.memberUrl ? (
-                      <a
-                        href={p.memberUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="tap inline-block text-haze transition-colors hover:text-accent"
-                      >
-                        {p.member}
-                      </a>
-                    ) : (
-                      <span className="text-haze">{p.member}</span>
-                    )}
-                    {p.language && <span>{p.language}</span>}
-                  </div>
-                </article>
-                ))}
-              </Carousel>
-            </>
-          )}
-        </section>
-
-        {/* ---- The programmes: what they are, and what we do about it ------ */}
-        <section id="programmes" className="section pt-24 sm:pt-36">
-          <p className="chip">The programmes</p>
+          <p className="chip">Who is on the other side</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg"
-            lead="Paid, competitive, and open to beginners."
-            trail="Most students never apply because nobody told them these exist."
-          />
-
-          <div className="mt-14 space-y-px overflow-hidden rounded-tile bg-seam">
-            {PROGRAMMES.map((pg) => (
-              <div key={pg.key} className="bg-raise p-8 sm:p-10">
-                <div className="grid gap-8 lg:grid-cols-[16rem_1fr] lg:gap-14">
-                  <div>
-                    {/* Programme name as type, tinted to match its planet in the
-                        system above — never the official logo. Those marks belong
-                        to Google, the Linux Foundation and others, and using them
-                        implies an endorsement nobody granted. */}
-                    <p
-                      className="text-display-md font-semibold leading-none"
-                      style={{ color: PROGRAMME_COLOUR[pg.key] }}
-                    >
-                      {PROGRAMME_SHORT[pg.key]}
-                    </p>
-                    <p className="mt-2 font-mono text-xs text-dust">
-                      {PROGRAMME_NAME[pg.key]}
-                    </p>
-                    <a
-                      href={pg.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="tap mt-4 inline-block font-mono text-xs text-accent hover:brightness-125"
-                    >
-                      Official site ↗
-                    </a>
-                  </div>
-
-                  <dl className="grid gap-6 sm:grid-cols-2">
-                    {[
-                      ["What it is", pg.what],
-                      ["Who gets in", pg.who],
-                      ["When it runs", pg.when],
-                      ["What it pays", pg.pays],
-                    ].map(([k, v]) => (
-                      <div key={k}>
-                        <dt className="label">{k}</dt>
-                        <dd className="mt-2 text-sm leading-relaxed text-haze">{v}</dd>
-                      </div>
-                    ))}
-                    <div className="sm:col-span-2 border-t border-seam pt-5">
-                      <dt className="label" style={{ color: PROGRAMME_COLOUR[pg.key] }}>
-                        What the club does
-                      </dt>
-                      <dd className="mt-2 text-sm leading-relaxed text-ink">{pg.weDo}</dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ---- Calendar -----------------------------------------------------
-            The only honest urgency device the club owns. The argument is
-            arithmetic, not a countdown: organisations select contributors who
-            already have months of commits in their repo, so "next year" is a
-            skipped cycle rather than a delay. No exact dates — they move annually
-            and a stale date costs more than it buys on a page claiming accuracy. */}
-        <section id="calendar" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <p className="chip">The reverse clock</p>
-          <Duo
-            className="mt-6 max-w-4xl text-display-lg"
-            lead="Applications are decided months before they open."
-            trail="Which is why starting now is the whole trick."
+            lead="There is a person at the other end of your pull request."
+            trail="Usually an unpaid one."
           />
           <p className="measure mt-7 text-body-lg text-haze">
-            Organisations pick contributors they already recognise. By the time a
-            proposal window opens, the people who get in have been committing to
-            that repository since autumn. Waiting a year does not delay you by a
-            year — it costs you the cycle.
+            This is the part that changes how you behave, and almost nobody explains it
+            before somebody&apos;s first contribution.
           </p>
 
-          <div className="mt-14 overflow-x-auto">
-            <table className="w-full min-w-[52rem] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-seam">
-                  {["Window", "Programme", "Opens", "Start prepping", "What you do first"].map((h) => (
-                    <th key={h} scope="col" className="px-3 py-3 text-left font-mono text-[11px] font-medium uppercase tracking-[0.14em] text-dust">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {CALENDAR.map((r) => (
-                  <tr key={r.programme} className="border-b border-seam/60 align-top last:border-0">
-                    <td className="px-3 py-5 font-mono text-xs text-accent">{r.window}</td>
-                    <td className="px-3 py-5 font-medium text-ink">{r.programme}</td>
-                    <td className="px-3 py-5 text-haze">{r.opens}</td>
-                    <td className="px-3 py-5 font-mono text-xs text-ember">{r.prepFrom}</td>
-                    <td className="max-w-sm px-3 py-5 text-haze">{r.doingNow}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* ---- Why this and not the CP club --------------------------------- */}
-        <section id="why-us" className="section pt-24 sm:pt-36">
-          <p className="chip">Choosing a club</p>
-          <Duo
-            className="mt-6 max-w-4xl text-display-lg"
-            lead="Competitive programming has a fixed number of winners."
-            trail="Open source does not."
-          />
-
-          {/* Two kinds of row live here, and the first layout treated them as one:
-              claims that cite a figure, and the reasoning that connects them. Rows
-              without a `stat` were rendered into the same stat column as an empty
-              cell, so a reader scanning the numbers hit blank space where a figure
-              should be and read it as missing data.
-
-              Now a single hairline runs the height of the section and the figures
-              are pinned along it, right-aligned against it. A row with no figure
-              does not break the line — it continues it, which is what "this is the
-              argument between two pieces of evidence" should look like. Cited rows
-              carry full-strength ink; the connective rows step down one level to
-              haze, so the hierarchy says which sentences have a source behind
-              them. The structure now encodes the distinction instead of losing it. */}
-          <div className="mt-14 border-t border-seam pt-10">
-            {POSITIONING.map((c, i) => (
-              <div key={i} className="grid gap-2 sm:grid-cols-[7rem_1fr] sm:gap-0">
-                <div className="sm:pr-8 sm:text-right">
-                  {c.stat && (
-                    <p className="text-display-md font-semibold text-accent">
-                      {c.stat}
-                    </p>
-                  )}
-                </div>
-                <div
-                  className={`sm:border-l sm:border-seam sm:pl-8 ${
-                    i === POSITIONING.length - 1 ? "pb-0" : "pb-10"
-                  }`}
-                >
-                  <p
-                    className={`measure text-body-lg ${
-                      c.stat ? "text-ink" : "text-haze"
-                    }`}
-                  >
-                    {c.line}
-                  </p>
-                  {/* Every claim terminates in a third-party link. With no
-                      testimonials and no placement data, external verifiability is
-                      the substitute for social proof — and it is the only thing
-                      that makes an attack on a rival activity fair. */}
-                  {c.source && (
-                    <a
-                      href={c.source.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="tap mt-3 inline-block font-mono text-xs text-accent hover:brightness-125"
-                    >
-                      {c.source.label} ↗
-                    </a>
-                  )}
-                </div>
+          <div className="mt-14 grid gap-x-14 gap-y-10 sm:grid-cols-3">
+            {MAINTAINERS.map((m) => (
+              <div key={m.title} className="border-t border-seam pt-6">
+                <h3 className="text-body-lg font-semibold">{m.title}</h3>
+                <p className="mt-3 text-body text-haze">{m.body}</p>
               </div>
             ))}
           </div>
-        </section>
 
-        {/* ---- How the club actually runs ----------------------------------- */}
-        <section id="culture" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <p className="chip">What it&apos;s like</p>
-          <Duo
-            className="mt-6 max-w-4xl text-display-lg"
-            lead="It is mostly people arguing about code with Maggi."
-            trail="Which is the point."
-          />
-
-          <div className="mt-14 grid gap-4 sm:grid-cols-2">
-            {CULTURE.map((c) => (
-              <div
-                key={c.title}
-                className="rounded-tile border border-seam bg-raise p-7"
-              >
-                <h3 className="text-body-lg font-semibold">{c.title}</h3>
-                <p className="mt-3 text-body text-haze">{c.body}</p>
-              </div>
-            ))}
+          <div className="mt-8">
+            <a
+              href={MAINTAINERS_SOURCE.url}
+              target="_blank"
+              rel="noreferrer"
+              className="tap inline-block font-mono text-xs text-accent transition hover:brightness-125"
+            >
+              {MAINTAINERS_SOURCE.label} ↗
+            </a>
           </div>
         </section>
 
-        {/* ---- Tracks ------------------------------------------------------ */}
-        <section id="tracks" className="section pt-24 sm:pt-36">
-          <p className="chip">Three tracks</p>
-          <Duo
-            className="mt-6 text-display-lg"
-            lead="What you can work on."
-            trail="Three tracks, three difficulties."
-          />
-
-          <div className="mt-14 space-y-px overflow-hidden rounded-2xl bg-seam">
-            {TRACKS.map((track, i) => (
-              <div key={track.name} className="bg-raise p-8 sm:p-10">
-                <div className="grid gap-6 lg:grid-cols-[20rem_1fr] lg:gap-12">
-                  <div>
-                    {/* Numbered because the three tracks ARE ordered by difficulty —
-                        the section headline says "three difficulties", so the order
-                        carries the information. */}
-                    <span className="step" aria-hidden>
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <h3 className="mt-4 font-display text-display-md uppercase leading-none tracking-[-0.005em]">
-                      {track.name}
-                    </h3>
-                    <p className="mt-3 font-mono text-xs text-accent">
-                      {track.summary}
-                    </p>
-                  </div>
-                  <p className="text-body text-haze lg:pt-2">{track.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
-        <section id="path" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <p className="chip">How a first contribution actually goes</p>
-          <Duo
-            className="mt-6 max-w-3xl text-display-lg"
-            lead="Four steps."
-            trail="The third is the one people skip."
-          />
-
-          {/* Numbered markers are usually decoration, and were nearly cut for that
-              reason. They stay because here the order is the content: the headline
-              points at "the third", so a reader has to be able to find which step
-              that is.
-
-              Which is exactly what the previous 2x2 grid prevented. Four numbered
-              items in two columns can be read across (01, 02 / 03, 04) or down
-              (01, 03 / 02, 04), and nothing on screen said which — so the one
-              sentence above it that depends on position was unresolvable. A single
-              column has one reading order. It also costs nothing: these are four
-              short steps, not a dense grid needing the horizontal room. */}
-          <ol className="mt-14 max-w-3xl">
-            {PATH.map((s, i) => (
-              <li
-                key={s.step}
-                className="grid gap-x-6 gap-y-3 sm:grid-cols-[3.2rem_1fr]"
-              >
-                {/* The numeral was 12px mono in the margin. It is a filled blue
-                    block now — the sequence has to survive being scanned, and the
-                    headline above it points at "the third", so finding step three
-                    at a glance is the whole job. */}
-                <span className="step sm:justify-self-end" aria-hidden>
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                {/* The gap has to live INSIDE the bordered element. With the padding
-                    on the <li> the rule only spanned each text block and broke in
-                    every gap between steps — four detached ticks instead of one
-                    line through the sequence. */}
-                <div
-                  className={`sm:border-l sm:border-seam sm:pl-8 ${
-                    i === PATH.length - 1 ? "pb-0" : "pb-9"
-                  }`}
-                >
-                  <h3 className="font-display text-display-md uppercase leading-none tracking-[-0.005em]">
-                    {s.step}
-                  </h3>
-                  <p className="mt-3 text-body text-haze">{s.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        {/* A deliberate stop, placed where the argument has just finished: the
-            reader has learned how a first contribution goes, so "start one" lands
-            here. See Banner for why this is not redundant with the sticky bar. */}
-        <div className="pt-24 sm:pt-36">
-          <Banner />
-        </div>
-
-        {/* ---- Mentors ------------------------------------------------------ */}
-        {/* aria-label because this section no longer has a nav link — "Team" took
-            that slot — so the outline panel is how it gets reached. */}
+        {/* ---- 1c. The vocabulary --------------------------------------------
+            The most open-source-specific thing on the site. The barrier to a first
+            contribution is very often linguistic rather than technical: a second-year
+            who writes fine Python still will not open a PR when the contributing guide
+            says "rebase onto upstream/main and squash before we triage". */}
         <section
-          id="mentors"
-          className="section pt-24 sm:pt-36"
-          aria-label="Mentors"
+          id="vocabulary"
+          className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
+          aria-label="The vocabulary of open source"
         >
-          <p className="chip">Who reads your code</p>
-          <Duo
-            className="mt-6 max-w-4xl text-display-lg"
-            lead="Not professors."
-            trail="People who did this recently, under the same constraints."
-          />
-          <p className="measure mt-7 text-body-lg text-haze">
-            Every mentor here has been through one of these programmes themselves.
-            What they offer is narrow and recent: they wrote the proposal, sat
-            through the review comments and landed the patch, from this campus,
-            within the last couple of years. Each entry says what they shipped,
-            links the public record, and names the few things they are genuinely
-            useful for.
+          <p className="flex items-center gap-2">
+            <span className="chip">The words</span>
+            <Doodle kind="squiggle" className="h-5 w-8 text-accent" />
           </p>
-          <Mentors />
-        </section>
-
-        {/* ---- The team -------------------------------------------------------
-            Directly after Mentors, and that adjacency is the point: both sections
-            answer "who are the humans here", so they belong in one spread rather
-            than scattered either side of an argument. Mentors goes first because a
-            prospective member cares more about who reviews their patch than who
-            books the room.
-
-            Deliberately NOT near the top. Eight named office-holders ahead of the
-            hall would be the club introducing itself before it has shown that
-            anybody outside it agreed — the same reason the hall leads the page.
-            Placed here it also sets up #institutional below, which asks a faculty
-            member to email organisers this section has just named.
-
-            aria-label, despite the section having a visible eyebrow: Outline names
-            a section from its aria-label first, then a `.label` eyebrow, then its
-            heading — and this eyebrow is a `.chip`. Without this the outline entry
-            would be the Duo headline cut at 33 characters ("8 people run this club.
-            2 are sha…"). It is also the landmark's accessible name, and matches the
-            nav link that points here. */}
-        <section id="team" className="section pt-24 sm:pt-36" aria-label="Team">
-          <p className="chip">Who runs it</p>
           <Duo
             className="mt-6 max-w-4xl text-display-lg"
-            lead={`${teamSize()} people run this club.`}
-            trail={`${TEAM_SHADOWS.length} are shadows, training to take over.`}
+            lead="Nobody is going to explain these to you."
+            trail="So here they are."
           />
+          {/* The count is DERIVED. Written as "Twelve words" it was a number in prose
+              that silently goes wrong the first time somebody adds a thirteenth term —
+              the same class of drift the numbers strip is built to avoid. */}
           <p className="measure mt-7 text-body-lg text-haze">
-            This page exists to answer one
-            question: <span className="mark">who to ask</span>. 
+            {GLOSSARY.length} words that get used constantly and explained never. Not
+            knowing them is the most common reason a capable person never opens their
+            first pull request, and every one of us had to work them out{" "}
+            <span className="mark">by being confused in public</span>.
           </p>
-          <Team />
-        </section>
 
-        {/* ---- Who this is not for ------------------------------------------
-            An explicit filter immediately before the ask. Stating who should not
-            join makes the invitation read as selective rather than desperate. */}
-        <section id="who-not-for" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <p className="chip">Be honest with yourself</p>
-          <Duo
-            className="mt-6 max-w-4xl text-display-lg"
-            lead="This is not for everyone."
-            trail="Four reasons to walk away now."
-          />
-          <ul className="mt-12 max-w-3xl space-y-6">
-            {NOT_FOR.map((n) => (
-              <li key={n} className="flex gap-4 border-t border-seam pt-6">
-                <span aria-hidden className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-ember" />
-                <span className="text-body text-haze">{n}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {/* ---- FAQ ---------------------------------------------------------- */}
-        <section id="faq" className="section pt-24 sm:pt-36">
-          <p className="chip">Questions</p>
-          <Duo
-            className="mt-6 max-w-4xl text-display-lg"
-            lead="The seven things people actually ask."
-          />
-          <dl className="mt-12 max-w-3xl">
-            {FAQ.map((f) => (
-              <div key={f.q} className="border-t border-seam py-7">
-                <dt className="text-body-lg font-semibold">{f.q}</dt>
-                <dd className="measure mt-3 text-body text-haze">{f.a}</dd>
+          {/* A definition list, because that is what it is. Two columns at lg so
+              twelve terms do not become a twelve-screen scroll on a laptop. */}
+          <dl className="mt-14 grid gap-x-14 gap-y-px sm:grid-cols-2 lg:gap-x-20">
+            {GLOSSARY.map((g) => (
+              <div key={g.term} className="border-t border-seam py-6">
+                <dt className="font-mono text-body-lg text-accent">{g.term}</dt>
+                <dd className="mt-2.5 text-body text-haze">{g.meaning}</dd>
               </div>
             ))}
           </dl>
         </section>
 
-        {/* ---- Join -------------------------------------------------------- */}
-        <section id="join" className="band section pt-24 pb-24 sm:pt-36 sm:pb-36">
-          <div className="seam-fade" />
-          {/* Centred, unlike every other section here, because this one is
-              structurally an Apple tile rather than an argument: short headline,
-              one supporting line, two pills. Seen in Chrome on their homepage —
-              the iPhone tile is exactly this shape, centred, with a filled and an
-              outlined pill side by side.
+        {/* ---- 2. How it changes your life ------------------------------------ */}
+        <section
+          id="impact"
+          className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
+          aria-label="How open source changes your career"
+        >
+          <p className="chip">Why it matters</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg"
+            lead="Nobody is going to read your college projects."
+            trail="They will read your commits."
+          />
+          <p className="measure mt-7 text-body-lg text-haze">
+            This is the part that sounds like a pitch and is not. Every line below is a
+            mechanism you can trace, and the reason it works is boring: open source is
+            the only part of your CV that a stranger has already{" "}
+            <span className="mark">checked for you</span>.
+          </p>
 
-              The other thirteen sections stay left-aligned deliberately. Apple
-              centres short tile copy, not paragraphs; our headlines are two-clause
-              arguments over three lines and centred ragged text is measurably
-              harder to read. Copying the alignment everywhere would be copying the
-              look without the reason. */}
-          <div className="pt-20 text-center sm:pt-28">
-            <Duo
-              className="mx-auto max-w-3xl text-display-lg"
-              lead="Want your name in the commit log?"
-              trail="Start here."
-            />
-            <p className="measure mx-auto mt-7 text-body-lg text-haze">
-              Bring a laptop and a GitHub account. You do not need to be good yet —
-              a first contribution is mostly about learning how the process works.
-            </p>
-
-            <div className="mt-11 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href={`mailto:${LINKS.email}`}
-                className="btn btn-primary"
-              >
-                Get in touch
-              </a>
-              <a
-                href={LINKS.github}
-                target="_blank"
-                rel="noreferrer"
-                className="btn btn-secondary"
-              >
-                Our GitHub
-              </a>
-            </div>
+          <div className="mt-14 grid gap-x-14 gap-y-11 sm:grid-cols-2">
+            {IMPACT.map((i) => (
+              <div key={i.title} className="border-t border-seam pt-7">
+                <h3 className="text-display-md font-semibold leading-tight">
+                  {i.title}
+                </h3>
+                <p className="mt-4 text-body text-haze">{i.body}</p>
+                {i.aside && (
+                  <p className="mt-4 flex gap-3 text-sm leading-relaxed text-ink">
+                    <Doodle
+                      kind="sparkle"
+                      className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+                    />
+                    {i.aside}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
-        </section>
 
-        {/* ---- For faculty, sponsors and maintainers -------------------------
-            Two of this site's three audiences previously had nowhere to land. An
-            anonymous club reads as vaporware to a faculty member and a maintainer
-            at the same time, so this band is concrete, contactable, and makes
-            exactly one small specific ask. */}
-        <section id="institutional" className="section pt-24 sm:pt-36">
-          <div className="rounded-tile border border-seam bg-raise p-8 sm:p-12">
-            <p className="chip">For faculty, sponsors and maintainers</p>
+          {/* ---- The comparison a student is actually making -------------------
+              Left in place from the previous design because it is the strongest
+              sourced argument on the site, and because every number in it survived a
+              round of fact-checking that cut two better-sounding claims. */}
+          <div className="mt-24">
+            <p className="label">Choosing a club</p>
             <Duo
-              className="mt-6 max-w-3xl text-display-md"
-              lead="What this club is, in plain terms."
+              className="mt-6 max-w-4xl text-display-md"
+              lead="Competitive programming has a fixed number of winners."
+              trail="Open source does not."
             />
-            <div className="mt-10 grid gap-x-14 gap-y-8 sm:grid-cols-3">
-              {INSTITUTIONAL.map((i) => (
-                <div key={i.title}>
-                  <h3 className="text-body-lg font-semibold">{i.title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-haze">{i.body}</p>
+
+            {/* Two kinds of row live here and an earlier layout treated them as one:
+                claims that cite a figure, and the reasoning connecting them. Rows
+                without a stat were rendered into the same stat column as an empty
+                cell, so a reader scanning the numbers hit blank space and read it as
+                missing data. Now one hairline runs the height of the section with the
+                figures pinned along it — a row with no figure continues the line
+                rather than breaking it, and steps down to haze, so the hierarchy says
+                which sentences have a source behind them. */}
+            <div className="mt-12 border-t border-seam pt-10">
+              {POSITIONING.map((c, i) => (
+                <div key={i} className="grid gap-2 sm:grid-cols-[7rem_minmax(0,1fr)] sm:gap-0">
+                  <div className="sm:pr-8 sm:text-right">
+                    {c.stat && (
+                      <p className="text-display-md font-semibold text-accent">
+                        {c.stat}
+                      </p>
+                    )}
+                  </div>
+                  <div
+                    className={`sm:border-l sm:border-seam sm:pl-8 ${
+                      i === POSITIONING.length - 1 ? "pb-0" : "pb-10"
+                    }`}
+                  >
+                    <p
+                      className={`measure text-body-lg ${
+                        c.stat ? "text-ink" : "text-haze"
+                      }`}
+                    >
+                      {c.line}
+                    </p>
+                    {/* Every claim terminates in a third-party link. With no
+                        testimonials and no placement data, external verifiability is
+                        the substitute for social proof — and the only thing that
+                        makes criticising a rival activity fair. */}
+                    {c.source && (
+                      <div className="mt-3">
+                        <a
+                          href={c.source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="tap inline-block font-mono text-xs text-accent transition hover:brightness-125"
+                        >
+                          {c.source.label} ↗
+                        </a>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
-            <a
-              href={`mailto:${LINKS.email}`}
-              className="mt-10 inline-block rounded-md border border-seam px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-accent/60"
-            >
-              Email the organisers
-            </a>
+
+            {/* A "What we are worse at" panel used to close this section, listing
+                TRADE_OFFS under the argument that a comparison naming only our own
+                advantages gets discounted wholesale. It was dropped on request, and
+                it stays dropped through the Figma rebuild: that rebuild moved the
+                visual language only and states so itself, so its copy of the panel
+                is the pre-removal file being carried forward rather than a decision
+                to bring it back.
+
+                TRADE_OFFS is still exported from content/essence.ts rather than
+                deleted alongside — it is the written-down version of what the club
+                tells people it is bad at, and that is worth keeping addressable if
+                the section ever returns. */}
           </div>
         </section>
 
-        {/* ---- Footer ------------------------------------------------------ */}
-        <footer className="section pb-16 pt-24 sm:pt-36">
-          <div className="seam-fade" />
-          <div className="flex flex-wrap items-start justify-between gap-8 pt-10">
-            <div>
-              <p className="font-semibold">Scaler Open Source Club</p>
-              <p className="mt-2 max-w-sm text-sm text-haze">
-                A student club at Scaler School of Technology.
-              </p>
-            </div>
-            <p className="font-mono text-xs text-dust">scaleropensourcelabs.com</p>
-          </div>
-        </footer>
-      </main>
+        {/* ---- 3. The club in numbers ----------------------------------------- */}
+        <section id="numbers" className="section pt-24 sm:pt-32" aria-label="The club in numbers">
+          <p className="chip">Where we are</p>
+          <Duo
+            className="mt-6 max-w-3xl text-display-lg"
+            lead="Small, new, and counting honestly."
+          />
+          <p className="measure mt-7 text-body-lg text-haze">
+            Everything here is derived from the other four pages rather than typed in
+            by hand, so it cannot say more than the evidence does. Click through and
+            check any of it.
+          </p>
+          <NumbersStrip />
+        </section>
 
-      {/* Appears once past the hero, hides over the apply form. */}
-      <StickyCTA />
+        {/* ---- 4. One member, first person ------------------------------------ */}
+        <section
+          id="story"
+          className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
+          aria-label="A member's story"
+        >
+          <p className="chip">In their words</p>
+          <Duo
+            className="mt-6 max-w-4xl text-display-lg"
+            lead="One person, unedited."
+            trail="Including the part where it was confusing."
+          />
+          <MemberStory />
+        </section>
+
+        {/* ---- 5. The one action --------------------------------------------- */}
+        <NextAction
+          eyebrow="Next"
+          lead="You do not need to be good yet."
+          trail="You need a laptop and a GitHub account."
+          body="Everybody on the other four pages started exactly where you are, including the ones with merged code in projects you have heard of. The form takes two minutes, there is nothing to prepare, and it opens on the beginner path."
+          href={`${JOIN_HREF}?path=build-day`}
+          cta="Join the club"
+        />
+      </main>
     </>
   );
 }
