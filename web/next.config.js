@@ -62,7 +62,10 @@ const CSP = [
     "connect-src 'self'",
     "https://firestore.googleapis.com",
     "https://*.googleapis.com",
-    isDev ? "ws: http://localhost:*" : "",
+    // 127.0.0.1 as well as localhost, and they are NOT interchangeable to CSP: the
+    // Firestore emulator binds 127.0.0.1, so a policy allowing only `localhost:*`
+    // blocks it — the form would fail locally in the one setup meant for testing it.
+    isDev ? "ws: http://localhost:* http://127.0.0.1:*" : "",
   ]
     .filter(Boolean)
     .join(" "),

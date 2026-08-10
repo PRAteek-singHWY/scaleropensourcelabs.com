@@ -212,6 +212,69 @@ it; App Check's reCAPTCHA does — register the domain in the **App Check** sect
 
 ---
 
+## Testing it without a Firebase project
+
+You can run the entire form — real submit, real rules, a real database you can browse —
+with **no Firebase project and no credentials**, using the emulator. Do this before
+touching production. It is also the only honest way to test a change to
+`firestore.rules`.
+
+Needs Java (the emulator is a JAR) and nothing else.
+
+```bash
+# terminal 1 — from the repo root
+npx firebase-tools emulators:start --only firestore --project demo-osc
+
+# terminal 2 — point the site at it
+cd web
+cat > .env.local <<'ENV'
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-osc
+NEXT_PUBLIC_FIRESTORE_EMULATOR=127.0.0.1:8080
+ENV
+npm run dev
+```
+
+Submit the form at `/join`, then open **<http://127.0.0.1:4000/firestore>** and you
+will see the document. Rules are enforced exactly as in production, so a submission
+that the emulator accepts is one production will accept.
+
+The `demo-` project prefix is what makes this safe: the SDK refuses to reach real
+Google services for it, so there is no way to accidentally write into the organisers'
+actual collection.
+
+Delete `.env.local` when you are done, or the form will keep pointing at an emulator
+that is no longer running.
+
+### Testing the rules directly
+
+```bash
+npm run rules:emulator      # with the emulator running
+```
+
+Eighteen assertions: that a genuine application is accepted, that optional fields are
+genuinely optional, and that reads, updates, deletes, writes to other collections,
+out-of-set values, extra fields, malformed emails, oversized fields, missing required
+fields and a client-forged timestamp are all refused.
+
+Run it whenever you touch `firestore.rules` or the form's fields. `npm run rules` is
+the cheap text check that runs in CI; this one actually executes the rules, which is
+the difference between "the file says `allow read: if false`" and "a read was attempted
+and refused".
+
+> **A trap worth knowing.** If you query the emulator over its REST API to check your
+> data, an unauthenticated read returns an **empty list rather than an error**, because
+> `allow read: if false` denies it. That looks exactly like "my write silently failed".
+> Add the emulator's admin bypass:
+>
+> ```bash
+> curl -s -H "Authorization: Bearer owner" \
+>   "http://127.0.0.1:8080/v1/projects/demo-osc/databases/(default)/documents/applications"
+> ```
+>
+> Or just use the emulator UI, which is already privileged.
+
+---
+
 ## Reading submissions
 
 **Firestore → Data → `applications`.** Access is governed by who has permissions on

@@ -12,7 +12,8 @@
     "smoke": "node scripts/smoke.mjs",
     "browsers": "node scripts/browsers.mjs",
     "palette": "node scripts/palette.mjs",
-    "rules": "node scripts/rules.mjs"
+    "rules": "node scripts/rules.mjs",
+    "rules:emulator": "node scripts/rules-emulator.mjs"
   },
   "dependencies": {
     "firebase": "^12.17.1",

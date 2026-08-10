@@ -38,11 +38,27 @@ const config = {
  *  token, so it is configured in production and simply absent in development. */
 const APP_CHECK_KEY = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_KEY ?? "";
 
+/** Point the client at a local Firestore emulator, e.g. "127.0.0.1:8080".
+ *
+ *  This is how somebody works on the form WITHOUT a Firebase project at all: start the
+ *  emulator, set this plus a `demo-` project id, and submissions land in a local
+ *  database they can inspect at http://127.0.0.1:4000/firestore. Without it, the only
+ *  way to test a real submit was against production, which means either test rows in
+ *  the organisers' real applications or no testing.
+ *
+ *  Rules are enforced by the emulator exactly as in production, so this also exercises
+ *  firestore.rules rather than bypassing it. See scripts/rules-emulator.mjs. */
+const EMULATOR = process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR ?? "";
+
 /** The three values without which nothing can work. `apiKey` and `projectId` are
  *  obvious; `appId` is included because App Check and Analytics both need it and a
  *  half-filled config that initialises and then fails per-request is worse than one
  *  that declines to initialise at all. */
 export function isConfigured(): boolean {
+  // Against the emulator only a projectId is needed — there is no real project to
+  // authenticate to, and requiring the full set would mean inventing five fake values
+  // just to run locally.
+  if (EMULATOR) return Boolean(config.projectId);
   return Boolean(config.apiKey && config.projectId && config.appId);
 }
 
@@ -59,6 +75,11 @@ async function getApp(): Promise<FirebaseApp | null> {
       // with the same name throws, and in dev this module is re-evaluated on every
       // edit — so this is not hypothetical tidiness.
       const app = getApps().length ? existing() : initializeApp(config);
+
+      // App Check is skipped entirely against the emulator: reCAPTCHA cannot be
+      // satisfied on localhost without a debug token, and the emulator does not
+      // enforce attestation anyway.
+      if (EMULATOR) return app;
 
       // App Check. Attests that requests come from this app before Firestore will
       // accept them, which is the only thing standing between a create-only public
@@ -89,12 +110,26 @@ async function getApp(): Promise<FirebaseApp | null> {
   return appPromise;
 }
 
+/** Guards the emulator wiring. `connectFirestoreEmulator` throws if called twice on
+ *  the same instance, and `getFirestore` returns the SAME instance for an app — so
+ *  without this, the second submit on a page would throw instead of writing. */
+let emulatorConnected = false;
+
 /** The Firestore handle, or null when Firebase is not configured. */
 export async function getDb(): Promise<Firestore | null> {
   const app = await getApp();
   if (!app) return null;
-  const { getFirestore } = await import("firebase/firestore");
-  return getFirestore(app);
+  const { getFirestore, connectFirestoreEmulator } = await import("firebase/firestore");
+  const db = getFirestore(app);
+
+  if (EMULATOR && !emulatorConnected) {
+    const [host, port] = EMULATOR.split(":");
+    connectFirestoreEmulator(db, host, Number(port));
+    emulatorConnected = true;
+    console.info(`[osc] Firestore -> emulator ${EMULATOR} (no data leaves this machine)`);
+  }
+
+  return db;
 }
 
 /** The single collection this site writes to. Named here so the rules file, the
