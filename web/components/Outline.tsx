@@ -129,7 +129,7 @@ export default function Outline() {
         aria-pressed={open}
         aria-controls="page-outline"
         title="Outline view"
-        className="hidden h-11 w-11 items-center justify-center rounded-full border border-seam text-haze transition-colors duration-300 ease-glide hover:border-accent/60 hover:text-ink lg:flex lg:h-9 lg:w-9"
+        className="hidden h-11 w-11 items-center justify-center rounded-full border border-seam text-haze transition-colors duration-200 ease-in-out hover:border-accent/60 hover:text-accent lg:flex lg:h-9 lg:w-9"
       >
         <span className="sr-only">
           {open ? "Hide the page outline" : "Show the page outline"}
@@ -164,8 +164,11 @@ export default function Outline() {
             ref={panel}
             aria-label="Page outline"
             // Anchored below the nav rather than vertically centred, so it cannot
-            // reach the header at any viewport height or list length.
-            className="plate fixed right-5 top-[4.25rem] z-40 hidden max-h-[calc(100vh-6rem)] w-[13.5rem] overflow-y-auto rounded-tile border border-seam p-3 lg:block"
+            // reach the header at any viewport height or list length. 4.75rem
+            // rather than 4.25: the nav floats now, and its bottom edge sits at
+            // 4rem at this breakpoint, so the old value left a 4px slot of page
+            // showing between two panes of glass.
+            className="plate fixed right-5 top-[4.75rem] z-40 hidden max-h-[calc(100vh-6.5rem)] w-[13.5rem] overflow-y-auto rounded-tile border border-seam p-3 lg:block"
           >
             <p className="label px-2 pb-2 pt-1">On this page</p>
             <ul className="space-y-px">
@@ -176,7 +179,7 @@ export default function Outline() {
                   <a
                     href={`#${i.id}`}
                     aria-current={current ? "true" : undefined}
-                    className={`block rounded-md px-2 py-1.5 text-[13px] leading-snug transition-colors duration-200 ease-glide ${
+                    className={`block rounded-md px-2 py-1.5 text-[15px] leading-snug transition-colors duration-200 ease-glide ${
                       current
                         ? "bg-sunk font-medium text-ink"
                         : "text-haze hover:text-ink"

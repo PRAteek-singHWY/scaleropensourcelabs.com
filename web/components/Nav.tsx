@@ -1,17 +1,22 @@
-// Nav, in the register Apple actually uses: 12px, centred, evenly spaced, and
-// near-invisible until you look for it.
+// Nav, as a floating glass plate rather than a bar welded to the top edge.
 //
-// Measured off apple.com — their global nav is 12px with a muted grey fill and no
-// weight. It works because a nav's job on a page like this is to be findable, not
-// to announce itself; the hero is doing the announcing. Anything heavier competes
-// with the one thing you want read first.
+// The register is still quiet — a nav's job on a page like this is to be
+// findable, not to announce itself; the hero is doing the announcing — but it is
+// now detached: inset from all three edges, rounded, and lifted off the page by
+// a 4%-black shadow. That single change is most of what separates a 2019 site
+// header from a current one, and it costs nothing structurally.
 //
-// The frosted plate is measured off apple.com rather than approximated. Their
-// global nav computes to rgba(255,255,255,0.8) with
-// `backdrop-filter: saturate(1.8) blur(20px)`. The saturate is the part that was
-// missing here — a plain blur greys out whatever passes beneath it, and the 1.8
-// boost is what makes Apple's glass look like glass rather than frosted plastic.
-// Height 44px matches theirs exactly (h-11).
+// The plate itself (fill, blur, shadow) is `.plate` in globals.css, shared with
+// the outline panel. Two rules matter here:
+//
+//   * Its width matches the content measure (88rem), not the viewport. A plate
+//     that runs edge to edge is a bar with rounded corners; one that lines up
+//     with the copy underneath reads as part of the same layout, and the links
+//     land directly above the text they scroll to.
+//
+//   * Its bottom edge is 3.75rem from the top of the viewport (0.75rem inset +
+//     3rem plate), 4rem at sm+. `scroll-padding-top: 5rem` in globals.css is
+//     derived from that. Change the inset or the height and it moves too.
 //
 // This was briefly a client component that watched for pinned-dark sections
 // beneath it and swapped to their palette. With the 3D gone there are no
@@ -33,14 +38,20 @@ const ITEMS = [
 
 export default function Nav() {
   return (
-    <header className="plate fixed inset-x-0 top-0 z-50 border-b border-seam/60">
+    <header className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-6">
       <nav
         aria-label="Main"
-        className="mx-auto flex h-11 max-w-[76rem] items-center justify-between gap-6 px-6 sm:px-8"
+        // 88rem, tracking `.section`. This number is not independent: the plate's
+        // whole idea is that its width IS the content measure, so a section that
+        // widened to 88rem while the nav stayed at 80rem would put the plate's edges
+        // 64px inside every heading beneath it — visible on any screen wide enough
+        // for the cap to bind, and exactly the kind of 64px misalignment that reads
+        // as "slightly off" without being locatable.
+        className="plate mx-auto flex h-12 max-w-[88rem] items-center justify-between gap-4 rounded-2xl border border-seam/70 px-4 sm:gap-4 sm:px-6"
       >
         <Link
           href="/"
-          className="-my-3 inline-block shrink-0 py-3 text-xs font-medium tracking-tight text-ink transition-colors duration-300 ease-glide hover:text-accent"
+          className="-my-3 inline-block shrink-0 py-3 text-sm font-extrabold tracking-tight text-ink transition-colors duration-200 ease-in-out hover:text-accent"
         >
           OSC
         </Link>
@@ -52,12 +63,12 @@ export default function Nav() {
             nothing could scroll. The strip now scrolls, so every item stays
             reachable, and the logo and toggle stay pinned either side of it. A
             partially-cut last item is the scroll affordance. */}
-        <ul className="scroll-strip flex min-w-0 flex-1 items-center gap-6 overflow-x-auto sm:flex-none sm:justify-center sm:gap-7">
+        <ul className="scroll-strip flex min-w-0 flex-1 items-center gap-4 overflow-x-auto sm:flex-none sm:justify-center sm:gap-5">
           {ITEMS.map((i) => (
             <li key={i.href}>
               <a
                 href={i.href}
-                className="-my-3 inline-block whitespace-nowrap py-3 text-xs text-haze transition-colors duration-300 ease-glide hover:text-ink"
+                className="nav-link -my-3 inline-block whitespace-nowrap py-3"
               >
                 {i.label}
               </a>
@@ -70,7 +81,7 @@ export default function Nav() {
             href="https://github.com/PRAteek-singHWY"
             target="_blank"
             rel="noreferrer"
-            className="-my-3 hidden py-3 text-xs text-haze transition-colors duration-300 ease-glide hover:text-ink sm:inline-block"
+            className="nav-link -my-3 hidden py-3 sm:inline-block"
           >
             GitHub ↗
           </a>

@@ -28,18 +28,14 @@ import {
 export default function Mentors() {
   const mentors = publishedMentors();
 
-  if (mentors.length === 0) {
-    return (
-      <div className="mt-14 rounded-tile border border-dashed border-seam px-8 py-16">
-        <p className="text-display-md font-semibold">No mentors listed yet.</p>
-        <p className="measure mt-4 text-body text-haze">
-          Each entry needs that person&apos;s own permission, and a public link to
-          the programme they came through. Nothing appears here on the strength of
-          a description alone.
-        </p>
-      </div>
-    );
-  }
+  /* Renders NOTHING when there is nobody to list, rather than the dashed "No
+     mentors listed yet" panel this used to show. That panel explained the
+     publishing bar — own permission, public link — to a reader who had not asked
+     and could not act on it, and page.tsx now hides the entire #mentors section
+     on the same condition, so in practice this branch is unreachable from the
+     page. It stays because the component must not depend on its caller checking
+     first. See the gate in page.tsx. */
+  if (mentors.length === 0) return null;
 
   const graduated = mentors.filter((m) =>
     /graduat/i.test(m.situation),
@@ -50,16 +46,16 @@ export default function Mentors() {
       {/* The durability claim, as a count rather than an adjective. If the number
           is small, the small number is still more persuasive than "lifelong". */}
       {graduated > 0 && (
-        <p className="measure mt-7 text-body text-haze">
+        <p className="measure mt-4 text-body text-haze">
           {graduated} of the {mentors.length} mentors below have already graduated
           and still take office hours.
         </p>
       )}
 
-      <div className="mt-14 space-y-px overflow-hidden rounded-tile bg-seam">
+      <div className="mt-8 space-y-px overflow-hidden rounded-tile bg-seam">
         {mentors.map((m) => (
           <article key={m.name} className="bg-raise p-8 sm:p-10">
-            <div className="grid gap-8 lg:grid-cols-[18rem_1fr] lg:gap-14">
+            <div className="grid gap-5 lg:grid-cols-[18rem_1fr] lg:gap-8">
               <div>
                 <h3 className="text-body-lg font-semibold">{m.name}</h3>
                 <p className="mt-1 text-sm text-haze">{m.situation}</p>
@@ -82,7 +78,7 @@ export default function Mentors() {
                     href={m.credential.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="tap mt-2 inline-block font-mono text-xs text-accent hover:brightness-125"
+                    className="tap mt-2 inline-block font-mono text-xs text-accent link-u hover:brightness-125"
                   >
                     Official record ↗
                   </a>
@@ -97,7 +93,7 @@ export default function Mentors() {
                       href={m.shippedUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="whitespace-nowrap font-mono text-xs text-accent hover:brightness-125"
+                      className="whitespace-nowrap font-mono text-xs text-accent link-u hover:brightness-125"
                     >
                       the work ↗
                     </a>
@@ -108,7 +104,7 @@ export default function Mentors() {
                     Naming the boundary of someone's authority is what makes the
                     claim inside it believable — and it is the only thing that
                     makes this section usable rather than decorative. */}
-                <div className="mt-6">
+                <div className="mt-4">
                   <p className="label">Ask them about</p>
                   <ul className="mt-2.5 flex flex-wrap gap-x-2 gap-y-2">
                     {m.askAbout.map((a) => (
@@ -122,7 +118,7 @@ export default function Mentors() {
                   </ul>
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-t border-seam pt-5">
+                <div className="mt-4 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-t border-seam pt-5">
                   {/* A stated commitment, not a claimed disposition. Following
                       Outreachy, which lists mentor eligibility purely as hours. */}
                   <p className="text-sm text-haze">

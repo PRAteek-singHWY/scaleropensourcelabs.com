@@ -26,6 +26,7 @@
 //    same rule the form itself follows.
 
 import { useEffect, useState } from "react";
+import CelebrateLink from "@/components/fx/CelebrateLink";
 
 const DEADLINE = process.env.NEXT_PUBLIC_COHORT_DEADLINE ?? "";
 
@@ -97,14 +98,18 @@ export default function StickyCTA() {
           </p>
           {/* Only rendered when a real date is configured. */}
           {deadline && (
-            <p className="mt-0.5 truncate text-[13px] text-ember">
+            <p className="mt-0.5 truncate text-[15px] text-ember">
               Applications close {deadline}
             </p>
           )}
         </div>
-        <a href="#apply" className="btn btn-primary shrink-0" tabIndex={show ? 0 : -1}>
+        <CelebrateLink
+          href="#apply"
+          className="btn btn-pop shrink-0"
+          tabIndex={show ? 0 : -1}
+        >
           Join the club
-        </a>
+        </CelebrateLink>
       </div>
     </div>
   );

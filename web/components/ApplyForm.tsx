@@ -29,6 +29,7 @@
 // swallowing a submission, which is the worse failure.
 
 import { useState } from "react";
+import { celebrate } from "@/components/fx/celebrate";
 
 const ENDPOINT = process.env.NEXT_PUBLIC_APPLY_ENDPOINT ?? "";
 /** ISO date. Renders only while genuinely in the future. */
@@ -49,8 +50,25 @@ function deadlineLabel(): string | null {
 // bands read, --bg and --raise were both #FFFFFF — so a white field sat on a white
 // card and only its 1px border said it was an input at all. --sunk is the recessed
 // fill and exists for exactly this.
+// 2px rather than 1px, and the reason is that this form sits inside a card that
+// is itself 1px-bordered on a dotted page. At 1px the fields read as ruled lines
+// in a table rather than as things you type into; the extra pixel is what makes
+// each one look like its own object.
+//
+// The focus ring is additive to the global :focus-visible outline rather than a
+// replacement for it: the outline only fires for keyboard focus, and a form this
+// long deserves an obvious target under the mouse too. Both are the accent, so
+// a pointer user and a keyboard user see the same colour mean the same thing.
 const field =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
+  // Black keyline and a 4px hard shadow, like every other control in the system —
+  // an input that does not share the button's construction reads as a different
+  // kind of object, and in a form the two sit inches apart.
+  //
+  // On focus the shadow goes electric blue rather than shrinking. The press
+  // animation the buttons use is wrong here: a field is not pressed, it is
+  // entered, and moving it 2px when the caret lands would shift the text somebody
+  // is about to type.
+  "w-full rounded-lg border-2 border-black bg-raise px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none shadow-[4px_4px_0_0_#000] transition duration-150 ease-out focus:shadow-[4px_4px_0_0_#0038FF]";
 
 export default function ApplyForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
@@ -79,6 +97,11 @@ export default function ApplyForm() {
       });
       if (!res.ok) throw new Error(`Submit failed (${res.status})`);
       setState("done");
+      // The one moment on this page that has genuinely earned a celebration:
+      // a submitted application. Fired after the success state is set, and not
+      // awaited — a failed confetti chunk must never be able to swallow the
+      // "you're in the queue" render behind it.
+      void celebrate();
     } catch (err) {
       setState("error");
       setMessage(
@@ -91,7 +114,7 @@ export default function ApplyForm() {
 
   if (state === "done") {
     return (
-      <div className="rounded-tile border border-seam bg-raise p-7">
+      <div className="card card-still rounded-tile bg-raise p-7">
         <p className="text-display-md font-semibold">You&apos;re in the queue.</p>
         <p className="measure mt-3 text-body text-haze">
           Someone will message you before the next session. Nothing else to do —
@@ -102,7 +125,16 @@ export default function ApplyForm() {
   }
 
   return (
-    <div className="rounded-tile border border-seam bg-raise shadow-[0_13px_27px_-5px_rgba(50,50,93,0.18),0_8px_16px_-8px_rgba(0,0,0,0.25)]">
+    // A reveal group, so the card's header strip and the form body arrive one
+    // after the other rather than together. Deliberately only those two — the
+    // group's children are its DIRECT children, so the fields inside the <form>
+    // are untouched. Staggering individual inputs would mean a form that is
+    // visibly assembling itself while somebody is trying to fill it in, which is
+    // the one place on this page where motion would cost a reader something.
+    <div
+      className="card card-still rounded-tile bg-raise shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
+      data-reveal-group
+    >
       <div className="border-b border-seam px-7 py-5">
         <p className="label">Open to all years</p>
         <p className="mt-1.5 text-body-lg font-semibold">Join the club</p>
@@ -194,29 +226,42 @@ export default function ApplyForm() {
         <div className="grid gap-4 sm:grid-cols-2">
           {/* One note for the pair. Repeating "(optional)" in both labels made each
               wrap to two lines inside the two-column grid. */}
-          <p className="text-[13px] text-dust sm:col-span-2">
+          <p className="text-[15px] text-dust sm:col-span-2">
             Both optional — leave them blank if you have not looked yet.
           </p>
-          <div>
+          {/* `flex flex-col` plus `mt-auto` on the input, rather than the plain
+              divs this used to be, and it fixes a real misalignment: the column is
+              about 172px inside a 26rem card, and "Second choice org" set in the
+              label face is just wide enough to wrap where "First choice org" does
+              not. With the label taller on one side, the two inputs sat at
+              different heights — the kind of 20px offset nobody can name and
+              everybody notices.
+
+              Pushing the input to the bottom of its (grid-stretched, therefore
+              equal-height) cell aligns them for ANY label that wraps, rather than
+              for the current strings at the current font. Shortening the copy
+              would have fixed today's render and broken again on the next
+              translation or type change. */}
+          <div className="flex flex-col">
             <label htmlFor="af-org1" className="label mb-2 block">
               First choice org
             </label>
             <input
               id="af-org1"
               name="org1"
-              className={field}
+              className={`${field} mt-auto`}
               placeholder="Kubernetes, OWASP…"
               autoComplete="off"
             />
           </div>
-          <div>
+          <div className="flex flex-col">
             <label htmlFor="af-org2" className="label mb-2 block">
               Second choice org
             </label>
             <input
               id="af-org2"
               name="org2"
-              className={field}
+              className={`${field} mt-auto`}
               placeholder="A backup you would be happy with"
               autoComplete="off"
             />
@@ -230,13 +275,13 @@ export default function ApplyForm() {
             name="updates"
             className="mt-0.5 h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
           />
-          <span className="text-[13px] leading-relaxed text-haze">
+          <span className="text-[15px] leading-relaxed text-haze">
             Message me about sessions and application deadlines.
           </span>
         </label>
 
         {deadline && (
-          <p className="pt-1 text-[13px] font-medium text-ember">
+          <p className="pt-1 text-[15px] font-medium text-ember">
             Applications for this cohort close {deadline}.
           </p>
         )}
@@ -244,16 +289,18 @@ export default function ApplyForm() {
         <button
           type="submit"
           disabled={state === "sending"}
-          className="btn btn-primary w-full disabled:opacity-60"
+          // btn-pop, not btn-primary: the brief names the join action as the
+          // yellow one, and this is that action.
+          className="btn btn-pop w-full disabled:opacity-60"
         >
           {state === "sending" ? "Sending…" : "Apply to join"}
         </button>
 
         {state === "error" && (
-          <p className="text-[13px] leading-relaxed text-ember">{message}</p>
+          <p className="text-[15px] leading-relaxed text-ember">{message}</p>
         )}
 
-        <p className="border-t border-seam pt-4 text-[13px] leading-relaxed text-dust">
+        <p className="border-t border-seam pt-4 text-[15px] leading-relaxed text-dust">
           Not ready to apply? Sit in on a session first — no signup, just turn up.
         </p>
       </form>

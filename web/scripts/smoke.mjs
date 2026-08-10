@@ -50,7 +50,15 @@ await pg.click(OUTLINE);
 await pg.waitForTimeout(300);
 ok("outline closes again", await pg.evaluate(() => !document.querySelector("#page-outline")));
 ok("NO canvas anywhere (3D removed)", await pg.evaluate(() => document.querySelectorAll("canvas").length === 0));
-ok("nav plate composites", await pg.evaluate(() => getComputedStyle(document.querySelector("header")).backgroundColor !== "rgba(0, 0, 0, 0)"));
+// The plate is on the NAV, not on the header. It moved when the nav became a
+// floating glass plate: the <header> is now a transparent fixed positioning
+// wrapper (`inset-x-0 top-3 z-50`) and the <nav> inside it carries `.plate`. This
+// asserted against the wrapper and so measured rgba(0,0,0,0) — a red check on a
+// plate that composites perfectly.
+//
+// Exactly the rot the note above THEME/OUTLINE describes, so it takes the same
+// cure: select the element by what it IS rather than by its position in the tree.
+ok("nav plate composites", await pg.evaluate(() => getComputedStyle(document.querySelector('nav[aria-label="Main"]')).backgroundColor !== "rgba(0, 0, 0, 0)"));
 const h = await pg.evaluate(() => document.body.scrollHeight);
 console.log(`  page height: ${h}px`);
 await b.close();

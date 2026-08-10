@@ -149,7 +149,7 @@ const DASHED = "border-dashed border-dust/50";
    It also removes a workaround — with no `.label` specificity to beat, the officer
    tint is a plain `text-accent` rather than an inline style. */
 const CAPTION =
-  "font-label text-[0.875rem] uppercase leading-[1.2] tracking-[0.07em]";
+  "font-label text-[1rem] font-semibold uppercase leading-[1.2] tracking-[0.07em]";
 
 function VLine({
   x,
@@ -254,7 +254,7 @@ export default function Team() {
           Below lg the stacked list takes over. Both are `display:none` at the other
           breakpoint, which also keeps the accessibility tree to exactly one copy. */}
       <div
-        className="mt-16 hidden lg:grid"
+        className="mt-8 hidden lg:grid"
         style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
         role="img"
         aria-label="Organisation chart of the club team. The same structure is listed below."
@@ -381,7 +381,7 @@ export default function Team() {
       </div>
 
       {/* ---- The same structure, stacked. Below lg only --------------------- */}
-      <ul className="mt-12 space-y-10 lg:hidden">
+      <ul className="mt-7 space-y-6 lg:hidden">
         {[...TEAM_OFFICERS, ...TEAM_LEADS].map((m) => {
           const shadow = SHADOWS.find((s) => s.principal === m.designation);
           const officer = TEAM_OFFICERS.includes(m);
@@ -441,7 +441,7 @@ export default function Team() {
       {/* The key. A dashed line means nothing on its own, and a reader should not
           have to infer it from the two cards it happens to connect. */}
       {SHADOWS.length > 0 && (
-        <p className="mt-16 flex items-center gap-3 border-t border-seam pt-6 font-mono text-xs text-dust">
+        <p className="mt-8 flex items-center gap-3 border-t border-seam pt-6 font-mono text-xs text-dust">
           <span
             aria-hidden
             className="h-0 w-8 shrink-0 border-t border-dashed border-dust/50"

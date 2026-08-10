@@ -73,31 +73,96 @@ export function totals() {
   };
 }
 
+// Declared here rather than at the foot of the file, where it used to sit: TRACKS
+// below reads LINKS.github for its last card, and a `const` referenced before its
+// declaration is a TDZ ReferenceError at module evaluation — the whole page would
+// fail to render, not just the link.
+export const LINKS = {
+  github: "https://github.com/PRAteek-singHWY",
+  security: "/security",
+  email: "opensource@scaleropensourcelabs.com",
+};
+
 export type Track = {
-  name: string;
+  /** Rendered as two lines, the second in the track's own tint. */
+  name: { lead: string; trail: string };
   summary: string;
   detail: string;
-  href?: string;
+  /**
+   * Which colour the card wears. A key rather than a hex: the two values behind
+   * it (a soft fill and an ink that is legible on it) have to invert between
+   * themes, so they live in globals.css as .tint-* and only the name travels
+   * through the content file. See the .tint block there.
+   */
+  tint: "blue" | "mint" | "violet";
+  /** Three at most — they are a scan aid on the card, not a taxonomy. */
+  tags: string[];
+  /**
+   * The dark frame at the foot of each card. Ordinary commands anybody can run,
+   * never simulated output: a fabricated `46 files changed` beside real
+   * contribution figures elsewhere on this page would be indistinguishable from
+   * a claim. Same rule as the code frames in the culture bento.
+   */
+  preview: { title: string; lines: { kind: "cmd" | "out"; text: string }[] };
+  cta?: { label: string; href: string; external?: boolean };
 };
 
 export const TRACKS: Track[] = [
   {
-    name: "Mentored contribution",
+    name: { lead: "Mentored", trail: "contribution" },
     summary: "Where almost everyone starts.",
     detail:
       "A mentor who has already landed work upstream helps you pick a project that genuinely needs help, find an issue sized for a first attempt, and review the patch before a maintainer ever sees it. The goal is your second contribution — once you know a codebase, the next one is much faster.",
+    tint: "blue",
+    // "Beginner" rather than "Beginner friendly": three pills have to hold ONE line
+    // at a third of an 80rem grid, and the longer phrase wrapped — which pushed this
+    // card's code frame a line higher than the other two and broke the row.
+    tags: ["Beginner", "Mentor review", "First PR"],
+    preview: {
+      title: "first-patch",
+      lines: [
+        { kind: "cmd", text: "git switch -c fix/broken-link" },
+        { kind: "out", text: "# small first, always" },
+        { kind: "cmd", text: "gh pr create --fill" },
+        { kind: "out", text: "# then read the review" },
+      ],
+    },
+    cta: { label: "How it goes", href: "#path" },
   },
   {
-    name: "AI security",
+    name: { lead: "AI", trail: "security" },
     summary: "Higher difficulty. The work most likely to get you noticed.",
     detail:
       "Open-source AI tooling shipped fast and is now load-bearing. Members find real weaknesses — credentials committed into model configs, checkpoints that execute code on load, agent frameworks letting untrusted input reach a shell — and land the fix upstream through the project's own coordinated disclosure process.",
+    tint: "mint",
+    tags: ["Disclosure", "Model configs", "Harder"],
+    preview: {
+      title: "audit",
+      lines: [
+        { kind: "cmd", text: 'grep -rn "api_key" configs/' },
+        { kind: "out", text: "# secrets get committed by accident" },
+        { kind: "cmd", text: "cat SECURITY.md" },
+        { kind: "out", text: "# report privately, never in an issue" },
+      ],
+    },
+    cta: { label: "Where it lands", href: "#hall" },
   },
   {
-    name: "Club engineering",
+    name: { lead: "Club", trail: "engineering" },
     summary: "Software the club owns and runs.",
     detail:
       "This site is one of them, and it is open source. Working here is the lowest-friction way to get a first merged pull request, because the maintainer reviewing it is someone you can talk to in person.",
+    tint: "violet",
+    tags: ["This site", "Next.js", "Lowest friction"],
+    preview: {
+      title: "this-site",
+      lines: [
+        { kind: "cmd", text: "git clone …/scaleropensourcelabs.com" },
+        { kind: "cmd", text: "npm install && npm run dev" },
+        { kind: "out", text: "# localhost:3000, then open a PR" },
+      ],
+    },
+    cta: { label: "The repo", href: LINKS.github, external: true },
   },
 ];
 
@@ -109,7 +174,7 @@ export const PATH: { step: string; body: string }[] = [
   },
   {
     step: "Find an issue sized for a first attempt",
-    body: "A failing edge case, a documentation gap, a small refactor. Unglamorous work gets merged; ambitious work gets stalled.",
+    body: "A failing edge case, a documentation gap, a small refactor. Unglamorous work does get merged; that's how you start.",
   },
   {
     step: "Get it reviewed before you send it",
@@ -120,12 +185,6 @@ export const PATH: { step: string; body: string }[] = [
     body: "The first contribution is the hard one. Everything after it compounds, because you already know where things live.",
   },
 ];
-
-export const LINKS = {
-  github: "https://github.com/PRAteek-singHWY",
-  security: "/security",
-  email: "opensource@scaleropensourcelabs.com",
-};
 
 // ---------------------------------------------------------------------------
 // SELECTIONS — the club's strongest claim.
@@ -236,41 +295,6 @@ export type Selection = {
   consented: boolean;
 };
 
-// Awaiting real entries. Each needs a name, programme, year, org, one line of
-// work, and that member's consent to being published.
-export const SELECTIONS: Selection[] = [];
-
-/**
- * The staging list, rendered in local development only.
- *
- * This USED to be pure invention — "Placeholder One" at "Example Foundation" — and
- * the fifteen GSoC entries below are no longer that. They are real students, named
- * by the club, and the rest of the list is still placeholder padding so the grid can
- * be laid out against a full five rows.
- *
- * That mix is why the NODE_ENV gate matters more now, not less. It used to stop a
- * production build shipping obvious nonsense; now it stops it shipping fifteen real
- * people's names before two things exist for each of them:
- *
- *   1. That student's explicit consent to being named on a public page. See rule 1
- *      at the top of this section — it is not satisfied by someone else supplying
- *      the list, however well they know the cohort.
- *   2. A URL that proves the selection. The whole page argues "somebody else picked
- *      them, go and check"; an unlinked name is the one claim on this site a reader
- *      cannot verify.
- *
- * PROMOTING AN ENTRY: move it out of here and into SELECTIONS above, with `org`, a
- * one-line `work`, a proof `url`, and `consented: true`. The moment SELECTIONS has a
- * single entry, publishedSelections() switches to it wholesale and this entire list
- * stops rendering — so promote the cohort together, not one at a time, or the page
- * will show one card where it used to show twenty-five.
- *
- * Grouped, not interleaved: GSoC runs first, then LFX, then C4GT, then SoB. That is
- * the order the roster sorts into anyway, and it puts the heaviest programme where
- * the eye lands first. Twenty-five entries is exactly five rows of five in the grid,
- * so the layout gets reviewed against full rows rather than a ragged tail.
- */
-
 /* The 2026 GSoC cohort, as supplied by the club. `studyYear` is their year of study,
    which is a different axis from the programme year in `year` — both appear on the
    card and conflating them would put "3rd year" in the chip next to GSoC. */
@@ -295,26 +319,32 @@ const GSOC_2025: [name: string, studyYear: string][] = [
   ["Sauhard Gupta", "3rd year"],
 ];
 
-/* Padding for the programmes with no names supplied yet. Deliberately implausible,
-   so a screenshot can never be mistaken for a claim — which is the property the GSoC
-   entries above have now lost, and the reason the gate below is load-bearing.
-
-   The counts hold the total at twenty-five: fifteen real GSoC entries plus five LFX,
-   three C4GT and two SoB. SoB dropped from three to two when the GSoC cohort came in
-   at fifteen rather than fourteen, purely to keep the grid at five clean rows. */
-const PLACEHOLDER_MIX: { programme: Programme; count: number }[] = [
-  { programme: "LFX", count: 5 },
-  { programme: "C4GT", count: 3 },
-  { programme: "SOB", count: 2 },
-];
-
-/* Spelled out rather than numbered. "Placeholder 07" reads like a real identifier
-   at a glance; "Placeholder Seven" cannot be mistaken for one. */
-const PLACEHOLDER_ORDINALS = [
-  "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
-];
-
-const SCAFFOLD: Selection[] = [
+/**
+ * The published list. These render everywhere — local, preview and production.
+ *
+ * PUBLISHED ON THE CLUB'S INSTRUCTION. This array used to be empty, with the cohort
+ * held in a development-only scaffold behind a NODE_ENV gate, because naming a
+ * student on a public page needs that student's consent and no consent record
+ * existed here. The club has since directed twice that the cohort be published. That
+ * is the club's call to make about its own members, and `consented: true` records
+ * that they have made it — the flag now means "the club asserts this person agreed
+ * to be named", which is what it has to mean for anyone but the student to set it.
+ *
+ * WHAT IS STILL MISSING, and it belongs here rather than in a ticket: not one of
+ * these entries has a proof `url`. The page's entire argument is "somebody else
+ * picked them, go and check", and until each name carries a link — the programme's
+ * accepted-projects page, the student's proposal, the announcement — these fifteen
+ * are the only claims on this site a reader cannot verify. The roster prints an em
+ * dash in the Proof column for each, which is honest but is not evidence. Add `url`
+ * per entry as the links come in; nothing else has to change.
+ *
+ * The ten LFX / C4GT / SoB rows that used to pad this list to twenty-five are gone,
+ * deliberately. "Placeholder Seven, Example Foundation" is layout padding, not a
+ * selected student; publishing it would have put visible nonsense on a public page
+ * beside fifteen real people and undercut every real name next to it. Those
+ * programmes get real entries the same way these did.
+ */
+export const SELECTIONS: Selection[] = [
   ...GSOC_2026.map(([name, studyYear]) => ({
     name,
     programme: "GSOC" as Programme,
@@ -329,26 +359,20 @@ const SCAFFOLD: Selection[] = [
     studyYear,
     consented: true,
   })),
-  ...PLACEHOLDER_MIX.flatMap(({ programme, count }) =>
-    Array.from({ length: count }, () => programme),
-  ).map((programme, i) => ({
-    // Falls back to the index if the mix ever outgrows the ordinal list, so a bumped
-    // count degrades to an ugly name rather than `Placeholder undefined`.
-    name: `Placeholder ${PLACEHOLDER_ORDINALS[i] ?? i + 1}`,
-    programme,
-    // Alternating, so the year column and the roster's newest-first sort both have
-    // something to actually sort.
-    year: i % 2 === 0 ? "2026" : "2025",
-    org: "Example Foundation",
-    work: "Replace with what this member actually built, in one specific sentence.",
-    consented: true,
-  })),
 ];
 
+/**
+ * `consented` is still the gate, and it is now the ONLY one — per entry, rather than
+ * per environment. An entry without it renders nowhere, so adding a name to the
+ * array above stays a deliberate two-part act.
+ *
+ * The NODE_ENV branch that used to live here went with the scaffold it served. It
+ * existed to keep unconsented names out of a production build; with the cohort
+ * published there is no second list to fall back to, and a development-only source
+ * of names is exactly what made local and production disagree about who the club is.
+ */
 export function publishedSelections(): Selection[] {
-  const real = SELECTIONS.filter((s) => s.consented);
-  if (real.length > 0) return real;
-  return process.env.NODE_ENV === "production" ? [] : SCAFFOLD;
+  return SELECTIONS.filter((s) => s.consented);
 }
 
 /** Programme counts, derived so the headline can never drift from the list. */
@@ -540,57 +564,150 @@ export const CULTURE: { title: string; body: string }[] = [
 // So the argument is deliberately NOT "our thing is easier to win". It is that
 // open source pays out below the top prize and competitive programming mostly
 // does not. That is the floor, not the ceiling, and it is defensible.
+//
+// THE THIRD COLUMN. A student on this campus is realistically choosing between
+// three clubs, not two, so the AI/ML club is in the comparison rather than
+// implied. It carries NO FIGURES, and that is deliberate: there is no rulebook
+// to cite for a hackathon and no published national admit rate for a Kaggle
+// competition, so every AI/ML cell is a structural statement about how the
+// activity works — open entry, a fixed prize pool, a leaderboard that closes —
+// which is checkable by anyone who has entered one. Inventing a stat to fill
+// the column would break the same rule the two claims above were cut for.
+//
+// Each row is also written so the CP and AI/ML cells are ones their own members
+// would agree with. "Who signs off" concedes the judge outright. A comparison a
+// rival would call unfair is one a reader discounts entirely, and this section
+// only works if it survives being read by someone in both other clubs.
 
-export type Claim = {
+export type Cell = {
   stat?: string;
   line: string;
-  source?: { label: string; url: string };
+  sources?: { label: string; url: string }[];
 };
 
-export const POSITIONING: Claim[] = [
+export type Comparison = {
+  /** The question the row answers. Renders as the row header. */
+  axis: string;
+  cp: Cell;
+  aiml: Cell;
+  osc: Cell;
+};
+
+export const COMPARISON: Comparison[] = [
   {
-    stat: "3",
-    line: "Only one team from a given institution may advance to the ICPC World Finals. Three students, per college, per year. That is the rulebook, not our opinion.",
-    source: {
-      label: "ICPC Regional Rules",
-      url: "https://icpc-iiitdm.vercel.app/onsite-rules.pdf",
+    axis: "How many can win",
+    cp: {
+      stat: "3",
+      line: "Only one team from a given institution may advance to the World Finals. Three students, per college, per year. Ten Indian teams reached Baku in 2025 — thirty students, for the entire country. They earned every place; the door is simply that narrow by design.",
+      sources: [
+        {
+          label: "ICPC Regional Rules",
+          url: "https://icpc-iiitdm.vercel.app/onsite-rules.pdf",
+        },
+        { label: "ICPC 2025 standings", url: "https://cphof.org/standings/icpc/2025" },
+      ],
+    },
+    aiml: {
+      line: "A hackathon or a Kaggle competition ranks everyone who entered and pays the top of the list. How many places exist is decided before registration opens.",
+    },
+    osc: {
+      stat: "∞",
+      line: "No rule caps how many people from your college get code merged into Kubernetes. Competitive programming is a sport with a fixed number of podium places. Open source is a backlog with an unbounded number of open issues.",
     },
   },
   {
-    stat: "30",
-    line: "Ten Indian teams reached the 2025 World Finals in Baku. Thirty students, for the entire country. They earned every place. The door is simply that narrow by design.",
-    source: { label: "ICPC 2025 standings", url: "https://cphof.org/standings/icpc/2025" },
-  },
-  {
-    line: "There is no rule capping how many people from your college can get code merged into Kubernetes. Competitive programming is a sport with a fixed number of podium places. Open source is a backlog with an unbounded number of open issues.",
-  },
-  {
-    stat: "8.4%",
-    // 1,280 not 1,272. Google's May announcement said 1,272; the August final
-    // statistics post — which is what we link — says 1,280. Citing one figure and
-    // linking a source that states another is the exact failure this whole section
-    // exists to avoid, so the number now matches the page it points at.
-    line: "GSoC accepted 1,280 people from 15,240 applicants in 2025. This is not the soft option, and we will not pretend it is. The difference is what you are left holding if you do not get in — a rating graph, or commits with your name on them.",
-    source: {
-      label: "Google Open Source Blog",
-      url: "https://opensource.googleblog.com/2025/08/google-summer-of-code-2025-contributor-statistics.html",
+    axis: "Odds at the top",
+    cp: {
+      line: "The World Finals is the ceiling and it is brutal. Nothing on this page pretends otherwise.",
+    },
+    aiml: {
+      line: "The leaderboard is public and open, which means you are ranked against everyone who entered — including people who do this full time.",
+    },
+    osc: {
+      stat: "8.4%",
+      // 1,280 not 1,272. Google's May announcement said 1,272; the August final
+      // statistics post — which is what we link — says 1,280. Citing one figure and
+      // linking a source that states another is the exact failure this whole section
+      // exists to avoid, so the number now matches the page it points at.
+      line: "GSoC accepted 1,280 people from 15,240 applicants in 2025. This is not the soft option, and we will not pretend it is.",
+      sources: [
+        {
+          label: "Google Open Source Blog",
+          url: "https://opensource.googleblog.com/2025/08/google-summer-of-code-2025-contributor-statistics.html",
+        },
+      ],
     },
   },
   {
-    line: "ICPC eligibility runs out: five regional years, two World Finals, and you must still be enrolled. Your commit history has no eligibility clause, and GSoC dropped its student-only requirement in 2022.",
-    source: {
-      label: "GSoC eligibility change",
-      url: "https://opensource.googleblog.com/2021/11/expanding-google-summer-of-code-in-2022.html",
+    axis: "What you keep if you do not get in",
+    cp: {
+      line: "A rating graph. It is a real measure of real skill, and it lives on one site, in one profile.",
+    },
+    aiml: {
+      line: "A model in a notebook. Good work — and the competition it was built for closes, and the leaderboard is archived.",
+    },
+    osc: {
+      line: "Commits with your name on them, in a repository other people run in production. Merged is merged whether or not the stipend came with it.",
     },
   },
   {
-    line: "India now has the largest open-source contributor base in the world. American developers still contribute more per head. That gap is the entire reason this club exists.",
-    source: {
-      label: "GitHub Octoverse 2025",
-      url: "https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/",
+    axis: "When you stop being eligible",
+    cp: {
+      line: "Five regional years, two World Finals, and you must still be enrolled. The clock is part of the format.",
+    },
+    aiml: {
+      line: "Kaggle has no student rule. Most campus hackathons do — the badge goes with the enrolment.",
+    },
+    osc: {
+      line: "Your commit history has no eligibility clause, and GSoC dropped its student-only requirement in 2022.",
+      sources: [
+        {
+          label: "GSoC eligibility change",
+          url: "https://opensource.googleblog.com/2021/11/expanding-google-summer-of-code-in-2022.html",
+        },
+      ],
+    },
+  },
+  {
+    axis: "Who signs off on your work",
+    cp: {
+      line: "An automated judge, in thirty seconds. The fastest feedback loop of the three and unbeatable for getting quick at DSA. What it cannot tell you is whether another person could read what you wrote.",
+    },
+    aiml: {
+      line: "A metric on a held-out set. Objective and immediate, and indifferent to everything a number cannot see — including whether anybody but you can run the code.",
+    },
+    osc: {
+      line: "A maintainer who has to read your patch, push back on it, and then live with it for years. The slowest signal of the three — a pull request can sit for three weeks — and the only one where a working engineer reviews your code the way your future colleagues will.",
+    },
+  },
+  {
+    axis: "What it pays",
+    cp: {
+      line: "Prize money at the top of the bracket. Below it, the return is the skill itself — which is not nothing, but it is not a stipend.",
+    },
+    aiml: {
+      line: "A prize pool, split between the teams that place.",
+    },
+    osc: {
+      line: "GSoC, LFX Mentorship, C4GT and Summer of Bitcoin pay stipends to contributors who are nowhere near the best in the country. The money is the floor here, not the ceiling.",
     },
   },
 ];
+
+/**
+ * The closing line under the comparison table.
+ *
+ * Deliberately not a row: it is not a fact about any of the three clubs, it is
+ * the reason this one exists. Putting it in the grid would have forced two
+ * invented cells to sit beside it.
+ */
+export const COMPARISON_NOTE = {
+  line: "India now has the largest open-source contributor base in the world. American developers still contribute more per head. That gap is the entire reason this club exists.",
+  source: {
+    label: "GitHub Octoverse 2025",
+    url: "https://github.blog/news-insights/octoverse/octoverse-a-new-developer-joins-github-every-second-as-ai-leads-typescript-to-1/",
+  },
+};
 
 /**
  * What we are worse at.
@@ -771,7 +888,17 @@ export const FAQ: { q: string; a: string }[] = [
 // Two of this site's three audiences previously had no real estate at all. An
 // anonymous club reads as vaporware to a faculty member and to a maintainer
 // simultaneously, so this band exists to be concrete and contactable, and to make
-// exactly one small, specific, fundable ask.
+// exactly one ask.
+//
+// THE ASK IS FOR PEOPLE, NOT MONEY, and it used to be the other thing — a room, a
+// projector, a small budget for the domain and refreshments. That version was easy
+// to grant and easy to ignore, and it was not what the club actually runs short of:
+// almost everyone who leaves leaves in the stretch where nothing works yet. So
+// "What we need" now asks for the members who sit through that stretch.
+//
+// Keep it that way. Put a budget line back and the faculty CTA underneath this band
+// stops being an invitation and becomes a funding request, which is a different
+// email to a different person.
 
 export const INSTITUTIONAL: { title: string; body: string }[] = [
   {
@@ -784,7 +911,7 @@ export const INSTITUTIONAL: { title: string; body: string }[] = [
   },
   {
     title: "What we need",
-    body: "A room with power and a projector, and a small budget for the domain and refreshments. Travel support for one conference would be transformative but is not the ask.",
+    body: "People who stay. Almost everyone who quits, quits in the stretch where nothing works and nothing is fun. We need the ones who sit through it, answer the person behind them, and bring one more next term.",
   },
 ];
 

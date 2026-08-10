@@ -22,8 +22,8 @@ import { LINKS } from "@/content/club";
 export default function Banner() {
   return (
     <div className="section">
-      <div className="relative overflow-hidden rounded-panel border border-seam bg-band px-6 py-8 sm:px-10 sm:py-9">
-        <div className="flex flex-col gap-7 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
+      <div className="card relative overflow-hidden rounded-panel bg-band px-6 py-8 sm:px-10 sm:py-9">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-10">
           <div className="flex items-start gap-4">
             {/* The doodle sits with the text rather than floating decoratively —
                 it points at the sentence. */}
@@ -31,7 +31,7 @@ export default function Banner() {
               kind="bolt"
               className="mt-1 h-7 w-5 shrink-0 text-accent"
             />
-            <p className="font-display text-display-md uppercase leading-[1.05] tracking-[-0.005em]">
+            <p className="font-display text-display-md font-bold leading-[1.25] tracking-[-0.015em]">
               The people who get in{" "}
               <span className="relative whitespace-nowrap">
                 <span className="tone">started early</span>

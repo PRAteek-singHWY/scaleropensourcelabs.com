@@ -26,7 +26,7 @@ export default function Eyebrow({
 }) {
   return (
     <p
-      className={`font-mono text-[11px] uppercase tracking-[0.16em] ${TONE[tone]}`}
+      className={`font-mono text-[13px] uppercase tracking-[0.16em] ${TONE[tone]}`}
     >
       {children}
     </p>

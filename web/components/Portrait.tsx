@@ -38,17 +38,38 @@ function pick(name: string, n: number): number {
   return h % n;
 }
 
-/* The fallback tint comes from the BRAND, not from an arbitrary hue.
-   The first version derived a hue from the name across the full 360 degrees, which
-   was right for a neutral palette and wrong for this one: against cobalt and yellow,
-   a wall of random pastels reads as a rendering accident. Rendered, they came out as
-   washed-out yellow-greens that belonged to no part of the design.
-   Two brand tints, chosen deterministically per name, gives a grid that varies
-   without leaving the palette. Both are tints of tokens, so both follow the theme. */
+/* Four pastel gradients, chosen deterministically per name.
+   An earlier version composited two brand tints at low alpha over the theme's own
+   recessed surface, so the fallback followed light and dark automatically. That
+   was the correct answer for a page of grey tiles and the wrong one for a page of
+   stickers: at 22% over --sunk the whole wall came out as barely-tinted grey,
+   which is exactly the "unfinished website" reading this component exists to
+   avoid.
+
+   These are opaque and FIXED — they do not follow the theme, and that is the
+   decision worth stating. A portrait placeholder stands in for a photograph, and
+   a photograph does not invert; a wall of light pastel frames on a dark page
+   reads as a wall of pictures, which is what it is. It also means the monogram's
+   contrast is a single known pair rather than one per theme (see INITIAL_INK).
+
+   Four rather than two because a five-column grid of twenty-five cards shows a
+   two-way alternation as obvious banding. Four with a hash-derived index reads as
+   variety. */
+/* Each entry is a BASE colour plus the gradient painted over it, and the split is
+   not decorative — see the note on the render below for what it costs to merge
+   them. The base is always the gradient's first stop, so the two agree. */
 const TINTS = [
-  "rgb(var(--accent) / 0.22)",
-  "rgb(var(--pop) / 0.34)",
+  { base: "#A5F3FC", grad: "linear-gradient(140deg, #A5F3FC 0%, #FBCFE8 100%)" },
+  { base: "#DDD6FE", grad: "linear-gradient(140deg, #DDD6FE 0%, #A5F3FC 100%)" },
+  { base: "#FDE68A", grad: "linear-gradient(140deg, #FDE68A 0%, #FBCFE8 100%)" },
+  { base: "#D9F99D", grad: "linear-gradient(140deg, #D9F99D 0%, #A5F3FC 100%)" },
 ] as const;
+
+/* Slate-900 at 45%, hardcoded rather than --ink, because the field underneath is
+   always light. --ink inverts and would have put a near-white monogram on cyan in
+   dark mode. Every stop above is light enough that this pair clears its floor in
+   both themes, which is the point of fixing the gradients. */
+const INITIAL_INK = "rgb(15 23 42 / 0.45)";
 
 export default function Portrait({
   name,
@@ -72,25 +93,42 @@ export default function Portrait({
   if (failed) {
     const tint = TINTS[pick(name, TINTS.length)];
     return (
+      // The gradient is painted by a SIBLING LAYER over an opaque base colour,
+      // not by `background: <gradient>` on this element, and it is worth knowing
+      // why before merging the two — they look identical on screen.
+      //
+      // scripts/qa.mjs resolves what is behind a text node by climbing ancestors,
+      // and it treats any ancestor carrying a background-IMAGE as unmeasurable:
+      // the pair gets deferred to a per-element pixel screenshot, because the
+      // painted colour of a gradient cannot be read out of the cascade. Putting
+      // the gradient directly on this div did exactly that to every monogram on
+      // the page — twenty-five in the hall plus the team chart — and turned a
+      // ~40-second eight-viewport sweep into an hour of individual element
+      // captures, each one scrolling the page to its target.
+      //
+      // With an opaque base here, the climb stops at this element's
+      // background-color and the pair is measured from the cascade like every
+      // other one. The base is the gradient's own first stop, so what is measured
+      // is a colour that is genuinely under the text rather than a convenient
+      // stand-in.
       <div
-        className={`relative flex items-center justify-center overflow-hidden bg-sunk ring-1 ring-inset ring-seam ${className}`}
+        className={`relative flex items-center justify-center overflow-hidden ring-1 ring-inset ring-black/5 ${className}`}
         role="img"
         aria-label={name}
+        style={{ backgroundColor: tint.base }}
       >
         <div
           aria-hidden
           className="absolute inset-0"
-          style={{
-            background: `radial-gradient(125% 105% at 50% 118%, ${tint}, transparent 74%)`,
-          }}
+          style={{ backgroundImage: tint.grad }}
         />
         {/* 8cqw put the initials at a fraction of the frame and they read as a
             mistake in a 750px-tall card. They are the whole graphic — size them
             like it. */}
         <span
           aria-hidden
-          className="relative select-none font-semibold tracking-tightest text-ink/40"
-          style={{ fontSize: "clamp(2.5rem, 26cqw, 7rem)" }}
+          className="relative select-none font-extrabold tracking-tightest"
+          style={{ fontSize: "clamp(2.625rem, calc(26cqw + 0.125rem), 7.125rem)", color: INITIAL_INK }}
         >
           {initials(name)}
         </span>

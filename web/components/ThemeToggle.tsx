@@ -88,7 +88,7 @@ export default function ThemeToggle() {
       // announces what it will become is guesswork for a screen reader user.
       aria-label={`Theme: ${LABEL[mode]}. Activate to change.`}
       title={`Theme: ${LABEL[mode]}`}
-      className="flex h-11 w-11 items-center justify-center sm:h-9 sm:w-9 rounded-full border border-seam text-xs text-haze transition-colors duration-300 ease-glide hover:border-accent/60 hover:text-ink"
+      className="flex h-11 w-11 items-center justify-center sm:h-9 sm:w-9 rounded-full border border-seam text-xs text-haze transition-colors duration-200 ease-in-out hover:border-accent/60 hover:text-accent"
     >
       {/* Suppress until the saved value is known, or the icon flips on hydration. */}
       <span

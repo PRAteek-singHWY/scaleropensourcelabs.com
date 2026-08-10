@@ -1,42 +1,73 @@
 import type { Metadata } from "next";
-import { Anton, JetBrains_Mono, Poppins, Staatliches } from "next/font/google";
+import { JetBrains_Mono, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-// Three faces, each with one job — the type system read off notyourcollege.com,
-// which is the reference for this pass. All self-hosted at build time by
-// next/font, so there is no third-party request and no layout shift.
+// TWO faces, where there were four. Both self-hosted at build time by next/font,
+// so there is no third-party request and no layout shift.
 //
-// Body. Their body face, and the right call for the register: Poppins is
-// geometric and friendly where Instrument Sans was cool and neutral. The whole
-// point of this direction is warmth.
-const sans = Poppins({
+// This replaces a trio — Anton for display, Staatliches for labels and buttons,
+// Poppins for body — that was read off notyourcollege.com and built for a poster
+// register: heavy, condensed, all-caps, shouting. The audience for this page is
+// sixteen and seventeen year olds deciding whether this club is for them, and a
+// poster shouts AT that reader rather than talking to them.
+//
+// Plus Jakarta Sans does all three jobs. It is the modern humanist geometric the
+// brief asks for — rounder and warmer than Inter, cleaner and less bubbly than
+// Poppins — and crucially it ships 200-800, so display, label and body are
+// weights of ONE family rather than three families pretending to agree. The
+// aliasing that points --font-display and --font-label at it lives in
+// globals.css, next to the note about what that costs (every display usage now
+// has to state its own weight).
+const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-sans",
   display: "swap",
 });
 
-// Display. Their hero uses `kapra-italic`, a commercial face I will not pirate,
-// so this is a deliberate substitution rather than a match: Anton is the closest
-// free equivalent for that heavy condensed poster-caps voice.
+// THE DISPLAY FACE. Headlines only — the hero, every section heading, the big
+// figures. Body, labels and buttons stay on Plus Jakarta Sans above.
 //
-// It has no true italic, and I am NOT faking one with skewX — a synthetically
-// slanted face at 100px+ shows its sheared verticals immediately, which would
-// look cheap at exactly the size where it matters most. Upright and heavy is a
-// worse imitation and a better typeface.
-const display = Anton({
+// SPACE GROTESK, replacing Syne — cool and legible, in that order of difficulty.
+//
+// Syne had the personality and paid for it in reading. Its ascenders and
+// descenders are unusually long, so at 800 a two-line heading fused into one dark
+// block: the descender of "picked" landed in the cap-height of the line below it.
+// The evidence that this was a real problem and not a preference is in
+// tailwind.config.ts — EVERY step of the type scale had to be loosened to
+// accommodate one face. When a typeface forces the whole vertical rhythm to move,
+// the typeface is the thing that is wrong.
+//
+// Space Grotesk keeps the character and gives the space back. It is still
+// distinctly not-neutral — the flat-sided round forms, the single-storey 'a' at
+// display size, the squared terminals — and it is the face this audience already
+// reads as "developer", which is the register the whole page is in. But its
+// extenders are short, its counters are open, and its x-height is large, which is
+// most of what legibility is at small sizes and all of what it is at large ones.
+//
+// Impact and Bebas Neue stay rejected for the reasons below, unchanged:
+//
+//   * IMPACT is a system font. It is not on the web, it is absent from most
+//     Android and many Linux installs, and next/font cannot self-host it — a
+//     headline set in it would be Impact on some machines and whatever Helvetica
+//     the fallback stack lands on elsewhere. A display face that renders
+//     differently per visitor is not a display face.
+//
+//   * BEBAS NEUE HAS NO LOWERCASE. Every heading it touches becomes capitals,
+//     and this page's section headings are two-clause sentences — "Most students
+//     never apply because nobody told them these exist." An earlier pass on this
+//     site already had to remove all-caps headings for exactly this reason: at
+//     display size they ran to three full lines of capitals and read as a wall.
+//
+// 700 IS THE CEILING, and it is why every display call site moved from
+// `font-extrabold` to `font-bold` in the same change. Space Grotesk ships
+// 300–700; an element asking for 800 gets the 700 master plus SYNTHETIC
+// emboldening, which smears an already-heavy face. Asking for what exists is the
+// difference between a bold headline and a blurry one.
+const display = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["500", "700"],
   variable: "--font-display",
-  display: "swap",
-});
-
-// Labels, buttons, eyebrows. Theirs, and it does the job an all-caps condensed
-// face does well: high energy at small sizes without shouting in body copy.
-const label = Staatliches({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-label",
   display: "swap",
 });
 
@@ -78,7 +109,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable} ${label.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      className={`${sans.variable} ${display.variable} ${mono.variable}`}
+    >
       <body>
         {/* Anti-flash for the theme toggle.
             Must be the first node in <body>, NOT in <head>: the App Router hoists
