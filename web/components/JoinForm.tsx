@@ -23,9 +23,11 @@
 //    the last possible moment, and it is exactly the person the club most wants who
 //    would close the tab.
 //
-// 4. No silent failure. There is no backend — the site is static — so with no
-//    endpoint configured the form SAYS so instead of pretending to submit. A form
-//    that swallows an application is worse than one that admits it is not wired up.
+// 4. No silent failure. With no Firebase project configured the form SAYS so instead
+//    of pretending to submit. A form that swallows an application is worse than one
+//    that admits it is not wired up. This is also the default for every contributor:
+//    the repo ships no credentials, so a local checkout gets the honest message rather
+//    than writing test entries into the real collection.
 //
 // 5. No fake validation. `type="email"` and `required` are the browser's, so they
 //    work before hydration and behave the way the reader's browser has taught them.
@@ -39,10 +41,20 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { HEARD_FROM, INTERESTS, LEVELS, LEVEL_LABEL, PATHS } from "@/content/join";
 import { LINKS } from "@/content/site";
-
-const ENDPOINT = process.env.NEXT_PUBLIC_APPLY_ENDPOINT ?? "";
+import { APPLICATIONS, getDb, isConfigured } from "@/lib/firebase";
 /** ISO date. Renders only while genuinely in the future. */
 const DEADLINE = process.env.NEXT_PUBLIC_COHORT_DEADLINE ?? "";
+
+/** Distinguishes "we gave up waiting" from "Firestore said no", because the two need
+ *  different words in front of an applicant. A named class rather than a string match
+ *  on the message, so it cannot be confused with a Firebase error that happens to
+ *  mention time. */
+class TimeoutError extends Error {
+  constructor() {
+    super("Timed out waiting for the application store");
+    this.name = "TimeoutError";
+  }
+}
 
 function deadlineLabel(): string | null {
   if (!DEADLINE) return null;
@@ -258,30 +270,83 @@ export default function JoinForm() {
     e.preventDefault();
     if (state === "sending") return;
 
-    if (!ENDPOINT) {
+    if (!isConfigured()) {
       setState("error");
       setMessage(
-        "This form has no endpoint configured yet, so submitting would send your application nowhere. Email us instead and it will actually reach somebody.",
+        "This form is not connected to anything yet, so submitting would send your application nowhere. Email us instead and it will actually reach somebody.",
       );
       return;
     }
 
-    setState("sending");
+    // Read the fields BEFORE the first await. `e.currentTarget` is null by the time an
+    // async handler resumes — React pools the event and the form reference is gone —
+    // so building FormData after awaiting the Firebase import throws, and it throws in
+    // the one code path a test that never submits would not cover.
     const data = new FormData(e.currentTarget);
+    setState("sending");
+
     try {
-      const res = await fetch(ENDPOINT, {
-        method: "POST",
-        body: data,
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) throw new Error(`Submit failed (${res.status})`);
+      const db = await getDb();
+      // Belt and braces: isConfigured() already returned true, so this is only
+      // reachable if the SDK import itself failed.
+      if (!db) throw new Error("Could not reach the application store");
+
+      const { addDoc, collection, serverTimestamp } = await import("firebase/firestore");
+
+      const str = (k: string) => String(data.get(k) ?? "").trim();
+      // Field names are the form's own, so the stored document reads the same as the
+      // markup. The rules file validates this exact shape — see firestore.rules, and
+      // `npm run rules` for the check that keeps the two in agreement.
+      const doc: Record<string, unknown> = {
+        name: str("name"),
+        email: str("email"),
+        year_branch: str("year_branch"),
+        level: str("level"),
+        path: str("path"),
+        why: str("why"),
+        interests: data.getAll("interests").map(String),
+        updates: data.get("updates") !== null,
+        // The SERVER's clock. The rules require `submitted_at == request.time`, so a
+        // client-supplied Date would be rejected — which is the point: submission
+        // order cannot be forged.
+        submitted_at: serverTimestamp(),
+      };
+      // Optional fields are omitted rather than stored empty, matching the
+      // present-or-absent shape the rules allow.
+      const github = str("github");
+      if (github) doc.github = github;
+      const heard = str("heard_from");
+      if (heard) doc.heard_from = heard;
+
+      // RACED AGAINST A TIMEOUT, because addDoc does not reject when the backend is
+      // unreachable — it queues the write and retries the channel indefinitely. Found
+      // by pointing the client at a project that does not exist: six retries went out,
+      // the promise never settled, and the button said "Sending…" forever with no
+      // message. An applicant would sit there, then leave.
+      //
+      // 12s is chosen to be longer than a slow-but-working submit on campus wifi and
+      // short enough that nobody assumes the page is broken. A rejected permission or
+      // a validation failure still arrives fast and takes the catch below.
+      await Promise.race([
+        addDoc(collection(db, APPLICATIONS), doc),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new TimeoutError()), 12_000),
+        ),
+      ]);
       setState("done");
     } catch (err) {
       setState("error");
+      // The raw Firebase message is not shown. "Missing or insufficient permissions"
+      // tells an applicant nothing and reads as though they did something wrong; it
+      // goes to the console for whoever is debugging instead.
+      console.error("[osc] application submit failed", err);
+      // The two cases need different words, and the distinction is not pedantry: on a
+      // timeout the queued write may still reach Firestore later, so claiming "nothing
+      // was saved" could be false and could produce a duplicate if they resubmit.
       setMessage(
-        err instanceof Error
-          ? `${err.message}. Email us instead and we'll pick it up.`
-          : "Something went wrong. Email us instead.",
+        err instanceof TimeoutError
+          ? "We could not confirm that went through — it may be our end or the network. Rather than have you send it twice, email us and we'll check:"
+          : "That did not go through, and the fault is ours rather than yours. Nothing was saved, so please email us and we'll pick it up:",
       );
     }
   }
@@ -349,7 +414,19 @@ export default function JoinForm() {
           </p>
         )}
 
+        {/* WHAT HAPPENS TO THE DATA. Added when the form started storing submissions
+            instead of posting them nowhere. A form that quietly began keeping names,
+            emails and colleges without saying so would be the exact behaviour this
+            site criticises elsewhere, and it is the applicant's information, not
+            ours. Kept to two sentences and placed where it is read before submitting
+            rather than in a policy page nobody opens. */}
         <p className="border-t border-seam pt-5 text-[13px] leading-relaxed text-dust">
+          What we do with this: your answers go to the club organisers and nowhere
+          else. Nothing here is published on the site — the names on it are only there
+          because those people were asked and said yes.
+        </p>
+
+        <p className="text-[13px] leading-relaxed text-dust">
           Not ready to apply? Turn up to a build day instead — no signup, no form, and
           nobody will ask whether you have contributed before.
         </p>

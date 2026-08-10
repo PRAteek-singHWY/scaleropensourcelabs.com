@@ -41,12 +41,28 @@ npm run dev          # http://localhost:3000
 
 That is the whole setup. There is no `.env` to fill in to see the site.
 
-Two optional variables, needed only to make the join form submit somewhere real:
+All optional, needed only to make the join form submit somewhere real. See
+`.env.example` for the full notes.
 
 | Variable | What it does |
 |---|---|
-| `NEXT_PUBLIC_APPLY_ENDPOINT` | Where the join form POSTs. Unset, the form renders and validates but does not submit. |
+| `NEXT_PUBLIC_FIREBASE_*` | The six web-config values from the Firebase console. All six, or the form treats itself as unconfigured. |
+| `NEXT_PUBLIC_FIREBASE_APPCHECK_KEY` | reCAPTCHA v3 site key for App Check. Production only — leave empty locally. |
 | `NEXT_PUBLIC_COHORT_DEADLINE` | A real date, shown near the form. Unset, no deadline is claimed. |
+
+**Setting Firebase up for the first time: [FIREBASE.md](../FIREBASE.md).** It covers
+creating the project, the one console setting that would otherwise publish every
+applicant's details, deploying the rules, App Check, and a troubleshooting table.
+
+`NEXT_PUBLIC_` on the Firebase values is correct and not an oversight: a Firebase web
+config is a public identifier, not a credential. The security boundary is
+[`firestore.rules`](../firestore.rules) — applications are create-only and no client
+can read them. Deploy rule changes with `firebase deploy --only firestore:rules`;
+editing the file alone changes nothing.
+
+`npm run rules` checks that the rules and the form still agree about the allowed
+values. They are two copies of the same list — Firestore rules cannot import — so it
+fails the build if they drift.
 
 > **Do not run `npm run build` while `npm run dev` is running.** They share the
 > `.next` directory, so building deletes the chunks the dev server is serving. The

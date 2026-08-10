@@ -38,6 +38,13 @@ This used to be a single `club.ts`. It was split when the site became five pages
 because one 800-line file holding five pages' content meant every content PR touched
 it and every one of them conflicted.
 
+> **Editing the join form's options?** `join.ts` holds the four paths, the three
+> experience levels and the interest checkboxes — and `firestore.rules` at the repo
+> root keeps a **second copy** of those values, because Firestore rules cannot import
+> anything. Change one without the other and every applicant who picks the new option
+> gets a permission error on submit, while the page still renders perfectly. Run
+> `npm run rules` to check, and see [FIREBASE.md](FIREBASE.md).
+
 ```ts
 // content/people.ts
 export const ACHIEVERS: Achiever[] = [

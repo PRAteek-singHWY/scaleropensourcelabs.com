@@ -114,8 +114,11 @@ export const CLUB_REPOS: ClubRepo[] = [
   {
     name: "scaleropensourcelabs.com",
     repo: "https://github.com/PRAteek-singHWY/scaleropensourcelabs.com",
+    // "no database and no backend" was true until the join form started writing to
+    // Firestore, and this site's whole argument is that every claim on it is checkable.
+    // A stale boast is the one kind of copy this page cannot carry.
     what:
-      "This website. Next.js, statically rendered, no database and no backend — all the content lives in typed arrays under web/content, so adding a person or a project is an edit to one file.",
+      "This website. Next.js, statically rendered — all the content lives in typed arrays under web/content, so adding a person or a project is an edit to one file. The only moving part is the join form, which writes applications to Firestore.",
     whyStartHere:
       "It is the lowest-friction first pull request that exists for you, because the maintainer reviewing it is somebody you can find in the lab and ask. The repo also carries a CONTRIBUTING.md written for people who have never opened a PR anywhere.",
     stack: ["TypeScript", "Next.js", "Tailwind", "Playwright"],

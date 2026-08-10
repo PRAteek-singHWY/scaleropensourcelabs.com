@@ -43,6 +43,17 @@ jobs:
       - name: Palette constraints
         run: npm run palette
 
+      # firestore.rules hardcodes the join form's allowed values, because Firestore
+      # rules cannot import. This diffs the two copies and asserts the create-only
+      # boundary is still closed.
+      #
+      # It runs in CI because nothing else here would catch the drift: the smoke test
+      # submits no applications and the QA sweep reads pixels. The failure it prevents
+      # is a real applicant getting permission-denied on a path the form offers, with
+      # the page rendering perfectly. Needs no Firebase project and no network.
+      - name: Firestore rules match the form
+        run: npm run rules
+
       - name: Build
         run: npm run build
 

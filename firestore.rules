@@ -1,0 +1,102 @@
+rules_version = '2';
+
+// Firestore security rules for scaleropensourcelabs.com
+//
+// THIS FILE IS THE SECURITY BOUNDARY. The Firebase web config in the client bundle
+// is a public identifier, not a credential (see web/lib/firebase.ts), so nothing here
+// is protected by being hard to find. What protects applicants' data is exactly this
+// file and nothing else.
+//
+// APPLICATIONS CONTAIN A STUDENT'S NAME, EMAIL, COLLEGE YEAR AND BRANCH. Firebase's
+// "test mode" default is `allow read, write: if true` for thirty days, which would
+// make every application readable by anyone who opens the site and types two lines
+// into the browser console. That is the trap this file exists to avoid, and it is why
+// `read` is denied explicitly and unconditionally below rather than merely left
+// unmentioned.
+//
+// The shape is the narrowest thing that works: the public may create one application
+// and may never read, change or delete anything. Organisers read submissions in the
+// Firebase console, where access is governed by Google account permissions on the
+// project rather than by these rules.
+//
+// DEPLOY WITH:  firebase deploy --only firestore:rules
+// Editing this file alone changes nothing until it is deployed. A rules file that is
+// correct in git and permissive in production is the worst case, because review passes.
+//
+// THE CLOSED SETS BELOW MIRROR web/content/join.ts AND MUST NOT DRIFT. Adding a path
+// there and not here means real applicants get a permission error on submit, which
+// presents as an outage rather than as a validation failure. I got two of these values
+// wrong on the first attempt — `some` for `some-git`, `hackathon` for `build-day` —
+// which is why `npm run rules` now diffs this file against the content and fails.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Rules functions must be declared inside a match block, not at service level.
+    function isWellFormedApplication(d) {
+      return
+        // Exactly the expected fields. `hasOnly` is the important half: `hasAll` alone
+        // would let a submitter append a hundred keys of their own.
+        d.keys().hasOnly([
+          'name', 'email', 'year_branch', 'github', 'level', 'path',
+          'interests', 'why', 'heard_from', 'updates', 'submitted_at'
+        ])
+        && d.keys().hasAll([
+          'name', 'email', 'year_branch', 'level', 'path', 'why', 'submitted_at'
+        ])
+
+        // Required strings, bounded. The form's maxlength is a courtesy to the reader;
+        // these are the real limits, because a direct SDK call never sees the form.
+        // `why` matches the textarea's maxLength of 400.
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        && d.email is string && d.email.size() > 3 && d.email.size() <= 200
+        && d.email.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
+        && d.year_branch is string && d.year_branch.size() > 0 && d.year_branch.size() <= 120
+        && d.why is string && d.why.size() > 0 && d.why.size() <= 400
+
+        // Optional strings. Present-or-absent rather than nullable, so the stored
+        // shape stays predictable for whoever reads these later.
+        && (!('github' in d) || (d.github is string && d.github.size() <= 100))
+        && (!('heard_from' in d) || (d.heard_from is string && d.heard_from.size() <= 60))
+
+        // Closed sets — see the drift warning in the header.
+        && d.level in ['none', 'some-git', 'merged']
+        && d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track']
+        && (!('interests' in d) || (
+             d.interests is list
+             && d.interests.size() <= 5
+             && d.interests.hasOnly(['web', 'ml', 'systems', 'design', 'docs'])
+           ))
+        && (!('updates' in d) || d.updates is bool)
+
+        // The server's clock, not the submitter's. `request.time` cannot be forged, so
+        // submission order is trustworthy even though everything else here is supplied
+        // by the client.
+        && d.submitted_at == request.time;
+    }
+
+    match /applications/{id} {
+      // Nobody reads through the client. Stated outright rather than relying on
+      // deny-by-default, so anyone loosening it has to delete a line that says false
+      // rather than add one that was never there.
+      allow read: if false;
+
+      // Immutable once submitted. An applicant has no identity to prove ownership
+      // with, so neither they nor a stranger can edit or remove one.
+      allow update, delete: if false;
+
+      // Anyone may submit exactly one well-formed application. Validated rather than
+      // accepted: an unvalidated create-only collection is a free document store, and
+      // the size limits are the only thing stopping a script filling the project's
+      // quota with one enormous field.
+      allow create: if isWellFormedApplication(request.resource.data);
+    }
+
+    // Everything else is closed. Deny-by-default would already do this; the explicit
+    // catch-all makes the intent legible and survives someone adding a broader match
+    // block above it.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
