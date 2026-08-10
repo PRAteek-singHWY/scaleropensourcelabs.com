@@ -1,95 +1,78 @@
 // The hero, as a thesis rather than a spectacle.
 //
-// It was a scroll-scrubbed WebGL rocket on a launchpad across 220vh, with a
-// CSS fallback, capability detection and a stage machine. That is gone at the
-// client's instruction, and what replaces it is the register both reference sites
-// actually use: apple.com and Scaler's School of Business are type-led, with the
-// claim doing the work and hard numbers immediately under it.
+// It was a scroll-scrubbed WebGL rocket on a launchpad across 220vh, with a CSS
+// fallback, capability detection and a stage machine. That is gone at the client's
+// instruction, and what replaces it is the register the reference sites actually
+// use: type-led, with the claim doing the work and hard evidence immediately under
+// it.
 //
-// Reading the SSB page closely, the pattern is consistent — a positioning
-// sentence, two calls to action, and figures placed where the eye lands first. It
-// is text-heavy on purpose and carries almost no imagery. So the strongest move
-// here is to state the claim and then evidence it with the count of people who got
-// in, which is the one number nobody else on campus can print.
-//
-// This is a server component: no canvas, no capability detection, no scroll
-// listener, no state. The previous hero needed all four and could only be checked
-// by rendering it. This one cannot fail in a way HTML cannot express.
+// A server component. No canvas, no capability detection, no scroll listener, no
+// state — the previous hero needed all four and could only be checked by rendering
+// it. This one cannot fail in a way HTML cannot express.
 //
 // One height rule: it deliberately does NOT force h-screen. A viewport-locked hero
 // pushes the evidence below the fold on a laptop, which is exactly where the
 // argument dies.
+//
+// The two buttons are the one place on the site where a second action is allowed
+// alongside Join, and the reason is that they are not competing: a first-year who
+// has just landed here does not yet know what open source is, so "start at the
+// beginning" is a more honest primary than "apply". Join is one tap away in the nav
+// regardless, which is what makes the softer hero affordable.
 
-import { PROGRAMME_COLOUR, PROGRAMME_SHORT, selectionStats } from "@/content/club";
+import Link from "next/link";
+import { JOIN_HREF } from "@/content/site";
 
 export default function Hero() {
-  const stats = selectionStats();
-
   return (
     <header
-      className="section relative pb-24 pt-32 sm:pb-32 sm:pt-44"
+      className="section page-top relative pb-20 pt-20 sm:pb-28 sm:pt-28"
       aria-label="Scaler Open Source Club"
     >
       <p className="chip">Scaler School of Technology</p>
 
-      {/* Heavy condensed caps in the display face, with the second word in blue.
-          Two tones mid-headline is what stops display type at this size reading as
-          a wall of letters — and it is the device their whole page is built on. */}
-      <h1 className="mt-7 font-display text-[clamp(3.25rem,10vw,8rem)] uppercase leading-[0.86] tracking-[-0.01em]">
+      {/* Heavy condensed caps with the second word in the accent. Two tones
+          mid-headline is what stops display type at this size reading as a wall of
+          letters. */}
+      <h1 className="mt-7 font-display text-[clamp(3rem,9.5vw,7.5rem)] uppercase leading-[0.86] tracking-[-0.01em]">
         Open <span className="tone">Source</span>
       </h1>
 
       <p className="mt-8 max-w-3xl text-display-lg font-semibold tracking-tight text-balance">
-        We put student names in the{" "}
-        {/* The marker carries emphasis; the text itself stays ink, so the yellow is
-            never what conveys the meaning. */}
-        <span className="mark">commit log</span>.
+        Software the whole world runs on, written in public — and{" "}
+        {/* The marker carries the emphasis while the text itself stays ink, so the
+            yellow never has to be legible for the sentence to be. */}
+        <span className="mark">you can edit it</span>.
       </p>
 
-      <p className="measure mt-6 text-body-lg text-haze">
-        Members contribute to the projects the world already runs on, and{" "}
-        <span className="mark font-medium text-ink">get paid</span> by Google, the
-        Linux Foundation and others to do it. Every claim on this page is a link you
-        can open.
+      <p className="measure mt-7 text-body-lg text-haze">
+        Not eventually. This week. We are a student club that helps you get your first
+        change merged into a real project, and then helps you get paid to do it by
+        Google, the Linux Foundation and others.
       </p>
 
       <div className="mt-10 flex flex-wrap items-center gap-4">
-        <a href="#hall" className="btn btn-pop">
-          See who got in →
+        <a href="#what-it-is" className="btn btn-pop">
+          Start at the beginning →
         </a>
-        <a
-          href="#apply"
-          className="btn btn-secondary"
-        >
+        <Link href={JOIN_HREF} className="btn btn-secondary">
           Join the club
-        </a>
+        </Link>
       </div>
 
-      {/* The evidence, in the hero, above the fold. Derived from the published list
-          so it can never overstate — and hidden entirely when there is nothing to
-          show, because "0 selected" is a worse first impression than no claim. */}
-      {stats.total > 0 && (
-        <div className="mt-16 flex flex-wrap items-baseline gap-x-8 gap-y-4 border-t border-seam pt-8 sm:mt-20">
-          <p>
-            <span className="text-display-lg font-semibold tracking-tightest">
-              {stats.total}
-            </span>
-            <span className="ml-3 text-body text-haze">
-              selected into international programmes
-            </span>
-          </p>
-          <ul className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-            {stats.programmes.map(({ programme, count }) => (
-              <li key={programme} className="font-mono text-xs">
-                <span style={{ color: PROGRAMME_COLOUR[programme] }}>
-                  {PROGRAMME_SHORT[programme]}
-                </span>
-                <span className="ml-1.5 text-dust">×{count}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <p className="mt-9 font-mono text-xs leading-relaxed text-dust">
+        Every claim on this site links to something you can open and check. If one
+        does not, that is a bug —{" "}
+        <a
+          href="https://github.com/PRAteek-singHWY/scaleropensourcelabs.com/issues"
+          target="_blank"
+          rel="noreferrer"
+          className="text-haze underline decoration-seam underline-offset-4 transition-colors hover:text-accent"
+        >
+          tell us
+        </a>
+        .
+      </p>
     </header>
   );
 }

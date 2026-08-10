@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "qa": "node scripts/qa.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "browsers": "node scripts/browsers.mjs"
+    "browsers": "node scripts/browsers.mjs",
+    "palette": "node scripts/palette.mjs"
   },
   "dependencies": {
     "next": "14.2.5",

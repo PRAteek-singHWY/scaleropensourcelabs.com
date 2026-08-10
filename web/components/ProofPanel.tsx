@@ -6,7 +6,7 @@
 // links to a source" would undercut the argument it decorates.
 //
 // So the visual is the evidence itself. Our product is merged code, and a product
-// page shows the product. Every number below comes from PROJECTS and is checkable
+// page shows the product. Every number below comes from UPSTREAM and is checkable
 // against the repo it names.
 //
 // The form was chosen before the colour, and it is deliberately NOT a chart:
@@ -29,10 +29,10 @@
 // Text wears text tokens throughout. The accent appears on the marks and on the
 // figure that names the rank, never on a label.
 
-import { PROJECTS } from "@/content/club";
+import { UPSTREAM } from "@/content/projects";
 
 export default function ProofPanel() {
-  const lead = PROJECTS.find((p) => p.published && p.proof);
+  const lead = UPSTREAM.find((p) => p.published && p.proof);
   if (!lead) return null;
 
   // Parsed from the proof label rather than duplicated, so the panel cannot drift
@@ -49,7 +49,7 @@ export default function ProofPanel() {
 
   return (
     <figure className="mt-14 overflow-hidden rounded-panel border border-seam bg-raise">
-      <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
+      <div className="grid grid-cols-1 gap-10 p-8 sm:p-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
         {/* ---- The hero figure: the one number this section leads with ---- */}
         <div>
           <p className="label">Contributor rank</p>

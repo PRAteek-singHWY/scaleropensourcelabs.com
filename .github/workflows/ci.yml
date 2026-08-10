@@ -38,6 +38,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Static and fast, so it runs before the build. Guards the categorical-colour
+      # constraints that a comment used to only assert — see content/programs.ts.
+      - name: Palette constraints
+        run: npm run palette
+
       - name: Build
         run: npm run build
 

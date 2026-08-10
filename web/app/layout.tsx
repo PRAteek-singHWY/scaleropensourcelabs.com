@@ -1,52 +1,52 @@
 import type { Metadata } from "next";
-import { Anton, JetBrains_Mono, Poppins, Staatliches } from "next/font/google";
+import { Archivo, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-// Three faces, each with one job — the type system read off notyourcollege.com,
-// which is the reference for this pass. All self-hosted at build time by
-// next/font, so there is no third-party request and no layout shift.
+// TWO FACES, read off the OSC Figma rather than a reference site. Self-hosted at
+// build time by next/font, so no third-party request and no layout shift.
 //
-// Body. Their body face, and the right call for the register: Poppins is
-// geometric and friendly where Instrument Sans was cool and neutral. The whole
-// point of this direction is warmth.
-const sans = Poppins({
+// This replaced a three-face system (Poppins / Anton / Staatliches). The Figma is
+// a narrower type system than what it replaced, and that is the design decision,
+// not an omission: everything that is not body copy or a headline is JetBrains
+// Mono. There is no condensed-caps face anywhere in the file.
+//
+// Body. Inter Regular at 15px, which is what every paragraph in the frames is.
+const sans = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-sans",
   display: "swap",
 });
 
-// Display. Their hero uses `kapra-italic`, a commercial face I will not pirate,
-// so this is a deliberate substitution rather than a match: Anton is the closest
-// free equivalent for that heavy condensed poster-caps voice.
+// Display. Archivo Bold — the frames set every headline in it, from the 96px page
+// titles down to the 32px footer wordmark. The Figma pins `wdth 100`, i.e. the
+// default width axis, so the static Bold is an exact match rather than an
+// approximation; there is nothing to substitute here.
 //
-// It has no true italic, and I am NOT faking one with skewX — a synthetically
-// slanted face at 100px+ shows its sheared verticals immediately, which would
-// look cheap at exactly the size where it matters most. Upright and heavy is a
-// worse imitation and a better typeface.
-const display = Anton({
+// Note this is a grotesque, NOT the heavy condensed poster face it replaces. The
+// design's authority comes from size and weight at normal width, so keeping Anton
+// would have been a different voice at the same size.
+const display = Archivo({
   subsets: ["latin"],
-  weight: ["400"],
+  weight: ["700"],
   variable: "--font-display",
   display: "swap",
 });
 
-// Labels, buttons, eyebrows. Theirs, and it does the job an all-caps condensed
-// face does well: high energy at small sizes without shouting in body copy.
-const label = Staatliches({
-  subsets: ["latin"],
-  weight: ["400"],
-  variable: "--font-label",
-  display: "swap",
-});
-
-// Reserved for identifiers and figures — repo names, counts, labels.
+// Identifiers, figures, labels, eyebrows, nav items and buttons — everything the
+// old system split between Staatliches and mono. One face, one variable: the
+// `--font-label` name is gone rather than aliased, so there is no second name for
+// the same font waiting to drift.
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
   variable: "--font-mono",
   display: "swap",
 });
+
+import Nav from "@/components/Nav";
+import Reveal from "@/components/Reveal";
+import Footer from "@/components/Footer";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://scaleropensourcelabs.com";
@@ -78,7 +78,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable} ${label.variable} ${mono.variable}`}>
+    <html lang="en" className={`${sans.variable} ${display.variable} ${mono.variable}`}>
       <body>
         {/* Anti-flash for the theme toggle.
             Must be the first node in <body>, NOT in <head>: the App Router hoists
@@ -91,7 +91,27 @@ export default function RootLayout({
               "(function(){try{var m=localStorage.getItem('osc-theme');if(m==='light'||m==='dark'){document.documentElement.setAttribute('data-theme',m)}}catch(e){}})()",
           }}
         />
+
+        {/* Skip link. It did not matter much on a single page; with a persistent
+            eight-item nav in front of every one of six pages, a keyboard reader
+            would otherwise tab through the whole bar on every navigation. First
+            focusable element in the document, visible only when focused. */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-raise focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-ink focus:shadow-lg focus:ring-1 focus:ring-seam"
+        >
+          Skip to content
+        </a>
+
+        {/* The chrome shared by every route. Nav and Footer are here rather than in
+            each page so a route cannot exist without them — the previous single-page
+            site imported them per page, which works for one page and is six chances
+            to forget at six. Reveal renders nothing; it opts the document in to the
+            scroll settle. */}
+        <Nav />
+        <Reveal />
         {children}
+        <Footer />
       </body>
     </html>
   );

@@ -35,7 +35,15 @@
 //    that was supposed to close it. Measured, not guessed — the geometry is the
 //    only thing that showed this.
 
+// 5. The item list is REBUILT ON EVERY NAVIGATION. This component sits in the
+//    shared layout, which does not remount when the router changes route, so a
+//    mount-only scan would leave every page after the first showing the home
+//    page's section list — an outline that confidently lies about the page, which
+//    is worse than no outline. Same failure mode the DOM-derivation in note 1 was
+//    meant to prevent, arriving by a different door.
+
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 
 type Item = { id: string; label: string };
@@ -49,6 +57,7 @@ function prettify(id: string): string {
 }
 
 export default function Outline() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
@@ -71,6 +80,9 @@ export default function Outline() {
   }, [open]);
 
   useEffect(() => {
+    // Reset before rescanning, so a page with no id'd sections shows nothing
+    // rather than the previous page's list.
+    setActive("");
     const found: Item[] = [];
     for (const s of document.querySelectorAll<HTMLElement>("section[id]")) {
       // The eyebrow is the section's own short name and already reads as a label.
@@ -100,7 +112,7 @@ export default function Outline() {
     );
     document.querySelectorAll("section[id]").forEach((s) => io.observe(s));
     return () => io.disconnect();
-  }, []);
+  }, [pathname]);
 
   const toggle = () => {
     const next = !open;

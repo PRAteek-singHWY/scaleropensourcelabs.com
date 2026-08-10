@@ -18,10 +18,21 @@
 // Sections are targeted rather than individual elements. Revealing every card and
 // paragraph separately produces a page that twitches continuously as you scroll;
 // one settle per section is what Apple actually does.
+//
+// KEYED ON THE PATHNAME, and this is not defensive padding. This component now
+// lives in the shared layout, which does NOT remount when the router moves between
+// routes — so with an empty dependency array it would mark and observe the home
+// page's sections once and never look again. Every subsequent page would render
+// with no settle at all, and the effect's cleanup would not run until the whole app
+// unmounted. The pathname dependency makes each navigation tear down the previous
+// page's observer and re-target the new page's sections.
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 export default function Reveal() {
+  const pathname = usePathname();
+
   useEffect(() => {
     const root = document.documentElement;
 
@@ -67,7 +78,7 @@ export default function Reveal() {
         t.classList.remove("is-in");
       });
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }
