@@ -59,7 +59,14 @@ export default function Achievers() {
   }
 
   return (
-    <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    // Five across at the top end, which is what a list this long wants: at three
+    // columns twenty-five people is nine rows and the count stops reading as a single
+    // set. The step to five happens at xl, not lg — the container caps at 76rem, so xl
+    // gives each card 208px, enough for a two-word name, whereas five at lg would be
+    // 170px and start breaking names mid-word. The ladder steps one column per
+    // breakpoint; a two-column jump halves the card width in a single step and the
+    // text visibly reflows while resizing. Mobile stays at one.
+    <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
       {people.map((a) => {
         const n = names(a);
         return (
@@ -92,36 +99,58 @@ export default function Achievers() {
               <h3 className="mt-3 text-body-lg font-semibold leading-snug">
                 {a.name}
               </h3>
-              <p className="mt-1 text-[13px] text-haze">{a.org}</p>
-              <p className="mt-3 text-sm leading-relaxed text-haze">{a.work}</p>
 
-              <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-5">
-                {a.url && (
-                  <a
-                    href={a.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tap font-mono text-xs text-accent transition hover:brightness-125"
-                  >
-                    Proof ↗
-                  </a>
-                )}
-                {a.github && (
-                  <a
-                    href={`https://github.com/${a.github}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tap font-mono text-xs text-haze transition-colors hover:text-accent"
-                  >
-                    GitHub ↗
-                  </a>
-                )}
-                {/* The full programme name, for a reader who does not recognise the
-                    acronym. Every acronym on this site resolves somewhere visible. */}
-                {n.full !== n.short && (
-                  <span className="ml-auto text-[11px] text-dust">{n.full}</span>
-                )}
-              </div>
+              {/* Year of study and organisation share one line, because they are the
+                  same kind of fact — small, factual, subordinate to the name. Joined
+                  rather than stacked so an entry with only one of them does not leave
+                  a visible gap where the other would sit. Both are optional: names
+                  arrive before the org and the proof link get chased down. */}
+              {(a.studyYear || a.org) && (
+                <p className="mt-1 text-[13px] text-haze">
+                  {[a.studyYear, a.org].filter(Boolean).join(" · ")}
+                </p>
+              )}
+
+              {a.work && (
+                <p className="mt-3 text-sm leading-relaxed text-haze">{a.work}</p>
+              )}
+
+              {/* Rendered only when there is something in it. An entry awaiting its
+                  proof link has neither link, and an empty flex row still contributes
+                  its pt-5 — which reads as an unexplained gap under every card in the
+                  cohort rather than as nothing.
+
+                  The full programme name rides inside it rather than in a row of its
+                  own, so it keeps the `ml-auto` behaviour it had before. */}
+              {(a.url || a.github || n.full !== n.short) && (
+                <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-5">
+                  {a.url && (
+                    <a
+                      href={a.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tap font-mono text-xs text-accent transition hover:brightness-125"
+                    >
+                      Proof ↗
+                    </a>
+                  )}
+                  {a.github && (
+                    <a
+                      href={`https://github.com/${a.github}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tap font-mono text-xs text-haze transition-colors hover:text-accent"
+                    >
+                      GitHub ↗
+                    </a>
+                  )}
+                  {/* The full programme name, for a reader who does not recognise the
+                      acronym. Every acronym on this site resolves somewhere visible. */}
+                  {n.full !== n.short && (
+                    <span className="ml-auto text-[11px] text-dust">{n.full}</span>
+                  )}
+                </div>
+              )}
             </div>
           </li>
         );

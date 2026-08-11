@@ -94,6 +94,80 @@ export function publishedCore(): CoreMember[] {
 }
 
 // ---------------------------------------------------------------------------
+// 1b. THE TEAM, AS AN ORG CHART — who actually runs the club.
+//
+// Sits beside CORE_TEAM rather than replacing it, and the split is the same one this
+// file makes everywhere else: the two answer different questions. A CoreMember entry
+// says what one person OWNS and how to contact them, with their consent and usually
+// their face. This list says what the club's STRUCTURE is — which offices exist, who
+// holds them, and who is being trained to take each one over. Rendered by
+// components/Team.tsx on the Hall of Fame page.
+//
+// It is also distinct from an achiever's entry, and that distinction is load-bearing.
+// An achiever's entry is justified by a public artifact: a merged patch, an official
+// selection record. A team entry is justified by nothing except holding the office,
+// so it claims nothing except the office. No "passionate about", no "shipped X" —
+// that belongs in a list with a link to prove it.
+//
+// There is no `consented` field here, and that is deliberate rather than an
+// oversight: holding an office is the club's own structure to state, which is the one
+// thing a club can legitimately assert about itself without a third party. A PHOTO is
+// still the person's to give — see public/people/README.md — so `photo` stays
+// optional and Portrait draws a monogram when it is absent.
+//
+// Three tiers, because the club genuinely has three: the two officers, the four
+// functional leads, and the shadows. A shadow is an understudy attached to one
+// specific role who is being trained to take it over at handover — which is the only
+// reason a student club survives its founders graduating, and therefore worth showing
+// on the chart rather than hiding in a handbook.
+//
+// `shadowOf` holds the DESIGNATION, not the person. Roles outlast the people in them:
+// when a Vice President hands over, the shadow relationship should not need
+// re-pointing at a new name. Team.tsx resolves it against the tier above and
+// positions the card in that role's column, so a typo here surfaces as a missing
+// connector rather than a silently wrong one.
+
+export type TeamMember = {
+  name: string;
+  /** The office, not a description of the person. Rendered above the name. */
+  designation: string;
+  /** Square crop — the frame is a circle. See public/people/README.md. */
+  photo?: string;
+  github?: string;
+  /** Designation of the role this person shadows. Shadows only. */
+  shadowOf?: string;
+};
+
+/** Tier 1. The two officers. */
+export const TEAM_OFFICERS: TeamMember[] = [
+  { name: "Abhinav Jha", designation: "President" },
+  { name: "Rushab Mistry", designation: "Vice President" },
+];
+
+/** Tier 2. Functional leads. Order is left-to-right on the chart, not a ranking. */
+export const TEAM_LEADS: TeamMember[] = [
+  { name: "Mehul Agarwal", designation: "Training Head" },
+  { name: "Prateek Singh", designation: "Mentorship Lead" },
+  { name: "Bhumi N Deshpande", designation: "Repo Maintainer" },
+  { name: "Kunal Saini", designation: "Events Lead" },
+];
+
+/** Tier 3. Each one attaches to exactly one role in a tier above. */
+export const TEAM_SHADOWS: TeamMember[] = [
+  { name: "Arnav Singh", designation: "Shadow", shadowOf: "Training Head" },
+  { name: "Yash Virulkar", designation: "Shadow", shadowOf: "Vice President" },
+];
+
+/** Everyone on the chart, in chart order. */
+export function teamRoster(): TeamMember[] {
+  return [...TEAM_OFFICERS, ...TEAM_LEADS, ...TEAM_SHADOWS];
+}
+
+export function teamSize(): number {
+  return teamRoster().length;
+}
+
+// ---------------------------------------------------------------------------
 // 2. ALUMNI / PAST CORE MEMBERS.
 //
 // "Where they are now" is the single most persuasive column on this page for a
@@ -177,11 +251,24 @@ export type Achievement =
 export type Achiever = {
   name: string;
   achievement: Achievement;
+  /** The PROGRAMME year — which edition selected them. Not their year of study. */
   year: string;
-  /** The mentoring organisation, or the hackathon's host. */
-  org: string;
-  /** One line on what they actually built. Specific beats impressive. */
-  work: string;
+  /** Year of study at the time of selection, e.g. "3rd year". */
+  studyYear?: string;
+  /**
+   * The mentoring organisation, or the hackathon's host.
+   *
+   * Optional, and that is a concession to how the list actually gets filled in:
+   * the names arrive first, from someone who knows the cohort, and the org and the
+   * proof link get chased down per person afterwards. Requiring it up front would
+   * mean inventing one, and an invented org on this page is exactly the kind of
+   * unverifiable claim this file's opening rule exists to keep out. A missing org
+   * renders as nothing; a wrong one renders as a lie.
+   */
+  org?: string;
+  /** One line on what they actually built. Specific beats impressive. Optional for
+      the same reason as `org`. */
+  work?: string;
   photo?: string;
   github?: string;
   /** Proof link: the project page, the merged work, the announcement. */
@@ -196,25 +283,107 @@ export const ACHIEVERS: Achiever[] = [
 ];
 
 /**
- * Development scaffold. The achievers section is a card grid whose alignment and
- * density can only be judged against a realistic number of entries — it was
- * designed once against three and fell apart at fourteen.
+ * The staging list, rendered in local development only.
  *
- * Deliberately implausible names and organisations, so no screenshot can be
- * mistaken for a real claim, and gated on NODE_ENV so a production build cannot
- * ship them even by accident.
+ * This USED to be pure invention — "Placeholder One" at "Example Foundation" — and
+ * the fifteen GSoC entries below are no longer that. They are real students, named
+ * by the club, and the rest of the list is still placeholder padding so the grid can
+ * be laid out against a full five rows.
+ *
+ * That mix is why the NODE_ENV gate matters more now, not less. It used to stop a
+ * production build shipping obvious nonsense; now it stops it shipping fifteen real
+ * people's names before two things exist for each of them:
+ *
+ *   1. That student's explicit consent to being named on a public page. See the
+ *      consent rule at the top of this file — it is not satisfied by someone else
+ *      supplying the list, however well they know the cohort.
+ *   2. A URL that proves the selection. The whole page argues "somebody else picked
+ *      them, go and check"; an unlinked name is the one claim on this site a reader
+ *      cannot verify.
+ *
+ * PROMOTING AN ENTRY: move it out of here and into ACHIEVERS above, with `org`, a
+ * one-line `work`, a proof `url`, and `consented: true`. The moment ACHIEVERS has a
+ * single entry, publishedAchievers() switches to it wholesale and this entire list
+ * stops rendering — so promote the cohort together, not one at a time, or the page
+ * will show one card where it used to show twenty-five.
+ *
+ * Grouped, not interleaved: GSoC runs first, then LFX, then C4GT, then SoB. That is
+ * the order the grid reads in anyway, and it puts the heaviest programme where the
+ * eye lands first. Twenty-five entries is exactly five rows of five in the grid, so
+ * the layout gets reviewed against full rows rather than a ragged tail.
  */
+
+/* The 2026 GSoC cohort, as supplied by the club. `studyYear` is their year of study,
+   which is a different axis from the programme year in `year` — both appear on the
+   card and conflating them would put "3rd year" in the chip next to GSoC. */
+const GSOC_2026: [name: string, studyYear: string][] = [
+  ["Prateek Singh", "3rd year"],
+  ["Ojas Maheshwari", "3rd year"],
+  ["Parth Dagia", "3rd year"],
+  ["Raj Prakash", "3rd year"],
+  ["Shubham Kumar", "3rd year"],
+  ["Shiva Gupta", "3rd year"],
+  ["Kartik Jangid", "3rd year"],
+  ["Vivek Singh Solanki", "3rd year"],
+  ["Ujjawal Prabhat", "3rd year"],
+  ["Piyush Goenka", "3rd year"],
+  ["Kartik Deshpande", "3rd year"],
+  ["Amrinder Singh", "3rd year"],
+  ["Vansh Dobhal", "3rd year"],
+  ["Kumar Amityush", "2nd year"],
+];
+
+const GSOC_2025: [name: string, studyYear: string][] = [
+  ["Sauhard Gupta", "3rd year"],
+];
+
+/* Padding for the programmes with no names supplied yet. Deliberately implausible,
+   so a screenshot can never be mistaken for a claim — which is the property the GSoC
+   entries above have now lost, and the reason the gate below is load-bearing.
+
+   The counts hold the total at twenty-five: fifteen real GSoC entries plus five LFX,
+   three C4GT and two SoB. SoB dropped from three to two when the GSoC cohort came in
+   at fifteen rather than fourteen, purely to keep the grid at five clean rows. */
+const PLACEHOLDER_MIX: { programme: Programme; count: number }[] = [
+  { programme: "LFX", count: 5 },
+  { programme: "C4GT", count: 3 },
+  { programme: "SOB", count: 2 },
+];
+
+/* Spelled out rather than numbered. "Placeholder 07" reads like a real identifier
+   at a glance; "Placeholder Seven" cannot be mistaken for one. */
+const PLACEHOLDER_ORDINALS = [
+  "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+];
+
 const ACHIEVERS_SCAFFOLD: Achiever[] = [
-  { name: "Placeholder One", achievement: { kind: "programme", programme: "GSOC" }, year: "2026", org: "Example Foundation", work: "Replace with what this member actually built, in one specific sentence.", consented: true },
-  { name: "Placeholder Two", achievement: { kind: "programme", programme: "LFX" }, year: "2025", org: "Example Foundation", work: "Replace with what this member actually built, in one specific sentence.", consented: true },
-  { name: "Placeholder Three", achievement: { kind: "programme", programme: "C4GT" }, year: "2026", org: "Example Foundation", work: "Replace with what this member actually built, in one specific sentence.", consented: true },
-  { name: "Placeholder Four", achievement: { kind: "programme", programme: "SOB" }, year: "2025", org: "Example Foundation", work: "Replace with what this member actually built, in one specific sentence.", consented: true },
-  { name: "Placeholder Five", achievement: { kind: "programme", programme: "OUTREACHY" }, year: "2026", org: "Example Foundation", work: "Replace with what this member actually built, in one specific sentence.", consented: true },
-  { name: "Placeholder Six", achievement: { kind: "hackathon", event: "Example Hackathon" }, year: "2025", org: "Example Host", work: "Replace with what they built and what place they took.", consented: true },
-  { name: "Placeholder Seven", achievement: { kind: "programme", programme: "GSOC" }, year: "2025", org: "Example Foundation", work: "Replace with what this member actually built, in one specific sentence.", consented: true },
-  { name: "Placeholder Eight", achievement: { kind: "programme", programme: "GSSOC" }, year: "2025", org: "Example Foundation", work: "Replace with what this member actually built, in one specific sentence.", consented: true },
-  { name: "Placeholder Nine", achievement: { kind: "hackathon", event: "Example Hackathon" }, year: "2026", org: "Example Host", work: "Replace with what they built and what place they took.", consented: true },
-  { name: "Placeholder Ten", achievement: { kind: "programme", programme: "LFX" }, year: "2026", org: "Example Foundation", work: "Replace with what this member actually built, in one specific sentence.", consented: true },
+  ...GSOC_2026.map(([name, studyYear]): Achiever => ({
+    name,
+    achievement: { kind: "programme", programme: "GSOC" },
+    year: "2026",
+    studyYear,
+    consented: true,
+  })),
+  ...GSOC_2025.map(([name, studyYear]): Achiever => ({
+    name,
+    achievement: { kind: "programme", programme: "GSOC" },
+    year: "2025",
+    studyYear,
+    consented: true,
+  })),
+  ...PLACEHOLDER_MIX.flatMap(({ programme, count }) =>
+    Array.from({ length: count }, () => programme),
+  ).map((programme, i): Achiever => ({
+    // Falls back to the index if the mix ever outgrows the ordinal list, so a bumped
+    // count degrades to an ugly name rather than `Placeholder undefined`.
+    name: `Placeholder ${PLACEHOLDER_ORDINALS[i] ?? i + 1}`,
+    achievement: { kind: "programme", programme },
+    // Alternating, so the year column has something to actually sort.
+    year: i % 2 === 0 ? "2026" : "2025",
+    org: "Example Foundation",
+    work: "Replace with what this member actually built, in one specific sentence.",
+    consented: true,
+  })),
 ];
 
 export function publishedAchievers(): Achiever[] {
@@ -244,10 +413,15 @@ export function achieversFor(programme: Programme): Achiever[] {
  * contributor is ONE member, and counting them three times is the easiest possible
  * way to inflate a headline figure by accident. Upstream contributors are passed in
  * rather than imported, so this module does not have to depend on projects.ts.
+ *
+ * The org chart is counted too, and the dedup is doing real work there rather than
+ * being defensive: a lead who is also in the GSoC cohort — which is currently true of
+ * one of them — is named twice on the site and is still one member.
  */
 export function memberCount(extraNames: string[] = []): number {
   const names = new Set<string>();
   for (const m of publishedCore()) names.add(m.name.trim().toLowerCase());
+  for (const m of teamRoster()) names.add(m.name.trim().toLowerCase());
   for (const a of publishedAlumni()) names.add(a.name.trim().toLowerCase());
   for (const a of publishedAchievers()) names.add(a.name.trim().toLowerCase());
   for (const n of extraNames) names.add(n.trim().toLowerCase());
@@ -270,7 +444,10 @@ export function achieverStats() {
       .sort((a, b) => b[1] - a[1])
       .map(([programme, count]) => ({ programme, count })),
     hackathons: live.filter((a) => a.achievement.kind === "hackathon").length,
-    orgs: new Set(live.map((a) => a.org)).size,
+    // Compacted before counting, because `org` is optional now. Mapping it straight
+    // into a Set puts one `undefined` in there and reports "1 org" for a cohort whose
+    // organisations are, accurately, not recorded yet.
+    orgs: new Set(live.flatMap((a) => (a.org ? [a.org] : []))).size,
   };
 }
 

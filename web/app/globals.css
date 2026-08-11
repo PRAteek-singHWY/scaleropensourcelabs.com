@@ -136,8 +136,26 @@
 }
 
 html {
-  /* The hero and hall are scroll-driven, so smooth-scroll would fight the scrub. */
-  scroll-behavior: auto;
+  /* This was pinned to `auto` because the hero and hall were scroll-scrubbed WebGL
+     and a smooth scroll would have fought the scrub. Both are plain static sections
+     now, so nothing is competing for the scroll position and the nav can glide to
+     its target instead of teleporting. Overridden under reduced-motion at the foot
+     of this file — a smooth scroll is exactly the kind of large-field movement that
+     preference exists to suppress.
+
+     scroll-padding-top is load-bearing alongside it: the nav is `fixed`, which is
+     outside flow, so an anchor target would otherwise come to rest with its first
+     nav-height behind the plate. The browser applies this offset to every
+     scroll-into-view — the nav links, the outline rail, and a deep link pasted into
+     the address bar all land in the same place.
+
+     KEEP THIS EQUAL TO THE NAV HEIGHT. It is h-14 (3.5rem) in components/Nav.tsx,
+     up from the h-11 it was written against; `.page-top` further down this file
+     carries the same 3.5rem for the same reason, so the two move together. A stale
+     value here does not fail loudly — it just parks every anchor a few pixels under
+     the plate, which is easy to look straight past. */
+  scroll-behavior: smooth;
+  scroll-padding-top: 3.5rem;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -668,5 +686,13 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Zeroing durations does nothing to scroll-behavior — it is neither an animation
+     nor a transition — so the smooth scroll would have survived a preference set
+     specifically to stop the whole viewport sliding. Back to an instant jump; the
+     scroll-padding offset stays, since that is layout, not motion. */
+  html {
+    scroll-behavior: auto;
   }
 }

@@ -126,8 +126,13 @@ function ProgrammeField({ p }: { p: ProgrammeInfo }) {
                           visually but leaves no whitespace in the text, so the
                           accessible name and anything copied out of the page read
                           "Placeholder EightExample Foundation". */}{" "}
+                      {/* `org` is optional — the names of a cohort arrive before each
+                          organisation is confirmed — so the separator is joined in
+                          rather than written between the two slots. Interpolated as
+                          `{a.org} · {a.year}` it rendered a leading " · 2026" on every
+                          entry still waiting for its org. */}
                       <span className="font-mono text-xs text-dust">
-                        {a.org} · {a.year}
+                        {[a.org, a.year].filter(Boolean).join(" · ")}
                       </span>
                     </li>
                   ))}

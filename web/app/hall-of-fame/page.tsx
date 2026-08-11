@@ -16,11 +16,14 @@ import Portrait from "@/components/Portrait";
 import Achievers from "@/components/Achievers";
 import OrgWall from "@/components/OrgWall";
 import NextAction from "@/components/NextAction";
+import Team from "@/components/Team";
 import { JOIN_HREF } from "@/content/site";
 import {
+  TEAM_SHADOWS,
   achieverStats,
   publishedAlumni,
   publishedCore,
+  teamSize,
 } from "@/content/people";
 
 export const metadata: Metadata = {
@@ -66,23 +69,48 @@ export default function HallOfFame() {
               trail="These are the people to ask."
             />
           </div>
-          {core.length > 0 && (
-            <p className="font-mono text-sm tabular-nums text-dust">{core.length}</p>
-          )}
+          {/* Counts the CHART, which is directly beneath this and always renders,
+              rather than `core.length`, which counts the consent-gated detail cards
+              further down and would read as "0" on a section showing eight people. */}
+          <p className="font-mono text-sm tabular-nums text-dust">{teamSize()}</p>
         </div>
 
         <p className="measure mt-7 text-body-lg text-haze">
-          Students, not staff. Each one owns something specific, which is why the roles
-          are listed as jobs rather than as a title ladder.
+          Students, not staff. {TEAM_SHADOWS.length} of them are shadows — understudies
+          attached to one specific role, being trained to take it over at handover,
+          which is the only reason a student club{" "}
+          <span className="mark">survives its founders graduating</span>.
         </p>
 
-        {core.length === 0 ? (
-          <EmptyPanel
-            title="Not published yet."
-            body="Each entry needs that person's own permission before it goes up, because it publishes their name and face internationally. Asking is a conversation, not a form."
-          />
-        ) : (
-          <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* A chart rather than a grid of faces, and the structure IS the content: a
+            grid answers "who is important", and the question a reader of this section
+            actually has is "who do I ask". The four leads have genuinely different
+            remits — if you want your pull request reviewed you want the Repo
+            Maintainer, not the President — and a flat grid destroys exactly that.
+
+            It renders unconditionally, unlike the three lists below it. Holding an
+            office is the club's own structure to state, so it needs no third party to
+            confirm it and no `consented` gate; a photo is still the person's to give,
+            and Portrait draws a monogram until they do. See content/people.ts. */}
+        <Team />
+
+        {/* The contactable detail — what each person owns, and how to reach them —
+            which IS somebody's information to publish and therefore does wait on
+            consent. No honest-empty panel under it: the chart above has already
+            answered "who runs this", so a "not published yet" notice sitting beneath
+            eight named people would read as a rendering fault rather than as the
+            careful thing it is. */}
+        {core.length > 0 && (
+          <>
+            <div className="mt-24 border-b border-seam pb-5">
+              <p className="label">In detail</p>
+              <Duo
+                className="mt-4 text-display-lg"
+                lead="What each of them owns."
+                trail="Roles written as jobs, not as a title ladder."
+              />
+            </div>
+            <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {core.map((m) => (
               <li
                 key={m.name}
@@ -130,7 +158,8 @@ export default function HallOfFame() {
                 </div>
               </li>
             ))}
-          </ul>
+            </ul>
+          </>
         )}
       </section>
 

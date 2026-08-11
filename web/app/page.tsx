@@ -22,7 +22,6 @@ import {
   MAINTAINERS,
   MAINTAINERS_SOURCE,
   POSITIONING,
-  TRADE_OFFS,
   WHAT_IT_IS,
 } from "@/content/essence";
 import { JOIN_HREF } from "@/content/site";
@@ -306,27 +305,18 @@ export default function Essence() {
               ))}
             </div>
 
-            {/* The honest cost. A comparison listing only our advantages gets
-                discounted wholesale; naming what we are worse at is what makes the
-                rest of it believable. */}
-            <div className="mt-14 rounded-tile border border-seam bg-raise p-8 sm:p-10">
-              <h3 className="text-display-md font-semibold">What we are worse at</h3>
-              <p className="measure mt-3 text-body text-haze">
-                Every one of these is a real reason to join the competitive programming
-                club instead. Doing both is the correct answer.
-              </p>
-              <ul className="mt-8 space-y-5">
-                {TRADE_OFFS.map((t) => (
-                  <li key={t} className="flex gap-4">
-                    <span
-                      aria-hidden
-                      className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-ember"
-                    />
-                    <span className="text-body text-haze">{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* A "What we are worse at" panel used to close this section, listing
+                TRADE_OFFS under the argument that a comparison naming only our own
+                advantages gets discounted wholesale. It was dropped on request, and
+                it stays dropped through the Figma rebuild: that rebuild moved the
+                visual language only and states so itself, so its copy of the panel
+                is the pre-removal file being carried forward rather than a decision
+                to bring it back.
+
+                TRADE_OFFS is still exported from content/essence.ts rather than
+                deleted alongside — it is the written-down version of what the club
+                tells people it is bad at, and that is worth keeping addressable if
+                the section ever returns. */}
           </div>
         </section>
 
