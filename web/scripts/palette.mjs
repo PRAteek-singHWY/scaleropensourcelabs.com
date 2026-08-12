@@ -26,36 +26,120 @@
 
 const LEGACY = process.argv.includes("--legacy");
 
+// THE TOKENS ARE READ OUT OF globals.css, NOT COPIED INTO THIS FILE.
+//
+// They used to be a hand-kept mirror, under a comment saying "if they drift, this
+// file is wrong and the fix is here, not there". They drifted, exactly as that
+// comment anticipated, and the way it was caught is the reason this now parses:
+// after a merge brought two palettes together the mirror still held the OTHER
+// branch's values for `ink`, `haze` and the dark `accent`, and the script printed
+// "all constraints pass" against three colours that were nowhere on the site.
+//
+// That is worse than having no check. A red run gets investigated; a green run
+// against the wrong input gets believed, and this one would have gone on certifying
+// contrast ratios for a palette nobody was shipping.
+//
+// So there is one source of truth and it is the stylesheet. Anything unparseable is
+// a hard failure rather than a skip — a check that quietly measures less than it
+// claims to is the same bug in a different costume.
+
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const CSS = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), "..", "app", "globals.css"),
+  "utf8",
+);
+
+/**
+ * Pull one `--name: r g b;` triple out of a given block of globals.css.
+ *
+ * The tokens are space-separated RGB channels rather than hex, because Tailwind
+ * needs to splice an alpha into them — see the note over `colors` in
+ * tailwind.config.ts. This converts to hex, which is what the contrast maths below
+ * already speaks.
+ *
+ * `blockStart` picks the theme: the file declares the light set on bare `:root` and
+ * the dark set under `:root[data-theme="dark"]`, and searching the whole file would
+ * find whichever came first.
+ */
+function token(blockStart, name) {
+  const from = CSS.indexOf(blockStart);
+  if (from < 0) throw new Error(`palette: no block "${blockStart}" in globals.css`);
+  const block = CSS.slice(from, CSS.indexOf("\n}", from));
+  const m = block.match(new RegExp(`--${name}:\\s*(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*;`));
+  if (!m) throw new Error(`palette: no --${name} in "${blockStart}"`);
+  return (
+    "#" +
+    [m[1], m[2], m[3]]
+      .map((n) => Number(n).toString(16).padStart(2, "0"))
+      .join("")
+      .toUpperCase()
+  );
+}
+
+/** The programme hues are plain hex rather than channel triples — see club.ts. */
+function progHex(blockStart, name) {
+  const from = CSS.indexOf(blockStart);
+  const block = CSS.slice(from, CSS.indexOf("\n}", from));
+  const m = block.match(new RegExp(`--prog-${name}:\\s*(#[0-9a-fA-F]{6})\\s*;`));
+  if (!m) throw new Error(`palette: no --prog-${name} in "${blockStart}"`);
+  return m[1].toUpperCase();
+}
+
+const LIGHT = ':root[data-theme="light"]';
+const DARK = ':root[data-theme="dark"]';
+
 const THEMES = {
   light: {
-    bg: "#FFFFFF",
-    // The two tier tones, and every token used as TEXT on this ground. Values
-    // mirror the custom properties in app/globals.css; if they drift, this file is
-    // wrong and the fix is here, not there.
-    tiers: { paid: "#0038FF", open: "#4A4A52" },
-    text: { ink: "#111111", haze: "#4A4A52", dust: "#6A6A72", accent: "#0038FF", ember: "#B4551A" },
+    // The page ground, not pure white — see --bg in globals.css.
+    bg: token(LIGHT, "bg"),
+    // The two tier tones, and every token used as TEXT on this ground.
+    tiers: { paid: token(LIGHT, "accent"), open: token(LIGHT, "haze") },
+    text: {
+      ink: token(LIGHT, "ink"),
+      haze: token(LIGHT, "haze"),
+      dust: token(LIGHT, "dust"),
+      accent: token(LIGHT, "accent"),
+      ember: token(LIGHT, "ember"),
+    },
     // Yellow is a FILL on light, never text: #FFD600 on white is 1.41:1. Checked
     // in the direction it is actually used — ink sitting on the yellow.
-    onPop: { pop: "#FFD600", over: "#111111" },
+    onPop: { pop: token(LIGHT, "pop"), over: token(LIGHT, "ink") },
     legacy: {
-      GSOC: "#1148D0",
-      LFX: "#77225D",
-      C4GT: "#03817D",
-      SOB: "#B35605",
-      OUTREACHY: "#6B3FBF",
+      GSOC: progHex(LIGHT, "gsoc"),
+      LFX: progHex(LIGHT, "lfx"),
+      C4GT: progHex(LIGHT, "c4gt"),
+      SOB: progHex(LIGHT, "sob"),
+      OUTREACHY: progHex(LIGHT, "outreachy"),
+      // The two open-tier programmes the merge added. Included here so the legacy
+      // sweep covers all seven rather than the five it was written against — see
+      // the note over PROGRAMME_COLOUR in club.ts, which is explicit that these two
+      // were picked by eye and not validated as part of the original set.
+      GSSOC: progHex(LIGHT, "gssoc"),
+      HACKTOBERFEST: progHex(LIGHT, "hacktoberfest"),
     },
   },
   dark: {
-    bg: "#0B0D14",
-    tiers: { paid: "#5C82FF", open: "#9CA2B2" },
-    text: { ink: "#F4F5FA", haze: "#9CA2B2", dust: "#82899A", accent: "#5C82FF", ember: "#FF8A3D" },
-    onPop: { pop: "#FFD600", over: "#111111" },
+    bg: token(DARK, "bg"),
+    tiers: { paid: token(DARK, "accent"), open: token(DARK, "haze") },
+    text: {
+      ink: token(DARK, "ink"),
+      haze: token(DARK, "haze"),
+      dust: token(DARK, "dust"),
+      accent: token(DARK, "accent"),
+      ember: token(DARK, "ember"),
+    },
+    onPop: { pop: token(DARK, "pop"), over: token(LIGHT, "ink") },
     legacy: {
-      GSOC: "#4A86E8",
-      LFX: "#D64FA0",
-      C4GT: "#1F9D6B",
-      SOB: "#B8871F",
-      OUTREACHY: "#8B6DE8",
+      GSOC: progHex(DARK, "gsoc"),
+      LFX: progHex(DARK, "lfx"),
+      C4GT: progHex(DARK, "c4gt"),
+      SOB: progHex(DARK, "sob"),
+      OUTREACHY: progHex(DARK, "outreachy"),
+      GSSOC: progHex(DARK, "gssoc"),
+      HACKTOBERFEST: progHex(DARK, "hacktoberfest"),
     },
   },
 };

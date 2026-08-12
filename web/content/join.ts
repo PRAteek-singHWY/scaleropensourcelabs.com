@@ -124,108 +124,18 @@ export const LEVEL_LABEL: Record<Level, string> = {
 // This removes the one belief that stops people applying: "I am not good enough at
 // coding yet." Worded as what the club VALUES, not as a test it administers —
 // nothing on this site claims a screening process, the form is an application
-// rather than an exam, so "we assess your reasoning" would invent a mechanic that
-// does not exist.
-//
-// Both columns are concrete and checkable against a real first contribution. That
-// is the test for anything in this list: if a line could sit on any club's page, it
-// is too vague to be here.
-
-export type LookingFor = { not: string; yes: string };
-
-export const LOOKING_FOR: LookingFor[] = [
-  {
-    not: "A contest rating, or fluency in DSA",
-    yes: "Reading code you did not write and working out what it does",
-  },
-  {
-    not: "Knowing a particular framework already",
-    yes: "Turning a vague problem into one small change you can defend",
-  },
-  {
-    not: "Prior open-source experience, or any merged work",
-    yes: "Following a review thread and understanding why a change was refused",
-  },
-  {
-    not: "A tidy GitHub profile with a streak",
-    yes: 'Saying "I do not understand this yet" early instead of late',
-  },
-];
 
 // ---------------------------------------------------------------------------
-// HOW THE CLUB ACTUALLY RUNS.
+// LOOKING_FOR, CULTURE, NOT_FOR AND FAQ USED TO BE HERE. They are in club.ts.
 //
-// "Vibrant community" tells a reader nothing. Coffee and Maggi at eleven at night
-// tells them exactly what walking in is like.
-
-export const CULTURE: { title: string; body: string }[] = [
-  {
-    title: "Discussions, not lectures",
-    body: "Sessions are people arguing about a codebase with a laptop open, not slides. If you have a question halfway through, that is the session.",
-  },
-  {
-    title: "Coffee and Maggi are on the club",
-    body: "Working sessions run late and nobody codes well hungry. There is always chai, coffee and Maggi, and you do not have to ask.",
-  },
-  {
-    title: "Work where you like",
-    body: "Library, lab, hostel common room, or the campus spot everyone knows. We pick the location by what the group wants that week, not by what was booked.",
-  },
-  {
-    title: "Nobody is behind",
-    body: "People join knowing wildly different amounts. Sitting in on a session you only half follow is a completely normal way to start, and everyone here did it.",
-  },
-];
-
-// ---------------------------------------------------------------------------
-// WHO THIS IS NOT FOR.
+// All four existed in both halves of the merge that produced this file, and the
+// rule applied throughout was that club.ts wins on anything both described. Its
+// copies are the longer ones — its FAQ runs to seven entries against five here,
+// and its NOT_FOR carries a fourth reason to walk away. Two arrays with the same
+// name in two content files is the failure mode this whole directory is arranged
+// to prevent, so the shorter copies are gone rather than kept in step by hand.
 //
-// An explicit filter immediately before the ask. Stating who should not join makes
-// the invitation read as selective rather than desperate, and it saves everyone the
-// wasted month — including us.
-
-export const NOT_FOR: string[] = [
-  "Anyone who wants a certificate. There isn't one. The output is a public commit history, which is worth more and photographs worse.",
-  "Anyone optimising purely for the DSA round. Go to the competitive programming club — they are better at it — and come here as well if you have the hours.",
-  "Anyone who wants to be told exactly what to do each week. You get a mentor and a direction, not a syllabus.",
-  "Anyone counting pull requests. Chasing PR count is how Hacktoberfest earned its bad reputation, and maintainers still remember. We are not running that.",
-];
-
-// ---------------------------------------------------------------------------
-// FAQ. Seven questions, no more. Every one is a real reason somebody decides not
-// to join, and the Scaler-funnel question is the one that silently loses exactly
-// the sceptical students most worth having.
-
-export const FAQ: { q: string; a: string }[] = [
-  {
-    q: "Do I need to be good at DSA?",
-    a: "No. Different skill. Reading an unfamiliar codebase, writing a small correct change and surviving review is what this needs, and none of it is competitive programming.",
-  },
-  {
-    q: "How many hours a week?",
-    a: "Four to six once you're going, and more in the weeks around an application deadline. During exams people go quiet and nobody minds — say so and pick it back up.",
-  },
-  {
-    q: "Is this free?",
-    a: "Yes, and there is nothing to upsell you. The coffee is on the club.",
-  },
-  {
-    q: "Is this a Scaler product or a marketing funnel?",
-    a: "It is a student club at Scaler School of Technology, run by students. Nothing here is a paid programme and nothing here sells you one.",
-  },
-  {
-    q: "I'm in my final year — is it too late?",
-    a: "For this year's GSoC cycle, most likely. For LFX Mentorship, no: terms run three times a year, and GSoC dropped its student-only requirement in 2022, so graduating does not end your eligibility.",
-  },
-  {
-    q: "What language or stack do I need?",
-    a: "One you can already write and run. Projects exist in Python, Go, Rust, TypeScript, C++ and more; we pick the project around you rather than the other way round.",
-  },
-  {
-    q: "What if my pull request gets rejected?",
-    a: "It will, sometimes. Ours do — 46 of 74 merged on our largest project, which is a normal ratio and the reason we publish it rather than rounding it up.",
-  },
-];
+// The sections that render them are unchanged; they import from club.ts now.
 
 // ---------------------------------------------------------------------------
 // THE JOIN FORM'S OPTIONS.
@@ -248,6 +158,53 @@ export const INTERESTS = [
   { value: "design", label: "Design" },
   { value: "docs", label: "Docs / writing" },
 ] as const;
+
+// The hostels. Two, because there are two.
+//
+// REQUIRED, and the list is exhaustive: everyone the club takes applications from lives
+// in one of these two buildings, so there is no third answer to offer and an opt-out
+// would only produce applications nobody can schedule around. It is asked because build
+// days and evening sessions get planned by which building people have to walk back to.
+// If that ever stops being true — an off-campus intake, a third block — this list and
+// the `hasAll` line in firestore.rules both have to change, not just this one.
+export const HOSTELS = [
+  { value: "uniworld-1", label: "Uniworld 1" },
+  { value: "uniworld-2", label: "Uniworld 2" },
+] as const;
+
+// The named programmes, and the one field on this form that is a closed set of
+// PROPER NOUNS rather than of the club's own vocabulary. Two consequences:
+//
+//   1. The labels are spelled the way the programmes spell themselves, including the
+//      parenthesised acronyms people actually search for. "Season of KDE", not
+//      "Season of KDE (SoK)" — the abbreviation is not what the programme calls
+//      itself on its own front page.
+//   2. `other` is here because this list will be out of date. New programmes appear
+//      every year and a fixed list of nine would quietly tell the applicant aiming at
+//      the tenth that the club has never heard of it. Selecting it reveals a required
+//      free-text field, so "other" never arrives without saying which — an
+//      unqualified "other" is the one answer that would change nobody's first
+//      conversation, which is the test every field on this form has to pass.
+//
+// Order is roughly by how competitive and how paid they are, which is also the order
+// somebody scanning the list is looking for the familiar name in.
+export const PROGRAMS = [
+  { value: "gsoc", label: "Google Summer of Code (GSoC)" },
+  { value: "lfx", label: "Linux Foundation LFX Mentorship" },
+  { value: "outreachy", label: "Outreachy" },
+  { value: "sok", label: "Season of KDE" },
+  { value: "hacktoberfest", label: "Hacktoberfest" },
+  { value: "sob", label: "Summer of Bitcoin" },
+  { value: "gssoc", label: "GSSoC" },
+  { value: "ssoc", label: "SSoC" },
+  { value: "esoc", label: "ESoC" },
+  { value: "other", label: "Other" },
+] as const;
+
+/** The one PROGRAMS value that requires the free-text field beside it. Named rather
+ *  than compared against the string inline, so the form and the rules check are
+ *  talking about the same thing. */
+export const PROGRAM_OTHER = "other";
 
 export const HEARD_FROM = [
   { value: "senior", label: "A senior or friend" },

@@ -52,32 +52,17 @@ export const BUILD_DAY: BuildDayProject[] = [
   // open issues a first-timer could take.
 ];
 
+// A single holding card, not three fake ones. Three placeholders read as three
+// projects at a glance and only reveal themselves as filler on a second look; one
+// card that says exactly what it is tells the truth immediately. Every optional
+// field is left off on purpose — the card renderer skips the rows it has no data
+// for, so there are no empty "Maintainer" labels underneath.
 const BUILD_DAY_SCAFFOLD: BuildDayProject[] = [
   {
-    name: "Placeholder Project One",
-    problem:
-      "Replace with the one-line problem this project solves, in plain terms.",
-    stack: ["Language", "Framework"],
-    maintainer: "Placeholder Maintainer",
-    size: "N people",
-    published: true,
-  },
-  {
-    name: "Placeholder Project Two",
-    problem:
-      "Replace with the one-line problem this project solves, in plain terms.",
-    stack: ["Language", "Database"],
-    maintainer: "Placeholder Maintainer",
-    size: "N people",
-    published: true,
-  },
-  {
-    name: "Placeholder Project Three",
-    problem:
-      "Replace with the one-line problem this project solves, in plain terms.",
-    stack: ["Language", "Tooling"],
-    maintainer: "Placeholder Maintainer",
-    size: "N people",
+    name: "To be updated",
+    problem: "",
+    stack: [],
+    maintainer: "",
     published: true,
   },
 ];

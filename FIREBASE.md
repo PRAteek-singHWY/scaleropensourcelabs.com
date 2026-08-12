@@ -294,16 +294,23 @@ change than it looks.
   name:         "Asha Verma",             // required
   email:        "asha@example.com",       // required, format-checked
   year_branch:  "2nd year, CSE",          // required
+  hostel:       "uniworld-1",             // required, closed set
   level:        "none",                   // required, closed set
   path:         "build-day",              // required, closed set
   why:          "…",                      // required, ≤400 chars
   interests:    ["web", "ml"],            // optional, ≤5, closed set
+  programs:     ["gsoc", "outreachy"],    // required, ≥1, ≤10, closed set
+  programs_other: "Season of Docs",       // required iff programs contains "other"
   github:       "octocat",                // optional, omitted if blank
   heard_from:   "senior",                 // optional, omitted if blank
   updates:      false,                    // optional bool
   submitted_at: <server timestamp>        // set by Firestore, not the client
 }
 ```
+
+`programs` is the only list field that is **required and non-empty**. `interests` may be
+absent; `programs` may not. `programs_other` and the `"other"` value are a pair enforced
+in both directions, so no application arrives saying only "other".
 
 `submitted_at` uses `request.time` and is enforced by the rules, so submission order
 cannot be forged even though every other field comes from the browser. Optional fields
@@ -313,11 +320,12 @@ are **omitted rather than stored empty**, so `github` being absent means "not gi
 
 ## Changing the form
 
-**`firestore.rules` hardcodes the allowed values for `level`, `path` and `interests`,
-because Firestore rules cannot import anything.** They are a second copy of the lists
-in `web/content/join.ts`.
+**`firestore.rules` hardcodes the allowed values for `level`, `path`, `hostel`,
+`interests` and `programs`, because Firestore rules cannot import anything.** They are a
+second copy of the lists in `web/content/join.ts`.
 
-If you add a path, a level or an interest, **you must update both files.** Otherwise
+If you add a path, a level, a hostel, an interest or a programme, **you must update both
+files.** Otherwise
 every applicant who picks the new option gets a permission error on submit — the form
 looks perfect, the page renders correctly, and only that one option is broken.
 
@@ -387,7 +395,7 @@ loosening the validator to accept both shapes means neither is really validated.
 | What you see | What it means |
 |---|---|
 | "This form is not connected to anything yet" | No config. One of the six `NEXT_PUBLIC_FIREBASE_*` values is missing or empty. Restart the dev server — env changes are not hot-reloaded. |
-| Console: `Missing or insufficient permissions` | The rules rejected the write. Either they are not deployed (step 4), or the document failed validation — most likely a `level`/`path`/`interests` value the rules do not know. Run `npm run rules`. |
+| Console: `Missing or insufficient permissions` | The rules rejected the write. Either they are not deployed (step 4), or the document failed validation — most likely a `level`/`path`/`hostel`/`interests`/`programs` value the rules do not know. Run `npm run rules`. |
 | Button stuck on "Sending…", then a "could not confirm" message after 12s | The SDK could not reach Firestore. Wrong `projectId`, no database created, or offline. `addDoc` does **not** reject when the backend is unreachable — it queues and retries forever — which is why there is a timeout at all. |
 | Console: `Refused to connect … Content Security Policy` | The CSP in `web/next.config.js` is missing an origin. It already allows `firestore.googleapis.com`, `*.googleapis.com`, and reCAPTCHA on `google.com`/`gstatic.com`. **This fails silently in every screenshot** — the page renders perfectly and only the submit is dead. |
 | Works locally, fails in production | Env vars are not set on the host, or App Check enforcement is on without a site key configured there. |

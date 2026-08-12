@@ -1,28 +1,38 @@
-// The one closing action a page is allowed.
+// The one closing action a route is allowed.
 //
-// The brief is "every page ends with one clear next action, not three", and the
-// reason to build that as a component rather than trust six pages to behave is that
-// the failure mode is invisible per page: each individual page looks fine with a
-// second "or read more about X" link, and the site as a whole becomes a maze. Here
-// there is one slot for a link, and adding a second means changing this file, which
-// is a decision somebody has to make on purpose.
+// THIS IS THE #join BAND FROM THE SINGLE-PAGE SITE, turned into a component. When
+// the whole site was one scroll, a closing "Want your name in the commit log?"
+// appeared exactly once, at the bottom, and that was the correct number. Split
+// across seven routes the same band has to appear seven times, and the moment a
+// thing repeats it needs a rule — otherwise each page grows its own closer, each
+// closer grows a second "or read more about X" link, and the site becomes a maze
+// one individually-defensible link at a time.
 //
-// THERE IS NO SECOND LINK, and there was one for an hour. The first version of this
-// component took an optional `secondary` — an underlined text link under the button,
-// for "or see the four ways in first" — on the reasoning that a subordinate
-// alternative is not really a competing action. That is how a page ends up with
-// three: each addition is individually defensible and the reader still has a
-// decision to make instead of a thing to do. Where a page genuinely needs to serve
-// two intentions, the difference belongs in WHICH path the button preselects, not in
-// a second control. So the signature has one href, and adding another means editing
-// this file on purpose.
+// So the shape is fixed here and the pages only supply words. There is ONE href.
+// Where a page genuinely serves two intentions, the difference belongs in which
+// destination the button preselects, not in a second control beside it.
 //
-// The hand-drawn arrow points AT the action. It is the one place a doodle earns its
-// place structurally rather than decoratively: on a page of straight rules, a wobbly
-// line drawn toward the button is the thing that makes a reader look there.
+// The styling is unchanged from the band it came from, and so is the argument for
+// each part of it:
+//
+//   * CENTRED, unlike every other section on the site, because this one is
+//     structurally a tile rather than an argument: short headline, one supporting
+//     line, one action. The content sections stay left-aligned deliberately —
+//     their headlines are two-clause arguments over three lines, and centred
+//     ragged text at that length is measurably harder to read.
+//
+//   * The `.seam-fade` hairline above it. It is what makes the band read as the
+//     end of the page rather than as one more section, which matters more now
+//     than it did: on a single page the footer was visibly next, and on a route
+//     the reader has to be told the argument has finished.
+//
+//   * The group is the inner block, NOT the section. The section's other child is
+//     that 1px rule, and a hairline sliding 20px up on reveal is the one thing
+//     here that would read as a rendering fault rather than as motion.
 
 import Link from "next/link";
 import Doodle from "@/components/Doodle";
+import Duo from "@/components/Duo";
 
 export default function NextAction({
   eyebrow,
@@ -31,34 +41,41 @@ export default function NextAction({
   body,
   href,
   cta,
+  children,
 }: {
-  eyebrow: string;
-  /** The claim. Set in the display face, caps. */
+  eyebrow?: string;
+  /** The claim. Set in the display face. */
   lead: string;
   /** The second clause, in the accent. Optional. */
   trail?: string;
   body: string;
   href: string;
   cta: string;
+  /** Slot for a margin note, so a page can keep its own gutter remark here. */
+  children?: React.ReactNode;
 }) {
   return (
     <section
       aria-label="What to do next"
-      className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
+      className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
     >
-      <div className="mx-auto max-w-3xl text-center">
-        <p className="chip">{eyebrow}</p>
+      <div className="seam-fade" />
+      {children}
+      <div className="pt-10 text-center sm:pt-14" data-reveal-group>
+        {eyebrow ? <p className="chip">{eyebrow}</p> : null}
+        <Duo
+          className={`mx-auto max-w-3xl text-display-lg ${eyebrow ? "mt-6" : ""}`}
+          lead={lead}
+          trail={trail}
+        />
+        <p className="measure mx-auto mt-4 text-body-lg text-haze">{body}</p>
 
-        <h2 className="mt-7 font-display text-display-lg uppercase leading-[0.94] tracking-[-0.005em] text-balance">
-          <span className="text-ink">{lead}</span>
-          {trail ? <span className="tone"> {trail}</span> : null}
-        </h2>
-
-        <p className="measure mx-auto mt-6 text-body-lg text-haze">{body}</p>
-
-        <div className="mt-10 flex items-center justify-center gap-3">
+        <div className="mt-11 flex flex-wrap items-center justify-center gap-3">
           {/* Points rightward into the button, and hidden on narrow viewports where
-              it would crowd the control instead of leading the eye to it. */}
+              it would crowd the control instead of leading the eye to it. On a page
+              of straight rules a wobbly line drawn at the action is the thing that
+              makes a reader look there — the one place a doodle earns its keep
+              structurally rather than decoratively. */}
           <Doodle
             kind="arrow"
             className="hidden h-6 w-10 shrink-0 text-accent sm:block"

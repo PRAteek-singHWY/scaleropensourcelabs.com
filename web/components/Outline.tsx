@@ -35,13 +35,6 @@
 //    that was supposed to close it. Measured, not guessed — the geometry is the
 //    only thing that showed this.
 
-// 5. The item list is REBUILT ON EVERY NAVIGATION. This component sits in the
-//    shared layout, which does not remount when the router changes route, so a
-//    mount-only scan would leave every page after the first showing the home
-//    page's section list — an outline that confidently lies about the page, which
-//    is worse than no outline. Same failure mode the DOM-derivation in note 1 was
-//    meant to prevent, arriving by a different door.
-
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
@@ -57,12 +50,21 @@ function prettify(id: string): string {
 }
 
 export default function Outline() {
-  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [ready, setReady] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [active, setActive] = useState<string>("");
   const panel = useRef<HTMLElement>(null);
+  // The rail lives in the nav, which lives in the root layout, so it survives every
+  // client-side navigation while the sections it indexes are swapped out from under
+  // it. Without this the list was scanned once and then frozen: a reader who opened
+  // the rail on /projects saw the home page's eight sections, clicked one, and got
+  // nothing — the anchors pointed at ids that were no longer in the document.
+  //
+  // Re-scanning per route also means `active` has to be cleared, which the effect
+  // below does implicitly by re-running: a stale id from the previous page would
+  // otherwise keep one entry highlighted until the reader scrolled.
+  const pathname = usePathname();
 
   useEffect(() => {
     setOpen(localStorage.getItem(KEY) === "1");
@@ -80,9 +82,6 @@ export default function Outline() {
   }, [open]);
 
   useEffect(() => {
-    // Reset before rescanning, so a page with no id'd sections shows nothing
-    // rather than the previous page's list.
-    setActive("");
     const found: Item[] = [];
     for (const s of document.querySelectorAll<HTMLElement>("section[id]")) {
       // aria-label FIRST, then the eyebrow. The eyebrow usually is the section's
@@ -141,7 +140,7 @@ export default function Outline() {
         aria-pressed={open}
         aria-controls="page-outline"
         title="Outline view"
-        className="hidden h-11 w-11 items-center justify-center rounded-full border border-seam text-haze transition-colors duration-300 ease-glide hover:border-accent/60 hover:text-ink lg:flex lg:h-9 lg:w-9"
+        className="hidden h-11 w-11 items-center justify-center rounded-full border border-seam text-haze transition-colors duration-200 ease-in-out hover:border-accent/60 hover:text-accent lg:flex lg:h-9 lg:w-9"
       >
         <span className="sr-only">
           {open ? "Hide the page outline" : "Show the page outline"}
@@ -176,8 +175,11 @@ export default function Outline() {
             ref={panel}
             aria-label="Page outline"
             // Anchored below the nav rather than vertically centred, so it cannot
-            // reach the header at any viewport height or list length.
-            className="plate fixed right-5 top-[4.25rem] z-40 hidden max-h-[calc(100vh-6rem)] w-[13.5rem] overflow-y-auto rounded-tile border border-seam p-3 lg:block"
+            // reach the header at any viewport height or list length. 4.75rem
+            // rather than 4.25: the nav floats now, and its bottom edge sits at
+            // 4rem at this breakpoint, so the old value left a 4px slot of page
+            // showing between two panes of glass.
+            className="plate fixed right-5 top-[4.75rem] z-40 hidden max-h-[calc(100vh-6.5rem)] w-[13.5rem] overflow-y-auto rounded-tile border border-seam p-3 lg:block"
           >
             <p className="label px-2 pb-2 pt-1">On this page</p>
             <ul className="space-y-px">
@@ -188,7 +190,7 @@ export default function Outline() {
                   <a
                     href={`#${i.id}`}
                     aria-current={current ? "true" : undefined}
-                    className={`block rounded-md px-2 py-1.5 text-[13px] leading-snug transition-colors duration-200 ease-glide ${
+                    className={`block rounded-md px-2 py-1.5 text-[15px] leading-snug transition-colors duration-200 ease-glide ${
                       current
                         ? "bg-sunk font-medium text-ink"
                         : "text-haze hover:text-ink"

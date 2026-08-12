@@ -96,7 +96,8 @@ nothing at all in production**, gated on `NODE_ENV`. A grid cannot be designed
 against an empty array, but a production build must never ship an invented name.
 
 Photos go in `public/people/` and are named by the `photo` field. A missing photo is
-fine — it falls back to a designed monogram, not a broken image.
+fine — it falls back to a designed monogram, not a broken image. `STORIES` is the
+exception: those slides are text only and carry no photo at all.
 
 ### Two rules that are not negotiable
 
@@ -107,8 +108,9 @@ Not a formality: these are named students, with photos, shown to an internationa
 audience, attached to a specific organisation or employer.
 
 **2. Every factual claim carries a link to a primary source.** The site has no
-testimonials and no placement statistics, so external verifiability is the only
-thing making it credible. A number without a source gets removed, however good it
+placement statistics, and the only unsourced words on it are the ones members
+signed their own names to, so external verifiability is the only thing making it
+credible. A number without a source gets removed, however good it
 sounds. Two claims were already cut for failing this: an invented "9 people make
 ICPC per college" figure, and "open source is an easier door than ICPC" — it is
 not, GSoC 2025 accepted 1,280 of 15,240 applicants.

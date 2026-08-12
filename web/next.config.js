@@ -5,8 +5,12 @@
 // platform config file is one nobody sees locally and nobody notices when the
 // platform changes.
 //
-// This is a static, credential-free page with one outbound form POST, so the policy
-// can be genuinely strict rather than the permissive boilerplate that usually ships.
+// This is a static site with one outbound write — the join form, into Firestore —
+// so the policy can be genuinely strict rather than the permissive boilerplate that
+// usually ships. It used to say "credential-free page with one outbound form POST",
+// which stopped being true when the form started writing to a database; see the
+// connect-src note below for what that costs and why the origins are listed one by
+// one rather than waved through with a blanket https:.
 // Next's dev server compiles with eval for HMR. Blocking 'unsafe-eval' therefore
 // does not merely warn in dev — it stops the dev bundle executing, so nothing
 // hydrates and every contributor running `npm run dev` gets a dead page.
@@ -19,6 +23,7 @@
 // The CI pipeline would also have caught this — it boots `next dev` and runs the
 // smoke test, which asserts hydration — but it should not have had to.
 const isDev = process.env.NODE_ENV === "development";
+
 
 const CSP = [
   "default-src 'self'",
@@ -98,6 +103,48 @@ const CSP = [
 
 const nextConfig = {
   reactStrictMode: true,
+
+  // The programmes route is spelled the way the rest of the site spells the word.
+  // club.ts is uniformly British — PROGRAMMES, PROGRAMME_NAME, "Programme and
+  // organisation names are trademarks…" — and a nav item reading "Programmes" that
+  // lands on /programs is the kind of small inconsistency a reader notices without
+  // being able to name.
+  //
+  // The American slug was the one the multi-page structure originally shipped with,
+  // so it is redirected rather than dropped: any link already written against it —
+  // in a commit message, a Slack thread, someone's bookmarks — still arrives. 308,
+  // so it is cached and the method is preserved.
+  async redirects() {
+    return [{ source: "/programs", destination: "/programmes", permanent: true }];
+  },
+
+  // Webpack's on-disk cache loses this project on Windows, and the way it fails is
+  // what makes it expensive rather than merely slow: nothing crashes. The dev server
+  // stays up, the terminal shows no error, and every route quietly starts returning
+  // 404 — including routes that were serving 200 a second earlier. The log has the
+  // whole sequence:
+  //
+  //   <w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack:
+  //       Error: ENOENT ... .next\cache\webpack\client-development\1.pack.gz
+  //   ✓ Compiled /programmes in 250ms (296 modules)   <- had been 740 modules
+  //   GET / 404
+  //
+  // A pack file goes missing mid-write, webpack restores a partial module graph, the
+  // route tree comes back nearly empty, and it never recovers on its own.
+  //
+  // Restarting `next dev` DOES NOT FIX IT, which is the part that costs an afternoon.
+  // The damage is in .next/cache, not in the process, so a fresh server reads the bad
+  // cache straight back in and 404s identically. Deleting .next by hand is the only
+  // thing that appears to work, so the loop becomes: restart, still broken, restart
+  // again, eventually delete .next, forget why, and meet it again next week.
+  //
+  // The disk cache only buys a faster cold start. In dev it is kept in memory instead
+  // — one slower first compile, and no pack files to lose. Production builds keep the
+  // disk cache untouched; this branch is dev-only.
+  webpack: (config, { dev }) => {
+    if (dev) config.cache = { type: "memory" };
+    return config;
+  },
 
   async headers() {
     return [

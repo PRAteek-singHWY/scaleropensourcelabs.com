@@ -64,14 +64,49 @@ for (const vp of VIEWPORTS) {
       await page.addInitScript(() => localStorage.setItem("osc-outline", "1"));
     }
 
+    // THE THEME IS SET BEFORE FIRST PAINT, NOT AFTER NAVIGATION, and this is a
+    // determinism fix rather than a tidy-up.
+    //
+    // It used to be `setAttribute("data-theme", …)` after each goto, followed by a
+    // 900ms settle. That looks sufficient and is not: flipping the attribute on a
+    // live document re-resolves every custom property and re-runs the colour
+    // transitions attached to .nav-link, .btn and friends, so for a brief window
+    // the page is genuinely half-themed — dark backgrounds already painted, some
+    // text still carrying light-theme ink. Measured in that window the contrast
+    // pass reports ratios like 1.02:1, which is not a design fault but light ink on
+    // a dark ground caught mid-swap.
+    //
+    // The symptom was intermittency, which is the expensive kind of wrong: three
+    // consecutive sweeps of one unchanged build returned 0, then 40, then 26
+    // issues, on different routes each time. A checker that disagrees with itself
+    // teaches people to ignore it.
+    //
+    // Writing localStorage instead makes the site's OWN anti-flash script (see
+    // layout.tsx) stamp data-theme synchronously before anything paints — the exact
+    // path a returning reader takes. There is no swap to catch mid-flight because
+    // the page is never in the other theme to begin with.
+    await page.addInitScript((t) => {
+      try {
+        localStorage.setItem("osc-theme", t);
+      } catch {}
+    }, theme);
+
     // One page object per viewport/theme, reused across routes. Cheaper than 48
     // browser contexts, and the theme attribute has to be re-applied after each
     // navigation anyway because a full page load resets the DOM.
     for (const route of ROUTES) {
-    await page.goto(BASE + route.path, { waitUntil: "domcontentloaded", timeout: 60_000 });
+    // "load" rather than "domcontentloaded". The stylesheet is what every
+    // measurement in this file depends on, and domcontentloaded does not wait for
+    // it — so the sweep could begin resolving colours against a partially applied
+    // stylesheet. Same class of bug as the theme race above.
+    await page.goto(BASE + route.path, { waitUntil: "load", timeout: 60_000 });
     // Before measuring anything, confirm this is our site and not whatever else
     // happens to be listening. See assert-site.mjs for why.
     await assertOurSite(page);
+    // Belt and braces. The init script above has already stamped this before paint;
+    // re-asserting it is a no-op that costs nothing and keeps the run correct if the
+    // anti-flash script is ever changed or removed. Because the value is already
+    // what it is being set to, no transition fires.
     await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
     // Was 2500 when a WebGL scene had to initialise. Nothing on the page is
     // async now and reducedMotion means the reveals do not animate, so this is just
@@ -254,6 +289,33 @@ for (const vp of VIEWPORTS) {
         for (const el of document.querySelectorAll("p,span,li,a,h1,h2,h3,dt,dd,td")) {
           const t = (el.textContent || "").trim();
           if (!t || el.children.length) continue;
+
+          // NOTHING WITH NO AREA. A contrast ratio for text that occupies zero
+          // pixels is not a fact about anything a reader can see.
+          //
+          // This is here because of the margin notes. They hang in the gutter at
+          // large widths and collapse to 0x0 below it — correct behaviour, since
+          // there is no gutter on a phone — and the deferred pixel pass below then
+          // tried to screenshot a zero-area box, which throws. Every one came back
+          // as `unmeasurable-bg (could not capture)`: six on one route, in both
+          // themes, at every mobile run. All false. The check was reporting that it
+          // could not measure elements that were deliberately not painted.
+          //
+          // The two scripts had simply never met before — this sweep came from the
+          // multi-page branch and the notes from the design one — so the pairing is
+          // new even though neither part is.
+          //
+          // IT ALSO KEEPS THE SWEEP FROM FALLING OVER, which was not the intent and
+          // is the better reason to keep it. Each deferred element gets a locator
+          // screenshot, and a locator screenshot scrolls to its own target; asking
+          // Playwright to scroll to and capture six zero-area boxes left the page in
+          // a state where the full-page screenshot at the foot of this loop then
+          // timed out at 30s and took the whole run with it. Verified by running this
+          // file with and without these two lines against the same build: guarded
+          // completes all 56 combinations, unguarded dies on the sixth.
+          const box = el.getBoundingClientRect();
+          if (box.width === 0 || box.height === 0) continue;
+
           const cs = getComputedStyle(el);
           const fg = parse(cs.color);
           const bg = bgOf(el);

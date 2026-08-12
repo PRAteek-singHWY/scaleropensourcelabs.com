@@ -1,42 +1,77 @@
 import type { Metadata } from "next";
-import { Archivo, Inter, JetBrains_Mono } from "next/font/google";
+import { JetBrains_Mono, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-// TWO FACES, read off the OSC Figma rather than a reference site. Self-hosted at
-// build time by next/font, so no third-party request and no layout shift.
+// TWO faces, where there were four. Both self-hosted at build time by next/font,
+// so there is no third-party request and no layout shift.
 //
-// This replaced a three-face system (Poppins / Anton / Staatliches). The Figma is
-// a narrower type system than what it replaced, and that is the design decision,
-// not an omission: everything that is not body copy or a headline is JetBrains
-// Mono. There is no condensed-caps face anywhere in the file.
+// This replaces a trio — Anton for display, Staatliches for labels and buttons,
+// Poppins for body — that was read off notyourcollege.com and built for a poster
+// register: heavy, condensed, all-caps, shouting. The audience for this page is
+// sixteen and seventeen year olds deciding whether this club is for them, and a
+// poster shouts AT that reader rather than talking to them.
 //
-// Body. Inter Regular at 15px, which is what every paragraph in the frames is.
-const sans = Inter({
+// Plus Jakarta Sans does all three jobs. It is the modern humanist geometric the
+// brief asks for — rounder and warmer than Inter, cleaner and less bubbly than
+// Poppins — and crucially it ships 200-800, so display, label and body are
+// weights of ONE family rather than three families pretending to agree. The
+// aliasing that points --font-display and --font-label at it lives in
+// globals.css, next to the note about what that costs (every display usage now
+// has to state its own weight).
+const sans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-sans",
   display: "swap",
 });
 
-// Display. Archivo Bold — the frames set every headline in it, from the 96px page
-// titles down to the 32px footer wordmark. The Figma pins `wdth 100`, i.e. the
-// default width axis, so the static Bold is an exact match rather than an
-// approximation; there is nothing to substitute here.
+// THE DISPLAY FACE. Headlines only — the hero, every section heading, the big
+// figures. Body, labels and buttons stay on Plus Jakarta Sans above.
 //
-// Note this is a grotesque, NOT the heavy condensed poster face it replaces. The
-// design's authority comes from size and weight at normal width, so keeping Anton
-// would have been a different voice at the same size.
-const display = Archivo({
+// SPACE GROTESK, replacing Syne — cool and legible, in that order of difficulty.
+//
+// Syne had the personality and paid for it in reading. Its ascenders and
+// descenders are unusually long, so at 800 a two-line heading fused into one dark
+// block: the descender of "picked" landed in the cap-height of the line below it.
+// The evidence that this was a real problem and not a preference is in
+// tailwind.config.ts — EVERY step of the type scale had to be loosened to
+// accommodate one face. When a typeface forces the whole vertical rhythm to move,
+// the typeface is the thing that is wrong.
+//
+// Space Grotesk keeps the character and gives the space back. It is still
+// distinctly not-neutral — the flat-sided round forms, the single-storey 'a' at
+// display size, the squared terminals — and it is the face this audience already
+// reads as "developer", which is the register the whole page is in. But its
+// extenders are short, its counters are open, and its x-height is large, which is
+// most of what legibility is at small sizes and all of what it is at large ones.
+//
+// Impact and Bebas Neue stay rejected for the reasons below, unchanged:
+//
+//   * IMPACT is a system font. It is not on the web, it is absent from most
+//     Android and many Linux installs, and next/font cannot self-host it — a
+//     headline set in it would be Impact on some machines and whatever Helvetica
+//     the fallback stack lands on elsewhere. A display face that renders
+//     differently per visitor is not a display face.
+//
+//   * BEBAS NEUE HAS NO LOWERCASE. Every heading it touches becomes capitals,
+//     and this page's section headings are two-clause sentences — "Most students
+//     never apply because nobody told them these exist." An earlier pass on this
+//     site already had to remove all-caps headings for exactly this reason: at
+//     display size they ran to three full lines of capitals and read as a wall.
+//
+// 700 IS THE CEILING, and it is why every display call site moved from
+// `font-extrabold` to `font-bold` in the same change. Space Grotesk ships
+// 300–700; an element asking for 800 gets the 700 master plus SYNTHETIC
+// emboldening, which smears an already-heavy face. Asking for what exists is the
+// difference between a bold headline and a blurry one.
+const display = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["700"],
+  weight: ["500", "700"],
   variable: "--font-display",
   display: "swap",
 });
 
-// Identifiers, figures, labels, eyebrows, nav items and buttons — everything the
-// old system split between Staatliches and mono. One face, one variable: the
-// `--font-label` name is gone rather than aliased, so there is no second name for
-// the same font waiting to drift.
+// Reserved for identifiers and figures — repo names, counts, labels.
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
@@ -78,7 +113,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable} ${mono.variable}`}>
+    <html
+      lang="en"
+      className={`${sans.variable} ${display.variable} ${mono.variable}`}
+    >
       <body>
         {/* Anti-flash for the theme toggle.
             Must be the first node in <body>, NOT in <head>: the App Router hoists
@@ -92,10 +130,11 @@ export default function RootLayout({
           }}
         />
 
-        {/* Skip link. It did not matter much on a single page; with a persistent
-            eight-item nav in front of every one of six pages, a keyboard reader
-            would otherwise tab through the whole bar on every navigation. First
-            focusable element in the document, visible only when focused. */}
+        {/* Skip link. It barely mattered when the site was one page — a reader
+            tabbed past the bar once. With a persistent nine-item bar in front of
+            every one of seven routes, a keyboard reader would otherwise tab through
+            the whole of it on every single navigation. First focusable element in
+            the document, visible only when focused. */}
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-raise focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-ink focus:shadow-lg focus:ring-1 focus:ring-seam"
@@ -103,11 +142,12 @@ export default function RootLayout({
           Skip to content
         </a>
 
-        {/* The chrome shared by every route. Nav and Footer are here rather than in
-            each page so a route cannot exist without them — the previous single-page
-            site imported them per page, which works for one page and is six chances
-            to forget at six. Reveal renders nothing; it opts the document in to the
-            scroll settle. */}
+        {/* The chrome every route shares. Here rather than imported per page so a
+            route cannot exist without it — the single-page site mounted these inside
+            page.tsx, which is correct for one page and seven chances to forget at
+            seven. Reveal renders nothing; it opts the document in to the scroll
+            settle, and doing that once at the root is also what stops each route
+            re-registering its own observer on navigation. */}
         <Nav />
         <Reveal />
         {children}

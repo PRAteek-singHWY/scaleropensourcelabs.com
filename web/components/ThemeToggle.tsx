@@ -27,28 +27,35 @@ function apply(mode: Mode) {
   else root.setAttribute("data-theme", mode);
 }
 
-// TYPED, NOT DRAWN — and this reverses an earlier decision for a stated reason.
-//
-// This control used to be an SVG icon, because before that it was a Unicode glyph
-// (U+25D0, U+2600, U+263E) that rendered as an empty circle when the font had no
-// glyph for it. Paths always render; glyphs from the reader's font stack do not.
-//
-// The OSC Figma draws this control as a bordered pill containing four mono
-// characters, so it is text again — but text we SHIP the font for, self-hosted by
-// next/font, which is the thing the Unicode version got wrong. JetBrains Mono is
-// already loaded for the nav beside it, and Latin capitals are not an exotic
-// codepoint. So this is not a return to the bug.
-//
-// The frames read "LGHT" on every one of the fourteen. I have kept that spelling
-// rather than expanding it to LIGHT: four characters keeps all three states the same
-// width, so the pill does not resize as the reader cycles it, and a control that
-// changes width on click nudges the Join button beside it. SYS / LGHT / DARK is the
-// set. See the note in the component for the accessible name, which is spelled out
-// properly and is what a screen reader announces.
-const GLYPH: Record<Mode, string> = {
-  system: "SYS",
-  light: "LGHT",
-  dark: "DARK",
+// Drawn, not typed. These were Unicode glyphs (U+25D0, U+2600, U+263E) until a
+// headless render showed an empty circle: the font had no glyph, so the only
+// visual the control has silently vanished. A symbol that depends on the
+// reader's installed fonts is not a reliable icon. Paths always render.
+const ICON: Record<Mode, JSX.Element> = {
+  system: (
+    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="5.5" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M8 2.5a5.5 5.5 0 0 0 0 11z" fill="currentColor" />
+    </svg>
+  ),
+  light: (
+    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="3.1" stroke="currentColor" strokeWidth="1.4" />
+      <g stroke="currentColor" strokeWidth="1.4" strokeLinecap="round">
+        <path d="M8 1v1.7M8 13.3V15M15 8h-1.7M2.7 8H1M12.9 3.1l-1.2 1.2M4.3 11.7l-1.2 1.2M12.9 12.9l-1.2-1.2M4.3 4.3 3.1 3.1" />
+      </g>
+    </svg>
+  ),
+  dark: (
+    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden>
+      <path
+        d="M13.5 9.9A5.8 5.8 0 0 1 6.1 2.5a5.8 5.8 0 1 0 7.4 7.4z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
 };
 const LABEL: Record<Mode, string> = {
   system: "Match system",
@@ -81,23 +88,15 @@ export default function ThemeToggle() {
       // announces what it will become is guesswork for a screen reader user.
       aria-label={`Theme: ${LABEL[mode]}. Activate to change.`}
       title={`Theme: ${LABEL[mode]}`}
-      // 44px tall on touch and 30px on pointer, which is the frames' height — the
-      // touch-target floor still governs the small end, so the shrink is `min-h`
-      // rather than a fixed height that would drop under it.
-      className="flex h-11 min-w-[3.75rem] items-center justify-center rounded-full border border-seam px-3 font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-haze transition-colors duration-300 ease-glide hover:border-accent/60 hover:text-ink sm:h-[1.875rem]"
+      className="flex h-11 w-11 items-center justify-center sm:h-9 sm:w-9 rounded-full border border-seam text-xs text-haze transition-colors duration-200 ease-in-out hover:border-accent/60 hover:text-accent"
     >
-      {/* Suppress until the saved value is known, or the label flips on hydration.
-          THE SPAN IS LOAD-BEARING BEYOND THE FLICKER: scripts/smoke.mjs proves the
-          bundle actually ran by reading this element's computed opacity, because it
-          is 1 only after the effect above has set `ready`. Removing the wrapper, or
-          moving the opacity onto the button, silently turns the site's only
-          hydration check into a check of nothing. */}
+      {/* Suppress until the saved value is known, or the icon flips on hydration. */}
       <span
         aria-hidden
         className="flex items-center justify-center"
         style={{ opacity: ready ? 1 : 0 }}
       >
-        {GLYPH[mode]}
+        {ICON[mode]}
       </span>
     </button>
   );
