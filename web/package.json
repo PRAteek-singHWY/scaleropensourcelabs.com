@@ -14,7 +14,7 @@
     "palette": "node scripts/palette.mjs",
     "rules": "node scripts/rules.mjs",
     "rules:emulator": "node scripts/rules-emulator.mjs",
-    "build:static": "STATIC_EXPORT=1 next build && node scripts/htaccess.mjs"
+    "build:static": "STATIC_EXPORT=1 next build && node scripts/htaccess.mjs && node scripts/hosting-config.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
