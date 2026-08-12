@@ -11,6 +11,23 @@
 
 export const SITE = process.env.SITE_URL ?? "http://localhost:3000";
 
+/** Every route on the site. Checks sweep all of them, not just the home page.
+    Ordered as a reader would meet them, with the form last. */
+export const ROUTES = [
+  { path: "/", name: "essence", inNav: true },
+  { path: "/projects", name: "projects", inNav: true },
+  { path: "/programmes", name: "programmes", inNav: true },
+  { path: "/hall-of-fame", name: "hall-of-fame", inNav: true },
+  { path: "/team", name: "team", inNav: true },
+  { path: "/how-to-join", name: "how-to-join", inNav: true },
+  // `inNav: false` is load-bearing, not a detail. /join is the destination of the
+  // nav's Join BUTTON, which is an action rather than a page, and it is deliberately
+  // never marked aria-current — an action that greys itself out at the moment it
+  // becomes relevant is a bug. So on this route exactly zero nav items are current,
+  // and a check expecting one would be asserting the bug.
+  { path: "/join", name: "join", inNav: false },
+];
+
 const MARKER = "Scaler Open Source Club";
 
 export async function assertOurSite(page) {

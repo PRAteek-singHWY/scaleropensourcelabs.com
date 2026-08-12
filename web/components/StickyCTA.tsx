@@ -1,5 +1,25 @@
 "use client";
 
+// CURRENTLY UNMOUNTED. Kept, not deleted, and this note is here so the next reader
+// does not spend ten minutes working out why nothing imports it.
+//
+// The argument below is entirely correct FOR A SINGLE-PAGE SITE, which is what this
+// was written for. Its premise is stated in its own second paragraph: the form
+// exists exactly once, 12,000px down. That premise is now false. /join is its own
+// route, and the nav carries a filled Join button at every scroll position on every
+// page — so this bar and that button would be two permanent controls firing the same
+// action, and the bar would be the one a reader learns to ignore.
+//
+// It is worth keeping because the premise could come back: if the nav ever loses its
+// button, or a single long landing page is added, this is a finished implementation
+// of the pattern with all four of its rules already worked out. Re-mounting it means
+// rendering <StickyCTA /> in app/layout.tsx and pointing its href at JOIN_HREF. The
+// body-padding reservation it needs is still in globals.css, gated on the
+// `[data-cta="1"]` attribute this component sets — so with it unmounted the
+// attribute is never set and the reservation costs nothing.
+//
+// ---------------------------------------------------------------------------
+//
 // The persistent call to action — Apple's sticky buy bar, which is the single
 // device that makes their product pages sell rather than merely describe.
 //
@@ -104,7 +124,7 @@ export default function StickyCTA() {
           )}
         </div>
         <CelebrateLink
-          href="#apply"
+          href="/join"
           className="btn btn-pop shrink-0"
           tabIndex={show ? 0 : -1}
         >

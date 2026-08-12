@@ -153,6 +153,8 @@
   --prog-c4gt: #03817D;
   --prog-sob: #B35605;
   --prog-outreachy: #6B3FBF;
+  --prog-gssoc: #6E0F0F;
+  --prog-hacktoberfest: #4C5B2F;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -198,6 +200,8 @@
     --prog-c4gt: #1F9D6B;
     --prog-sob: #B8871F;
     --prog-outreachy: #8B6DE8;
+    --prog-gssoc: #FFB3B3;
+    --prog-hacktoberfest: #C3D98A;
   }
 }
 
@@ -232,6 +236,8 @@
   --prog-c4gt: #1F9D6B;
   --prog-sob: #B8871F;
   --prog-outreachy: #8B6DE8;
+  --prog-gssoc: #FFB3B3;
+  --prog-hacktoberfest: #C3D98A;
 }
 
 :root[data-theme="light"] {
@@ -261,6 +267,124 @@
   --prog-c4gt: #03817D;
   --prog-sob: #B35605;
   --prog-outreachy: #6B3FBF;
+  --prog-gssoc: #6E0F0F;
+  --prog-hacktoberfest: #4C5B2F;
+}
+
+/* ---------------------------------------------------------------------------
+   THE INVERTED SURFACE — one band that runs opposite to the page.
+
+   Used by the footer, and available to any band that wants to close a page on a
+   hard tonal switch. It works by REDEFINING THE TOKENS FOR A SUBTREE rather than
+   setting colours on the elements inside it: everything below inherits the flip,
+   including the accent, and a component dropped into it needs no dark-mode
+   variant of its own.
+
+   The accent has to flip with the rest, and that is the part usually forgotten.
+   #0038FF gets its punch by being dark, so it measures 2.78:1 on the near-black
+   ground this class installs — the same trap the dark-theme block above exists to
+   avoid. Inside `.inverse` the accent therefore becomes the periwinkle, which is
+   the same hue re-picked for the surface at 8.1:1.
+
+   THE VALUES ARE COPIES, kept in step with the two blocks above by hand. Pointing
+   them at the theme's own variables is impossible: `.inverse` has to state the
+   OPPOSITE of whatever is currently active, and there is no CSS reference to "the
+   other theme's value of --bg". Change a token above and change it here. */
+.inverse {
+  color-scheme: dark;
+  --bg: 11 13 20;
+  --band: 17 20 29;
+  --raise: 20 24 34;
+  --sunk: 15 18 26;
+  --seam: 42 48 62;
+  --edge: 32 38 51;
+  --ink: 244 245 250;
+  --slate: 214 220 232;
+  --haze: 156 162 178;
+  --dust: 130 137 154;
+  --sky: 129 165 255;
+  --accent: 129 165 255;
+  --accent-soft: 14 40 58;
+  --sticker: 27 95 217;
+  --pop: 255 214 0;
+  --ember: 255 138 61;
+  --flag: 248 113 113;
+  --tone-a: 96 165 250;
+  --tone-b: 167 139 250;
+  --prog-gsoc: #4a86e8;
+  --prog-lfx: #d64fa0;
+  --prog-c4gt: #1f9d6b;
+  --prog-sob: #b8871f;
+  --prog-outreachy: #8b6de8;
+  --prog-gssoc: #FFB3B3;
+  --prog-hacktoberfest: #C3D98A;
+  background: rgb(var(--bg));
+  color: rgb(var(--ink));
+}
+
+/* On a dark page the inverted surface is the LIGHT one. Both cases — the OS
+   preference and the explicit choice — in the same order and for the same reason
+   as the token blocks at the top of this file. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .inverse {
+    color-scheme: light;
+    --bg: 250 250 252;
+    --band: 255 255 255;
+    --raise: 255 255 255;
+    --sunk: 245 246 248;
+    --seam: 209 213 219;
+    --edge: 226 232 240;
+    --ink: 10 10 10;
+    --slate: 55 65 81;
+    --haze: 102 102 102;
+    --dust: 106 106 114;
+    --sky: 27 75 255;
+    --accent: 0 56 255;
+    --accent-soft: 240 243 255;
+    --sticker: 0 71 171;
+    --pop: 255 214 0;
+    --ember: 180 85 26;
+    --flag: 185 28 28;
+    --tone-a: 0 56 255;
+    --tone-b: 107 33 255;
+    --prog-gsoc: #1148d0;
+    --prog-lfx: #77225d;
+    --prog-c4gt: #03817d;
+    --prog-sob: #b35605;
+    --prog-outreachy: #6b3fbf;
+    --prog-gssoc: #6E0F0F;
+    --prog-hacktoberfest: #4C5B2F;
+  }
+}
+
+:root[data-theme="dark"] .inverse {
+  color-scheme: light;
+  --bg: 250 250 252;
+  --band: 255 255 255;
+  --raise: 255 255 255;
+  --sunk: 245 246 248;
+  --seam: 209 213 219;
+  --edge: 226 232 240;
+  --ink: 10 10 10;
+  --slate: 55 65 81;
+  --haze: 102 102 102;
+  --dust: 106 106 114;
+  --sky: 27 75 255;
+  --accent: 0 56 255;
+  --accent-soft: 240 243 255;
+  --sticker: 0 71 171;
+  --pop: 255 214 0;
+  --ember: 180 85 26;
+  --flag: 185 28 28;
+  --tone-a: 0 56 255;
+  --tone-b: 107 33 255;
+  --prog-gsoc: #1148d0;
+  --prog-lfx: #77225d;
+  --prog-c4gt: #03817d;
+  --prog-sob: #b35605;
+  --prog-outreachy: #6b3fbf;
+  --prog-gssoc: #6E0F0F;
+  --prog-hacktoberfest: #4C5B2F;
 }
 
 /* ---------------------------------------------------------------------------
@@ -305,12 +429,14 @@ html {
      links, the outline rail, the sticky CTA and a deep link pasted into the
      address bar all land in the same place.
 
-     The number tracks the nav, and the nav now FLOATS: 0.75rem of top inset plus
-     a 3rem plate is a 3.75rem bottom edge (4rem at sm+, where the inset grows).
-     5rem clears that with a rem of air, so a heading does not land flush against
-     the glass. Change the nav's inset or height and this has to move with it. */
+     The number tracks the nav, and the nav FLOATS: 0.75rem of top inset plus a
+     3.5rem plate is a 4.25rem bottom edge (4.5rem at sm+, where the inset grows).
+     5.5rem clears that with a rem of air, so a heading does not land flush against
+     the glass. Change the nav's inset or height and this has to move with it — the
+     plate went from 3rem to 3.5rem when the Join button had to reach a 44px touch
+     target, and this number went with it. */
   scroll-behavior: smooth;
-  scroll-padding-top: 5rem;
+  scroll-padding-top: 5.5rem;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -409,6 +535,30 @@ body::before {
    than assumed. */
 .section {
   @apply mx-auto w-full max-w-[88rem] px-4 sm:px-6;
+}
+
+/* Where a route's first band starts. Stated once here rather than as a pt-* utility
+   repeated on every page, because the number is derived from the nav and a copy of
+   it per route is a copy per route that can drift.
+
+   THE DERIVATION: the nav floats rather than sitting on the top edge — 0.75rem of
+   inset plus a 3.5rem plate puts its bottom at 4.25rem, and 4.5rem at sm+ where the
+   inset grows. These values clear that with 1.75rem / 3rem of air, so a page title
+   has room to breathe under the glass instead of tucking against it. Move the nav's
+   inset or height and this moves too, along with `scroll-padding-top` above.
+
+   DO NOT PAIR THIS WITH A pt-* UTILITY. Every custom class in this file is declared
+   after `@tailwind utilities`, so at equal specificity source order hands the win to
+   this rule and the utility silently does nothing — the reader sees `pt-20` in the
+   markup and 6rem on the screen. Use `.page-top` for the clearance and `pb-*` for
+   whatever the band needs underneath. */
+.page-top {
+  padding-top: 6rem;
+}
+@media (min-width: 640px) {
+  .page-top {
+    padding-top: 7.5rem;
+  }
 }
 
 /* 34em was a book measure — the 60-75 characters typography texts recommend for
@@ -1996,6 +2146,30 @@ body::before {
   background: rgb(var(--pop) / 0.22);
 }
 
+/* The nav's Join button, and nothing else. A `.btn` narrowed to fit inside the plate.
+
+   THE HEIGHT STAYS AT 44px. It was briefly 40 — the plate was 3rem then, and 44
+   inside 48 leaves 2px of air either side, which reads as a button wedged into a bar
+   rather than one sitting in it. 40px clears the 40 that scripts/qa.mjs enforces and
+   the 24 that WCAG 2.5.8 asks at AA, so it passed everything except the number that
+   actually matters here: 2.5.5 and Apple's HIG both want 44, smoke.mjs asserts 44,
+   and this is the single most-tapped control on the site.
+
+   So the PLATE grew instead, to 3.5rem. That is the more expensive fix — the nav's
+   bottom edge, `scroll-padding-top` and `.page-top` are all derived from its height
+   and all three had to move with it — and it is the right one. Shrinking a touch
+   target to fit the furniture is how accessibility floors get quietly lowered one
+   component at a time.
+
+   Only the horizontal padding and the label size are reduced. 15px rather than the
+   base 17px because the label has to clear six nav links at 390px, and the strip is
+   already the thing that scrolls when it does not. */
+.btn-compact {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 0.9375rem;
+}
+
 /* The electric-blue indicator on the secondary CTA. A right-aligned bolt in a
    electric-blue square, per the brief — it gives the quiet button one point of colour so
    it reads as a peer of the yellow one rather than as a disabled control.
@@ -2786,6 +2960,471 @@ button:focus-visible .icon-slide {
       animation-range: cover 0% cover 100%;
     }
   }
+}
+
+/* ---- THE STORY RAIL -------------------------------------------------------
+   The horizontally scrolling testimonials under "In their words". The drift, the
+   wrap and the arrows are in MemberStory.tsx; what is here is the geometry.
+
+   FULL-BLEED THE SAME WAY .band IS, and for the same reason the note there gives:
+   symmetric negative inline margins rather than 100vw, because 100vw includes the
+   scrollbar gutter and would push the page sideways. Applied as margins on the
+   rail's own wrapper, since this escapes a `.section` that has already capped and
+   centred itself — 50% therefore resolves against that capped width, which is
+   exactly the inset being cancelled.
+
+   The reserved outline panel breaks the symmetry the offsets assume, so the
+   correction is the one .band::before carries: with padding-right P on main, each
+   side shifts by P/2 = 7.5rem. */
+.stories {
+  /* THE BLUE DOES NOT INVERT, and that is the one decision in this block worth
+     arguing about. --accent is #0038FF in light and #81A5FF in dark, because it
+     is a TEXT and UI colour that has to stay legible on whichever ground it lands
+     on. Painting a slide with it would flip this panel to pale periwinkle in dark
+     mode and drop white type on it to about 1.9:1 — unreadable.
+
+     So the fill is the literal light-mode --accent, fixed, and the type on it is
+     white in both themes at 6.98:1. Portrait's tints make the same call for the
+     same reason: this is a graphic object, like a photograph, not a surface the
+     theme owns. Keep the two in step — a slide painted from a token is a dark-mode
+     contrast failure that nothing in the QA sweep would call a colour bug. */
+  --story-blue: #0038ff;
+  position: relative;
+  margin-inline: calc(50% - 50vw);
+}
+@media (min-width: 1024px) {
+  :root[data-outline="1"] .stories {
+    margin-left: calc(50% - 50vw + 7.5rem);
+    margin-right: calc(50% - 50vw - 7.5rem);
+  }
+}
+
+/* No padding and no gap on the rail: a slide is exactly one rail-width, so the
+   inset that lines its content up with the rest of the page has to live INSIDE
+   the slide, where it is `.section` doing its normal job rather than a second
+   copy of the 88rem measure maintained by hand.
+
+   No scrollbar either. This scroller drives itself and has arrows, and a
+   permanent horizontal bar under a full-width panel reads as a rendering
+   accident. It is still a real scroll container, so a trackpad, a touch drag and
+   the keyboard all work — the bar is the only thing hidden. */
+.stories-rail {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  /* Or a flick at the end of the rail scrolls the page behind it. */
+  overscroll-behavior-x: contain;
+  /* ONE TESTIMONIAL IS ONE STOP. The rail advances a whole slide at a time under
+     its own timer, and snap is what makes a human drag obey the same rule — a
+     flick lands on a person rather than halfway between two of them.
+     `scroll-snap-stop: always` on the slides is the other half: without it a hard
+     swipe skips three people at once, which is the failure this section cannot
+     afford, since each slide is somebody's account and not a frame of a video. */
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.stories-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.stories-slide {
+  background: var(--story-blue);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* A SOLID WHITE DISC WITH A BLUE GLYPH, not a translucent one. Over a slide the
+   pointer can also drag, the arrows have to stay findable while the content
+   behind them moves, and a tinted disc dissolves into whatever paragraph is
+   passing under it. The glyph takes the same fixed blue as the panel for the same
+   reason the panel is fixed — `text-accent` on white would be pale periwinkle at
+   2.4:1 in dark mode. */
+.stories-arrow {
+  background: #ffffff;
+  color: var(--story-blue);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+  transition:
+    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 160ms ease-out;
+}
+.stories-arrow:hover {
+  transform: scale(1.08);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.26);
+}
+.stories-arrow:active {
+  transform: scale(0.96);
+}
+
+/* ---------------------------------------------------------------------------
+   MOTION PASS II — THE SURFACES THE FIRST PASS LEFT STILL
+
+   The pass above animated arrival (two reveal modes), the ambient layer (orb,
+   grid, band sheen) and the controls that were obviously controls (buttons,
+   citations, table rows, the accordion). What it explicitly declined to touch was
+   the CONTENT: three quarters of this site is hairline-ruled prose blocks, plain
+   tiles, list rows, figures and diagrams, and every one of them was a rectangle
+   that did nothing under a pointer and drew itself in a single frame.
+
+   This block covers those, and it is written as a small vocabulary of named
+   gestures rather than as a rule per call site:
+
+     .lift       a tile rises 3px and gains a shadow           (tiles, cards)
+     .rise       a hairline-ruled block rises 2px, rule lights (prose blocks)
+     .list-row   a row in a seam-gap stack tints               (stacked lists)
+     .stat-tile  a figure grows inside a tinting tile          (numbers strip)
+     .zoom       a photograph scales inside a fixed frame      (framed images)
+     .nav-rule   the nav's current-page rule, drawn on hover   (nav)
+     .graph-node / .rail-draw  a diagram draws itself          (figures)
+
+   THE FOUR RULES EVERY ONE OF THEM FOLLOWS, all inherited from the first pass
+   rather than invented here:
+
+     1. No new background-IMAGE on an ancestor of text — scripts/qa.mjs resolves a
+        text node's ground by climbing ancestors and checking background-image
+        first, and finding one defers the pair from a cheap cascade read to a
+        per-element screenshot. Every tint below is a background-COLOR from a
+        token, and the two gradients are on pseudo-elements.
+
+     2. Nothing new owns arrival. Where an entrance IS added (the two diagrams) it
+        is gated under `:root.reveal-on` so the reveal system is still the only
+        thing that decides when something appears — and, for free, so the whole
+        gesture is absent under prefers-reduced-motion, since Reveal.tsx does not
+        add that class when the preference is set.
+
+     3. Hover travel is `transform`, never `translate`. The stagger owns
+        `translate` on every reveal item (see the long note over
+        [data-reveal-item]), and the two compose only as long as each keeps to its
+        own property.
+
+     4. Resting appearance is unchanged. Every rule here is a :hover, a
+        scroll-driven pseudo-element, or scoped under .reveal-on — so the page a
+        screenshot sweep measures, and the page somebody with JavaScript off
+        reads, is the page that was already signed off.
+   --------------------------------------------------------------------------- */
+
+/* THE TILE LIFT, for the surfaces that are visibly cards and were not getting
+   .card. That class was the obvious answer and is the wrong one for these: it
+   also sets `border: 1px solid rgb(var(--edge))`, which — this file being emitted
+   after Tailwind's utilities layer — silently beats the `border-seam` they carry,
+   and several of them already own a border-colour hover of their own that
+   .card:hover's accent edge would have fought. This is the lift alone, so it
+   composes with whatever the tile already does about its own edge.
+
+   3px rather than .card's 4px, and no accent pulse: these are tiles a reader
+   reads rather than controls a reader presses, and the pulse is the site's way of
+   saying "this whole rectangle is one target". */
+/* THE TRANSITION LIST CARRIES THE TWO COLOUR PROPERTIES IT DOES NOT ANIMATE, for
+   the same reason the reveal items' list carries three of .card's — `transition`
+   is one property, so stating it here REPLACES whatever the call site had. Several
+   of these tiles already carry Tailwind's `transition-colors` for their own
+   border-colour hover, and this class is emitted after the utilities layer, so a
+   list of transform and box-shadow alone would have quietly turned every one of
+   those hovers into a jump. Inert on the tiles that have no colour hover. */
+.lift {
+  transition:
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 240ms ease-in-out,
+    border-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+}
+
+/* THE HAIRLINE BLOCK, which is the single most repeated shape on this site — a
+   1px rule, a heading, a paragraph — and appeared about seventy times without a
+   hover state anywhere.
+
+   THE RULE ITSELF IS THE AFFORDANCE, not a shadow. These blocks have no fill and
+   no border on three sides, so there is no card to lift and a drop shadow under a
+   bottomless block reads as a rendering fault. The one piece of furniture they do
+   own is the hairline, so that is the part that answers: it goes from --seam to
+   the accent and the block rises 2px with it.
+
+   border-top-color and not `border-color`: the block's other three edges do not
+   exist, but `.rise:hover { border-color }` would still beat the `border-t`
+   utility's shorthand and light up any block that later gains a second edge. */
+.rise {
+  transition:
+    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-top-color 200ms ease-in-out;
+}
+.rise:hover {
+  transform: translateY(-2px);
+  border-top-color: rgb(var(--sky));
+}
+
+/* A ROW IN A SEAM-GAP STACK — the programme rows, the mentor rows, the build-day
+   list. These are `space-y-px` over a --seam ground, so every row is a --raise
+   sheet with a hairline of the container showing between them.
+
+   A TINT AND NOTHING ELSE. Both of the gestures above are wrong here for a
+   structural reason rather than a stylistic one: the rows are 1px apart, so a
+   lift on one opens a 3px gap that exposes the grey container behind it and reads
+   as the stack coming apart. Same reasoning as .row-live on the tables, and the
+   same token — --sunk, opaque, because the QA sweep reads a translucent wash as
+   its own un-composited colour and would score the row's text against a surface
+   that exists nowhere. */
+.list-row {
+  transition: background-color 180ms ease-in-out;
+}
+.list-row:hover {
+  background-color: rgb(var(--sunk));
+}
+
+/* THE NUMBERS STRIP. Same 1px-gap construction as .list-row, so the tile can only
+   tint — but the figure inside it is display-size and can afford to grow, which
+   is the one hover on this site where the thing that reacts is the content rather
+   than the container.
+
+   transform-origin is the figure's own left baseline. Centred, a 4% scale on a
+   54px numeral pushes it up and left into its own tile padding; anchored bottom
+   left it grows into the empty space above the label, which is where the tile has
+   room. */
+.stat-tile {
+  transition: background-color 200ms ease-in-out;
+}
+.stat-tile:hover {
+  background-color: rgb(var(--sunk));
+}
+.stat-tile .stat-figure {
+  display: inline-block;
+  transform-origin: left bottom;
+  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stat-tile:hover .stat-figure {
+  transform: scale(1.04);
+}
+
+/* A PHOTOGRAPH INSIDE A FIXED FRAME. The frame is the thing with the keyline and
+   the hard shadow, so the frame must not move — only the image inside it scales,
+   which is why the overflow-hidden that makes this work already exists on every
+   call site and is not set here.
+
+   600ms, which is two to three times anything else in this file. A photograph is
+   the largest object on screen when it is on screen, and the same 240ms that
+   reads as responsive on a 300px tile reads as a flinch on a 700px image. */
+.zoom img {
+  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.zoom:hover img {
+  transform: scale(1.04);
+}
+
+/* THE NAV'S UNDERLINE. The rule under the current page was already there and
+   already correct — it is the non-colour half of "you are here", for the reader
+   who cannot use the accent to tell (see the comment at that span in Nav.tsx).
+   What it was not doing was answering a pointer, so a nav of six links had
+   nothing but a colour change across the whole strip.
+
+   ONE ELEMENT, TWO STATES, and the current page's is not an animation: it sits at
+   scaleX(1) from the first frame, so nothing about where you are depends on a
+   transition completing. The hover draws the same rule left to right on every
+   other link, which makes the current page's rule read as a link that is already
+   drawn rather than as a different device.
+
+   The colour is set here for both, so the markup no longer needs bg-transparent
+   for the un-hovered case — a transparent rule cannot animate to a visible one
+   without also animating colour, and scaling a coloured line is one composited
+   property instead of two. */
+.nav-rule {
+  background: rgb(var(--accent));
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-link:hover .nav-rule,
+.nav-link:focus-visible .nav-rule,
+.nav-link[aria-current="page"] .nav-rule {
+  transform: scaleX(1);
+}
+
+/* THE READING PROGRESS LINE, along the bottom edge of the nav plate.
+   The one thing added here that is not a hover: a 2px accent rule that tracks how
+   far down the document you are. On a site whose shortest route is 6,000px and
+   whose longest is over 20,000, "how much of this is left" is a real question and
+   nothing on the page answered it.
+
+   SCROLL-DRIVEN AND THEREFORE CHROME-ONLY, on the same terms as the dot grid's
+   drift above: no scroll listener, no layout read per frame, and browsers without
+   `animation-timeline` get the nav exactly as it was. The reduced-motion gate is
+   again a no-preference media query rather than the global block at the foot of
+   this file, because that block works by zeroing animation-duration and a
+   scroll-driven animation has no duration to zero.
+
+   Inset 0.75rem either side so the line sits inside the plate's 1rem corner
+   radius instead of poking out of the curve — cheaper and more robust than
+   putting overflow:hidden on a bar that contains a focus ring and a fixed panel.
+
+   scaleX from the left rather than an animated width, so it stays on the
+   compositor and cannot lay the nav out again on every frame. */
+@keyframes read-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .nav-plate {
+      position: relative;
+    }
+    .nav-plate::after {
+      content: "";
+      position: absolute;
+      left: 0.75rem;
+      right: 0.75rem;
+      bottom: 0;
+      height: 2px;
+      border-radius: 9999px;
+      background: rgb(var(--accent));
+      transform: scaleX(0);
+      transform-origin: left center;
+      animation: read-progress linear both;
+      animation-timeline: scroll(root block);
+    }
+  }
+}
+
+/* ---- THE TWO DIAGRAMS DRAW THEMSELVES -------------------------------------
+   The commit graph and the pull-request timeline are the site's two explanatory
+   figures, and both were fully drawn in the first frame — which is the one place
+   on this site where motion carries meaning rather than polish. Both diagrams are
+   about a SEQUENCE (fork, commit, commit, merge; open, CI, review, changes,
+   merge), and a sequence that assembles in order says what the labels say.
+
+   Everything below is scoped under `:root.reveal-on` and keyed on the group's
+   `.is-in`, which buys three things at once: the trigger is the existing
+   intersection observer rather than a second one, a bundle failure leaves both
+   diagrams fully drawn, and the whole effect is absent under
+   prefers-reduced-motion because Reveal.tsx never adds that class. Nothing here
+   needs an entry in the reduced-motion block at the foot of this file. */
+
+/* THE COMMIT GRAPH'S TWO LANES, plotting themselves left to right.
+
+   NOT the [data-draw] rule the heading underlines use, and the reason is measured
+   rather than stylistic. That rule leans on `pathLength="1"` to make one dash
+   value serve paths of any length; this SVG also carries
+   `vector-effect: non-scaling-stroke`, which keeps its rails 2px at every width
+   and, as a side effect, makes dash lengths resolve in SCREEN PIXELS. The two
+   together produce a dash of "the whole path" = 304 user units read as 304px
+   against a lane rendered 1199px long, i.e. four dashes and three gaps in what is
+   supposed to be one continuous line. It rendered as a broken diagram.
+
+   So each lane declares its own length in container-width units instead — 95cqw
+   for the 304-unit rail, 57cqw for the 181-unit branch, both authored at the path
+   in CommitGraph.tsx. Those track the rendered width of a `w-full` svg exactly, so
+   one dash covers one lane at every viewport, and the fallback keeps a
+   never-visible lane from becoming a permanently invisible one if a future call
+   site forgets the variable.
+
+   Same 0.7s and same 0.15s step behind the block as the heading rules, so the two
+   drawn things on the page share one rhythm. */
+:root.reveal-on [data-reveal-group] .graph-lane {
+  stroke-dasharray: var(--lane, 100vw);
+  stroke-dashoffset: var(--lane, 100vw);
+  transition: stroke-dashoffset 0.7s ease calc(var(--reveal-delay, 0s) + 0.15s);
+}
+:root.reveal-on [data-reveal-group].is-in .graph-lane {
+  stroke-dashoffset: 0;
+}
+
+/* The nodes on the commit graph, popping in along the lane the path has just
+   drawn. --node-i is authored in the JSX, since the order is the diagram's
+   meaning rather than document order: the four project commits, then the two on
+   your branch, then the merge.
+
+   transform-box: fill-box is what makes `transform-origin: center` mean the
+   circle's own centre rather than the SVG viewport's — without it every node
+   scales in from the top-left corner of the graph. */
+@keyframes node-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+:root.reveal-on [data-reveal-group] .graph-node {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+:root.reveal-on [data-reveal-group].is-in .graph-node {
+  /* 0.45s of lead, which is the 0.7s the lane takes to draw minus enough of it
+     that the node is not still waiting on a line that has visibly arrived. */
+  animation: node-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1)
+    calc(var(--node-i, 0) * 110ms + 0.45s) both;
+}
+
+/* The timeline's rail, drawn downward between one dot and the next. Delay comes
+   from --reveal-delay, which the stagger already declares on each <li> and which
+   reaches this span by ordinary inheritance — so the rail belonging to step three
+   draws when step three arrives and not before, with one number governing both.
+
+   scaleY from the top, because the span is `h-full` of a grid cell whose height
+   is the step's own copy: a height animation would read the layout every frame
+   and the cell is inside a five-row grid. */
+:root.reveal-on [data-reveal-group] .rail-draw {
+  transform: scaleY(0);
+  transform-origin: top center;
+  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1)
+    calc(var(--reveal-delay, 0s) + 0.12s);
+}
+:root.reveal-on [data-reveal-group].is-in .rail-draw {
+  transform: scaleY(1);
+}
+
+/* The timeline's dots, on the same inherited delay. A DIV rather than an SVG
+   node, so this one needs no transform-box — it is a 10px rounded box that scales
+   about its own centre by default. It carries `ring-4 ring-bg` at the call site,
+   which is what lets it sit on the rail it interrupts; the ring scales with it. */
+:root.reveal-on [data-reveal-group] .step-dot {
+  opacity: 0;
+}
+:root.reveal-on [data-reveal-group].is-in .step-dot {
+  animation: node-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1)
+    var(--reveal-delay, 0s) both;
+}
+
+/* THE GREEN WALL, filling in column by column — a year of contributions
+   accumulating left to right, which is what the graphic is a picture of.
+
+   THE DELAY IS PER COLUMN, NOT PER CELL, and that is the whole reason this is
+   affordable. The wall is 7 × 52 = 364 squares; at even 12ms each the last one
+   would arrive four and a half seconds after the first, and the reader would watch
+   a decorative texture assemble for longer than they will spend on the section.
+   Keyed on the column index — written by the component, which already computes it
+   — all seven cells in a week come up together and the whole wall resolves in
+   about 0.6s.
+
+   OPACITY ONLY. No transform, no scale: 364 simultaneously animating elements is
+   the one place on this site where the cost of a gesture is a real number rather
+   than a rounding error, and opacity is the property a compositor can do without
+   touching layout or paint. */
+@keyframes wall-fill {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+:root.reveal-on [data-reveal-group] .wall-cell {
+  opacity: 0;
+}
+:root.reveal-on [data-reveal-group].is-in .wall-cell {
+  animation: wall-fill 380ms ease-out calc(var(--wall-col, 0) * 12ms) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

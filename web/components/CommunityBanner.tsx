@@ -79,7 +79,7 @@ export default function CommunityBanner() {
 
           {/* Centre: the action. Same CelebrateLink as the hero's, so this fires
               the confetti too — it is the same button, in a second place. */}
-          <CelebrateLink href="#apply" className="btn btn-pop shrink-0">
+          <CelebrateLink href="/join" className="btn btn-pop shrink-0">
             Join the club →
           </CelebrateLink>
 

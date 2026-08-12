@@ -16,6 +16,7 @@
 // It states no figure and makes no claim, so there is nothing here to source. The
 // one number on the page that matters is already above it.
 
+import Link from "next/link";
 import Doodle from "@/components/Doodle";
 import { LINKS } from "@/content/club";
 
@@ -46,9 +47,9 @@ export default function Banner() {
             </p>
           </div>
 
-          <a href="#apply" className="btn btn-pop shrink-0 self-start sm:self-auto">
+          <Link href="/join" className="btn btn-pop shrink-0 self-start sm:self-auto">
             Start now →
-          </a>
+          </Link>
         </div>
       </div>
     </div>

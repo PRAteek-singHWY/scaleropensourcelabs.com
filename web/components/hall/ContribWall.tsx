@@ -142,7 +142,13 @@ const MASK = typeset();
 
 export default function ContribWall() {
   return (
-    <div aria-hidden className="mt-8 sm:mt-20">
+    // A stagger group, which here is doing something other than staggering: the
+    // wall needs the `.is-in` a group earns so its cells can fill in column by
+    // column as it arrives — a year of contributions accumulating left to right,
+    // which is the one gesture this graphic is a picture of. The cell delay is
+    // per COLUMN rather than per cell, so 364 squares resolve in about 0.6s
+    // instead of four and a half seconds. See .wall-cell in globals.css.
+    <div aria-hidden className="mt-8 sm:mt-20" data-reveal-group>
       <div className="flex items-end justify-between gap-4">
         <p className="label">The wall</p>
         {/* Not a disclaimer any more — a hint. It tells you what to do with the
@@ -202,8 +208,13 @@ export default function ContribWall() {
               return (
                 <span
                   key={i}
-                  className="aspect-square rounded-[2px]"
-                  style={{ background: WORD_FILL }}
+                  className="wall-cell aspect-square rounded-[2px]"
+                  style={
+                    {
+                      background: WORD_FILL,
+                      "--wall-col": col,
+                    } as React.CSSProperties
+                  }
                 />
               );
             }
@@ -216,10 +227,13 @@ export default function ContribWall() {
             return (
               <span
                 key={i}
-                className="aspect-square rounded-[2px]"
-                style={{
-                  background: l === 0 ? "rgb(var(--sunk))" : FILL[l],
-                }}
+                className="wall-cell aspect-square rounded-[2px]"
+                style={
+                  {
+                    background: l === 0 ? "rgb(var(--sunk))" : FILL[l],
+                    "--wall-col": col,
+                  } as React.CSSProperties
+                }
               />
             );
           })}

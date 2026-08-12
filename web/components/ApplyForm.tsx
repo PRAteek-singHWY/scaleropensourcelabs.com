@@ -1,76 +1,274 @@
 "use client";
 
-// The apply form, in the hero.
+// The join form.
 //
-// Measured off scaler.com/school-of-business/minimal-landing: the form is not a
-// link to a form, it is the form, pinned right, above the fold, visible before any
-// scroll. Their button is 14px/600 at 6px radius. Every club page that actually
-// converts does some version of this; the closest comparable that does NOT — Ohio
-// State's Open Source Club, whose only CTA is a mailto — now displays "This website
-// is not currently maintained".
+// Nine fields, which is a lot, and every one of them is here because it changes what
+// somebody does with the application rather than because it would be nice to know.
+// The test applied to each: if two people answer differently, do they get a different
+// first conversation? Where the answer was no, the field is not here.
 //
-// Deliberately five fields. Each additional field costs completions, and none of
-// the ones we cut tell us anything we cannot ask later.
+// FIVE THINGS THIS FORM WILL NOT DO.
 //
-// TWO THINGS I WILL NOT COPY FROM THE REFERENCE:
+// 1. No countdown timer. The reference this form's layout came from counts down to a
+//    real dated admissions deadline; a club timer that silently resets is a dark
+//    pattern, and on a site whose entire argument is "every claim here is checkable"
+//    it would be the one self-inflicted wound. The deadline below renders ONLY when
+//    a real future date is configured, and disappears once it passes.
 //
-//   1. A countdown timer. Scaler's counts down to a real, dated admissions
-//      deadline. A club timer that silently resets is a dark pattern, and on a
-//      site whose entire argument is "every claim here is checkable" it would be
-//      the one self-inflicted wound. The deadline below renders ONLY when a real
-//      future date is configured, and disappears once it passes.
+// 2. No pre-ticked opt-in. Pre-ticked consent is not consent — the same rule the
+//    rest of this site applies to publishing a student's face.
 //
-//   2. A pre-ticked messaging opt-in. Theirs is checked by default. Ours is not,
-//      because pre-ticked consent is not consent — the same rule the rest of this
-//      site applies to publishing a student's face.
+// 3. No required GitHub field. The site tells beginners repeatedly that they are
+//    welcome with no experience; a required GitHub profile would call that a lie at
+//    the last possible moment, and it is exactly the person the club most wants who
+//    would close the tab.
 //
-// No backend: the site is static. The form posts to whatever form service the club
-// configures. With none configured it says so plainly rather than silently
-// swallowing a submission, which is the worse failure.
+// 4. No silent failure. With no Firebase project configured the form SAYS so instead
+//    of pretending to submit. A form that swallows an application is worse than one
+//    that admits it is not wired up. This is also the default for every contributor:
+//    the repo ships no credentials, so a local checkout gets the honest message rather
+//    than writing test entries into the real collection.
+//
+// 5. No fake validation. `type="email"` and `required` are the browser's, so they
+//    work before hydration and behave the way the reader's browser has taught them.
+//
+// PATH PRESELECTION. Every page's closing action links here with ?path=<id>, so a
+// reader who clicked "join the program track" arrives with that already chosen. It
+// is a default, not a lock — the whole point of showing four paths is that people
+// reclassify themselves while reading, and the field stays editable.
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { HEARD_FROM, INTERESTS, LEVELS, LEVEL_LABEL, PATHS } from "@/content/join";
+import { LINKS } from "@/content/club";
+import { APPLICATIONS, getDb, isConfigured } from "@/lib/firebase";
 import { celebrate } from "@/components/fx/celebrate";
-
-const ENDPOINT = process.env.NEXT_PUBLIC_APPLY_ENDPOINT ?? "";
 /** ISO date. Renders only while genuinely in the future. */
 const DEADLINE = process.env.NEXT_PUBLIC_COHORT_DEADLINE ?? "";
+
+/** Distinguishes "we gave up waiting" from "Firestore said no", because the two need
+ *  different words in front of an applicant. A named class rather than a string match
+ *  on the message, so it cannot be confused with a Firebase error that happens to
+ *  mention time. */
+class TimeoutError extends Error {
+  constructor() {
+    super("Timed out waiting for the application store");
+    this.name = "TimeoutError";
+  }
+}
 
 function deadlineLabel(): string | null {
   if (!DEADLINE) return null;
   const d = new Date(DEADLINE);
   if (Number.isNaN(d.getTime()) || d.getTime() < Date.now()) return null;
-  return d.toLocaleDateString(undefined, {
+  return d.toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
 }
 
-// bg-sunk, not bg-bg. Once the light page became pure white to let the section
-// bands read, --bg and --raise were both #FFFFFF — so a white field sat on a white
-// card and only its 1px border said it was an input at all. --sunk is the recessed
-// fill and exists for exactly this.
-// 2px rather than 1px, and the reason is that this form sits inside a card that
-// is itself 1px-bordered on a dotted page. At 1px the fields read as ruled lines
-// in a table rather than as things you type into; the extra pixel is what makes
-// each one look like its own object.
-//
-// The focus ring is additive to the global :focus-visible outline rather than a
-// replacement for it: the outline only fires for keyboard focus, and a form this
-// long deserves an obvious target under the mouse too. Both are the accent, so
-// a pointer user and a keyboard user see the same colour mean the same thing.
+// bg-sunk, not bg-bg. On the light theme --bg and --raise are both #FFFFFF, so a
+// white field on a white card is distinguished only by its 1px border. --sunk is the
+// recessed fill and exists for exactly this.
 const field =
-  // Black keyline and a 4px hard shadow, like every other control in the system —
-  // an input that does not share the button's construction reads as a different
-  // kind of object, and in a form the two sit inches apart.
-  //
-  // On focus the shadow goes electric blue rather than shrinking. The press
-  // animation the buttons use is wrong here: a field is not pressed, it is
-  // entered, and moving it 2px when the caret lands would shift the text somebody
-  // is about to type.
-  "w-full rounded-lg border-2 border-black bg-raise px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none shadow-[4px_4px_0_0_#000] transition duration-150 ease-out focus:shadow-[4px_4px_0_0_#0038FF]";
+  // The halo on focus is the same 3px accent ring at 18% that .card wears on
+  // hover, so a focused field and a hovered tile are visibly the same system
+  // saying the same thing. It rides the `transition` already here — Tailwind's
+  // bare `transition` covers box-shadow — and it is additive to the border
+  // recolour rather than a replacement for it, so the affordance still survives
+  // being flattened by a forced-colours mode.
+  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
 
-export default function ApplyForm() {
+function Fields() {
+  const params = useSearchParams();
+  // Validated against the real list rather than trusted. A hand-edited
+  // ?path=anything would otherwise become the select's value and submit a path
+  // that does not exist.
+  const requested = params.get("path");
+  const preselected = PATHS.some((p) => p.id === requested) ? requested! : "";
+
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="af-name" className="label mb-2 block">
+            Name
+          </label>
+          <input id="af-name" name="name" required className={field} autoComplete="name" />
+        </div>
+        <div>
+          <label htmlFor="af-email" className="label mb-2 block">
+            Email
+          </label>
+          <input
+            id="af-email"
+            name="email"
+            type="email"
+            required
+            className={field}
+            autoComplete="email"
+            placeholder="you@example.com"
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label htmlFor="af-year" className="label mb-2 block">
+            Year and branch
+          </label>
+          <input
+            id="af-year"
+            name="year_branch"
+            required
+            className={field}
+            placeholder="1st year, CSE"
+          />
+        </div>
+        <div>
+          <label htmlFor="af-github" className="label mb-2 block">
+            GitHub{" "}
+            <span className="normal-case tracking-normal text-dust">(optional)</span>
+          </label>
+          <input
+            id="af-github"
+            name="github"
+            className={field}
+            placeholder="octocat"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <p className="mt-2 text-[15px] leading-relaxed text-dust">
+            Leave it blank if you have never used it. That is genuinely fine.
+          </p>
+        </div>
+      </div>
+
+      {/* Level. A radio group rather than a select, because the three options are the
+          form's most important answer and burying them behind a tap is the wrong
+          trade. Also: reading the three options is itself reassuring — "never
+          contributed" being listed first says the club expects it. */}
+      <fieldset>
+        <legend className="label mb-3">Where you are right now</legend>
+        <div className="space-y-2">
+          {LEVELS.map((l) => (
+            <label
+              key={l.value}
+              className="flex cursor-pointer items-center gap-3 rounded-md border border-seam bg-sunk px-3.5 py-3 transition hover:border-accent/50"
+            >
+              <input
+                type="radio"
+                name="level"
+                value={l.value}
+                required
+                /* NOT pre-checked. The first option was, which made `required`
+                   decorative and let somebody submit without ever considering the
+                   one answer that decides what their first conversation is about.
+                   Listing "never contributed" first is the reassurance; ticking it
+                   on their behalf is just bad data. */
+                className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
+              />
+              <span className="text-sm text-ink">{l.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      {/* Path. A select, because there are four with long names and four more radio
+          cards would make this form look twice as long as it is — which costs
+          completions on the one page where that matters most. */}
+      <div>
+        <label htmlFor="af-path" className="label mb-2 block">
+          Which path interests you
+        </label>
+        <select
+          id="af-path"
+          name="path"
+          className={field}
+          defaultValue={preselected}
+          required
+        >
+          <option value="" disabled>
+            Pick one — you can change your mind later
+          </option>
+          {(["beginner", "intermediate"] as const).map((level) => (
+            <optgroup key={level} label={LEVEL_LABEL[level]}>
+              {PATHS.filter((p) => p.level === level).map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+      </div>
+
+      {/* Interests. Checkboxes, because these genuinely are not exclusive and forcing
+          one answer would produce worse data than allowing three.
+          The whole control is a <label>, so the tap target is the full 44px row
+          rather than the 16px box — a tap-target check once flagged the box here and
+          was measuring something no finger ever touches. */}
+      <fieldset>
+        <legend className="label mb-3">
+          Areas you are curious about{" "}
+          <span className="normal-case tracking-normal text-dust">
+            (pick any)
+          </span>
+        </legend>
+        <div className="flex flex-wrap gap-2">
+          {INTERESTS.map((i) => (
+            <label
+              key={i.value}
+              className="flex cursor-pointer items-center gap-2.5 rounded-md border border-seam bg-sunk px-3.5 py-2.5 transition hover:border-accent/50"
+            >
+              <input
+                type="checkbox"
+                name="interests"
+                value={i.value}
+                className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
+              />
+              <span className="text-sm text-ink">{i.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <div>
+        <label htmlFor="af-why" className="label mb-2 block">
+          One line on why open source interests you
+        </label>
+        <textarea
+          id="af-why"
+          name="why"
+          required
+          rows={3}
+          maxLength={400}
+          className={`${field} resize-y`}
+          placeholder="Anything honest. &quot;I want a job&quot; is a real answer and we would rather have it than a paragraph you think we want."
+        />
+      </div>
+
+      <div>
+        <label htmlFor="af-heard" className="label mb-2 block">
+          How you heard about us
+        </label>
+        <select id="af-heard" name="heard_from" className={field} defaultValue="">
+          <option value="" disabled>
+            Pick one
+          </option>
+          {HEARD_FROM.map((h) => (
+            <option key={h.value} value={h.value}>
+              {h.label}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
+  );
+}
+
+export default function JoinForm() {
   const [state, setState] = useState<"idle" | "sending" | "done" | "error">("idle");
   const [message, setMessage] = useState("");
   const deadline = deadlineLabel();
@@ -79,35 +277,95 @@ export default function ApplyForm() {
     e.preventDefault();
     if (state === "sending") return;
 
-    if (!ENDPOINT) {
+    if (!isConfigured()) {
       setState("error");
       setMessage(
-        "No form endpoint is configured yet, so this would go nowhere. Set NEXT_PUBLIC_APPLY_ENDPOINT before launch.",
+        "This form is not connected to anything yet, so submitting would send your application nowhere. Email us instead and it will actually reach somebody.",
       );
       return;
     }
 
-    setState("sending");
+    // Read the fields BEFORE the first await. `e.currentTarget` is null by the time an
+    // async handler resumes — React pools the event and the form reference is gone —
+    // so building FormData after awaiting the Firebase import throws, and it throws in
+    // the one code path a test that never submits would not cover.
     const data = new FormData(e.currentTarget);
+    setState("sending");
+
     try {
-      const res = await fetch(ENDPOINT, {
-        method: "POST",
-        body: data,
-        headers: { Accept: "application/json" },
-      });
-      if (!res.ok) throw new Error(`Submit failed (${res.status})`);
+      const db = await getDb();
+      // Belt and braces: isConfigured() already returned true, so this is only
+      // reachable if the SDK import itself failed.
+      if (!db) throw new Error("Could not reach the application store");
+
+      const { addDoc, collection, serverTimestamp } = await import("firebase/firestore");
+
+      const str = (k: string) => String(data.get(k) ?? "").trim();
+      // Field names are the form's own, so the stored document reads the same as the
+      // markup. The rules file validates this exact shape — see firestore.rules, and
+      // `npm run rules` for the check that keeps the two in agreement.
+      const doc: Record<string, unknown> = {
+        name: str("name"),
+        email: str("email"),
+        year_branch: str("year_branch"),
+        level: str("level"),
+        path: str("path"),
+        why: str("why"),
+        interests: data.getAll("interests").map(String),
+        updates: data.get("updates") !== null,
+        // The SERVER's clock. The rules require `submitted_at == request.time`, so a
+        // client-supplied Date would be rejected — which is the point: submission
+        // order cannot be forged.
+        submitted_at: serverTimestamp(),
+      };
+      // Optional fields are omitted rather than stored empty, matching the
+      // present-or-absent shape the rules allow.
+      const github = str("github");
+      if (github) doc.github = github;
+      const heard = str("heard_from");
+      if (heard) doc.heard_from = heard;
+
+      // RACED AGAINST A TIMEOUT, because addDoc does not reject when the backend is
+      // unreachable — it queues the write and retries the channel indefinitely. Found
+      // by pointing the client at a project that does not exist: six retries went out,
+      // the promise never settled, and the button said "Sending…" forever with no
+      // message. An applicant would sit there, then leave.
+      //
+      // 12s is chosen to be longer than a slow-but-working submit on campus wifi and
+      // short enough that nobody assumes the page is broken. A rejected permission or
+      // a validation failure still arrives fast and takes the catch below.
+      await Promise.race([
+        addDoc(collection(db, APPLICATIONS), doc),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new TimeoutError()), 12_000),
+        ),
+      ]);
       setState("done");
-      // The one moment on this page that has genuinely earned a celebration:
-      // a submitted application. Fired after the success state is set, and not
-      // awaited — a failed confetti chunk must never be able to swallow the
-      // "you're in the queue" render behind it.
+      // The confetti, and it fires HERE rather than anywhere earlier — after the
+      // write has been confirmed, not when the button is pressed. A celebration on
+      // submit would fire over a request that is still in flight and might yet fail,
+      // which is the one moment on this site where a bit of delight would become a
+      // lie.
+      //
+      // Deliberately not awaited, and the void is the point rather than tidiness:
+      // celebrate() dynamically imports canvas-confetti, so it can reject on a slow
+      // or blocked network. Awaited, a failed confetti chunk would throw into the
+      // catch below and tell somebody whose application HAD been saved that it had
+      // not. The success state is already set above and does not depend on it.
       void celebrate();
     } catch (err) {
       setState("error");
+      // The raw Firebase message is not shown. "Missing or insufficient permissions"
+      // tells an applicant nothing and reads as though they did something wrong; it
+      // goes to the console for whoever is debugging instead.
+      console.error("[osc] application submit failed", err);
+      // The two cases need different words, and the distinction is not pedantry: on a
+      // timeout the queued write may still reach Firestore later, so claiming "nothing
+      // was saved" could be false and could produce a duplicate if they resubmit.
       setMessage(
-        err instanceof Error
-          ? `${err.message}. Email us instead and we'll pick it up.`
-          : "Something went wrong. Email us instead.",
+        err instanceof TimeoutError
+          ? "We could not confirm that went through — it may be our end or the network. Rather than have you send it twice, email us and we'll check:"
+          : "That did not go through, and the fault is ours rather than yours. Nothing was saved, so please email us and we'll pick it up:",
       );
     }
   }
@@ -116,157 +374,29 @@ export default function ApplyForm() {
     return (
       <div className="card card-still rounded-tile bg-raise p-7">
         <p className="text-display-md font-semibold">You&apos;re in the queue.</p>
-        <p className="measure mt-3 text-body text-haze">
-          Someone will message you before the next session. Nothing else to do —
-          bring a laptop.
+        <p className="measure mt-4 text-body text-haze">
+          Somebody will message you before the next session. There is nothing else to
+          do and nothing to prepare — bring a laptop.
         </p>
       </div>
     );
   }
 
   return (
-    // A reveal group, so the card's header strip and the form body arrive one
-    // after the other rather than together. Deliberately only those two — the
-    // group's children are its DIRECT children, so the fields inside the <form>
-    // are untouched. Staggering individual inputs would mean a form that is
-    // visibly assembling itself while somebody is trying to fill it in, which is
-    // the one place on this page where motion would cost a reader something.
-    <div
-      className="card card-still rounded-tile bg-raise shadow-[0_8px_24px_rgba(0,0,0,0.06)]"
-      data-reveal-group
-    >
+    <div className="card card-still rounded-tile bg-raise shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
       <div className="border-b border-seam px-7 py-5">
-        <p className="label">Open to all years</p>
-        <p className="mt-1.5 text-body-lg font-semibold">Join the club</p>
+        <p className="label">Open to all years, no experience needed</p>
+        <p className="mt-2 text-body-lg font-semibold">Join the club</p>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4 px-7 py-6">
-        <div>
-          <label htmlFor="af-name" className="label mb-2 block">
-            Name
-          </label>
-          <input id="af-name" name="name" required className={field} autoComplete="name" />
-        </div>
-
-        <div>
-          <label htmlFor="af-github" className="label mb-2 block">
-            GitHub username
-          </label>
-          <input
-            id="af-github"
-            name="github"
-            required
-            className={field}
-            placeholder="octocat"
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="af-year" className="label mb-2 block">
-            Year and branch
-          </label>
-          <input
-            id="af-year"
-            name="year"
-            required
-            className={field}
-            placeholder="2nd year, CSE"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="af-link" className="label mb-2 block">
-            One link to anything you&apos;ve built{" "}
-            <span className="normal-case tracking-normal text-dust">(optional)</span>
-          </label>
-          <input
-            id="af-link"
-            name="link"
-            className={field}
-            placeholder="A repo, a deploy, a half-finished thing"
-          />
-        </div>
-
-        {/* Which programme they are aiming at, and where.
-            Asked because it is the single most useful thing to know before the
-            first conversation: someone aiming at GSoC in eight months needs a
-            different first patch than someone who wants an LFX term next quarter.
-
-            A select, not free text, because the answer has to be countable — the
-            point is to group people by target so a session can serve several at
-            once. "Not sure yet" is a real option and the DEFAULT, because most
-            people genuinely do not know and forcing a guess produces noise. It is
-            also honest: this page tells beginners they are welcome, so the form
-            must not immediately demand a plan. */}
-        <div>
-          <label htmlFor="af-target" className="label mb-2 block">
-            Which programme are you aiming at
-          </label>
-          <select id="af-target" name="target" defaultValue="unsure" className={field}>
-            <option value="unsure">Not sure yet — help me pick</option>
-            <option value="GSOC">Google Summer of Code</option>
-            <option value="LFX">LFX Mentorship</option>
-            <option value="C4GT">Code for GovTech</option>
-            <option value="SOB">Summer of Bitcoin</option>
-            <option value="OUTREACHY">Outreachy</option>
-          </select>
-        </div>
-
-        {/* Two org preferences rather than one. Nobody gets their first choice
-            reliably — the whole argument of this site is that these are
-            competitive — so asking for a second is realistic rather than
-            pessimistic, and it gives us somewhere to point them when the first
-            organisation has no tractable issues open.
-
-            Optional on purpose. A beginner who has not yet read any org's issue
-            tracker cannot answer this, and requiring it would filter out exactly
-            the people the club exists for. */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* One note for the pair. Repeating "(optional)" in both labels made each
-              wrap to two lines inside the two-column grid. */}
-          <p className="text-[15px] text-dust sm:col-span-2">
-            Both optional — leave them blank if you have not looked yet.
-          </p>
-          {/* `flex flex-col` plus `mt-auto` on the input, rather than the plain
-              divs this used to be, and it fixes a real misalignment: the column is
-              about 172px inside a 26rem card, and "Second choice org" set in the
-              label face is just wide enough to wrap where "First choice org" does
-              not. With the label taller on one side, the two inputs sat at
-              different heights — the kind of 20px offset nobody can name and
-              everybody notices.
-
-              Pushing the input to the bottom of its (grid-stretched, therefore
-              equal-height) cell aligns them for ANY label that wraps, rather than
-              for the current strings at the current font. Shortening the copy
-              would have fixed today's render and broken again on the next
-              translation or type change. */}
-          <div className="flex flex-col">
-            <label htmlFor="af-org1" className="label mb-2 block">
-              First choice org
-            </label>
-            <input
-              id="af-org1"
-              name="org1"
-              className={`${field} mt-auto`}
-              placeholder="Kubernetes, OWASP…"
-              autoComplete="off"
-            />
-          </div>
-          <div className="flex flex-col">
-            <label htmlFor="af-org2" className="label mb-2 block">
-              Second choice org
-            </label>
-            <input
-              id="af-org2"
-              name="org2"
-              className={`${field} mt-auto`}
-              placeholder="A backup you would be happy with"
-              autoComplete="off"
-            />
-          </div>
-        </div>
+        {/* useSearchParams needs a Suspense boundary or the page cannot be
+            statically rendered — Next throws at build time rather than at runtime,
+            which is the good version of this error. The fallback is a plain height
+            reservation so the card does not jump on hydration. */}
+        <Suspense fallback={<div className="h-[42rem]" aria-hidden />}>
+          <Fields />
+        </Suspense>
 
         <label className="flex cursor-pointer gap-3 pt-1">
           {/* Unticked. Pre-ticked consent is not consent. */}
@@ -281,7 +411,7 @@ export default function ApplyForm() {
         </label>
 
         {deadline && (
-          <p className="pt-1 text-[15px] font-medium text-ember">
+          <p className="text-[15px] font-medium text-ember">
             Applications for this cohort close {deadline}.
           </p>
         )}
@@ -289,19 +419,35 @@ export default function ApplyForm() {
         <button
           type="submit"
           disabled={state === "sending"}
-          // btn-pop, not btn-primary: the brief names the join action as the
-          // yellow one, and this is that action.
           className="btn btn-pop w-full disabled:opacity-60"
         >
           {state === "sending" ? "Sending…" : "Apply to join"}
         </button>
 
         {state === "error" && (
-          <p className="text-[15px] leading-relaxed text-ember">{message}</p>
+          <p className="text-[15px] leading-relaxed text-ember" role="alert">
+            {message}{" "}
+            <a href={`mailto:${LINKS.email}`} className="underline">
+              {LINKS.email}
+            </a>
+          </p>
         )}
 
-        <p className="border-t border-seam pt-4 text-[15px] leading-relaxed text-dust">
-          Not ready to apply? Sit in on a session first — no signup, just turn up.
+        {/* WHAT HAPPENS TO THE DATA. Added when the form started storing submissions
+            instead of posting them nowhere. A form that quietly began keeping names,
+            emails and colleges without saying so would be the exact behaviour this
+            site criticises elsewhere, and it is the applicant's information, not
+            ours. Kept to two sentences and placed where it is read before submitting
+            rather than in a policy page nobody opens. */}
+        <p className="border-t border-seam pt-5 text-[15px] leading-relaxed text-dust">
+          What we do with this: your answers go to the club organisers and nowhere
+          else. Nothing here is published on the site — the names on it are only there
+          because those people were asked and said yes.
+        </p>
+
+        <p className="text-[15px] leading-relaxed text-dust">
+          Not ready to apply? Turn up to a build day instead — no signup, no form, and
+          nobody will ask whether you have contributed before.
         </p>
       </form>
     </div>

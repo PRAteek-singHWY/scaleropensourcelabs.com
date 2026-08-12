@@ -24,33 +24,80 @@
 // CNCF and others, and setting them in a row on a club's recruitment page states
 // a relationship nobody granted. Typeset names say "this is the ecosystem the
 // work lands in", which is true and checkable; a wall of trademarks says
-// "partners", which is not. The caption under the strip closes the gap the
-// brief's own framing leaves open, because a decorative band of org names beside
-// a join button will otherwise be read as endorsement by exactly the
-// sixteen-year-old this page is written for.
+// "partners", which is not.
 //
-// The list is local rather than in content/club.ts. It is one decorative strip
-// with one call site, and everything in that file is data some other section
-// derives a claim from — a reader who meets this array there would reasonably
-// assume the club has a relationship with each entry.
+// THE NON-ENDORSEMENT LINE THAT USED TO SIT UNDER THIS STRIP IS GONE, removed on
+// request. The disclaimer itself is not lost — the footer carries it on every
+// route ("Programme and organisation names are trademarks of their respective
+// owners… not an endorsement by any programme or company"), which is a better
+// home for it anyway: it is chrome, it is site-wide, and it no longer explains a
+// decorative strip to a reader who had not yet wondered. If the footer note ever
+// goes, this strip is one of the places that relied on it.
+//
+// THE STRIP IS HALF DERIVED AND HALF LOCAL, and the split is the point.
+//
+// The PROGRAMMES half is read out of club.ts, so this strip lists exactly the
+// programmes /programmes documents — no more, no fewer. It used to name two of
+// them by hand while that page described seven, which is the kind of drift that
+// is invisible until somebody notices the ticker is advertising a shorter list
+// than the page it sits two clicks from. Add a programme to PROGRAMMES and it
+// appears here; remove one and it leaves.
+//
+// The PROJECTS half stays a local array, and deliberately does NOT move into
+// club.ts. Everything in that file is data some other section derives a claim
+// from, and a reader meeting this list there would reasonably assume the club
+// has a relationship with each entry. It does not: this is the ecosystem the
+// work lands in, which is a weaker and truer statement.
+//
+// NOTHING HERE IS A CLAIM ABOUT WORK DONE, and that now holds without exception.
+// OWASP was briefly on this list because it is the one upstream project with a
+// verified contribution behind it — which is exactly why it does not belong on a
+// decorative strip. A real, checkable contribution is worth more stated as a
+// contribution, where it links to the evidence, than dissolved into a scrolling
+// band of names a reader cannot tell apart. It is already on /projects, ranked
+// and sourced. Keep this list aspirational-but-honest: ecosystems, not receipts.
 
 import { useState } from "react";
+import { PROGRAMME_SHORT } from "@/content/club";
 
-const ECOSYSTEM = [
-  "GSoC",
-  "LFX",
+/** Every programme the site documents, in the order club.ts declares them. */
+const PROGRAMMES_IN_STRIP = Object.values(PROGRAMME_SHORT);
+
+/** Projects and foundations the work lands in. Names only — see the note above. */
+const PROJECTS_IN_STRIP = [
   "Linux Foundation",
   "Kubernetes",
   "PyTorch",
   "CNCF",
+  "Apache",
+  "Mozilla",
+  "Rust",
+  "Node.js",
+  "Django",
 ];
+
+// INTERLEAVED rather than concatenated. Two solid blocks would scroll past as
+// "here are the programmes… and now here are the projects", which invites the
+// reader to treat the second block as a partner list. Alternating them keeps the
+// strip reading as one undifferentiated ecosystem band, which is what it is.
+//
+// zip-longest rather than zip: the two lists are different lengths (7 and 10) and
+// a plain pairwise walk would silently drop the tail of the longer one.
+const ECOSYSTEM = Array.from(
+  { length: Math.max(PROGRAMMES_IN_STRIP.length, PROJECTS_IN_STRIP.length) },
+  (_, i) => [PROGRAMMES_IN_STRIP[i], PROJECTS_IN_STRIP[i]],
+)
+  .flat()
+  .filter(Boolean) as string[];
 
 /**
  * One copy of the list.
  *
  * The second copy is `aria-hidden`: it is a rendering trick to make the loop
- * seamless, and a screen reader announcing six organisations twice would be
- * reporting the trick rather than the content.
+ * seamless, and a screen reader announcing the whole list twice would be
+ * reporting the trick rather than the content. (It said "six organisations" when
+ * the list was hardcoded at six; the count is derived now, so naming it here
+ * would just be a number to forget to update.)
  */
 function Row({ duplicate = false }: { duplicate?: boolean }) {
   return (
@@ -137,10 +184,6 @@ export default function Ticker() {
         </button>
       </div>
 
-      <p className="mt-4 text-sm text-dust">
-        The programmes and projects members contribute into. Names rather than
-        logos — none of these organisations endorse this club.
-      </p>
     </div>
   );
 }

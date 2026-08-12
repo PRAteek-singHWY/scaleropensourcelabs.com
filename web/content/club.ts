@@ -81,6 +81,12 @@ export const LINKS = {
   github: "https://github.com/PRAteek-singHWY",
   security: "/security",
   email: "opensource@scaleropensourcelabs.com",
+  /** The club's own repo. This site is one of the club's projects. */
+  repo: "https://github.com/PRAteek-singHWY/scaleropensourcelabs.com",
+  issues:
+    "https://github.com/PRAteek-singHWY/scaleropensourcelabs.com/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22",
+  contributing:
+    "https://github.com/PRAteek-singHWY/scaleropensourcelabs.com/blob/main/CONTRIBUTING.md",
 };
 
 export type Track = {
@@ -127,7 +133,7 @@ export const TRACKS: Track[] = [
         { kind: "out", text: "# then read the review" },
       ],
     },
-    cta: { label: "How it goes", href: "#path" },
+    cta: { label: "How it goes", href: "/how-to-join#path" },
   },
   {
     name: { lead: "AI", trail: "security" },
@@ -145,7 +151,7 @@ export const TRACKS: Track[] = [
         { kind: "out", text: "# report privately, never in an issue" },
       ],
     },
-    cta: { label: "Where it lands", href: "#hall" },
+    cta: { label: "Where it lands", href: "/hall-of-fame" },
   },
   {
     name: { lead: "Club", trail: "engineering" },
@@ -207,7 +213,31 @@ export const PATH: { step: string; body: string }[] = [
 //    organisations, and putting them on a club site implies an endorsement nobody
 //    granted. Typographic treatment says the same thing and is ours to use.
 
-export type Programme = "GSOC" | "LFX" | "C4GT" | "SOB" | "OUTREACHY";
+// GSSOC AND HACKTOBERFEST ARRIVED IN THE MERGE, and they are the reason the `tier`
+// field below exists. This list used to be five programmes that a student has to be
+// SELECTED into, which made "programme" and "paid, competitive thing" the same word.
+// The moment two open-entry events joined the list that stopped being true, and a
+// first-year reading a single undifferentiated grid would reasonably conclude that
+// every item on it is out of reach this year. The honest answer — the open ones
+// today, the paid ones after a few months of the open ones — needs the distinction
+// to be in the data.
+export type Programme =
+  | "GSOC"
+  | "LFX"
+  | "C4GT"
+  | "SOB"
+  | "OUTREACHY"
+  | "GSSOC"
+  | "HACKTOBERFEST";
+
+/**
+ * `paid` — somebody else runs a selection process, and if they pick you, you are
+ *   paid. This is the tier that is worth something to a recruiter precisely
+ *   because you did not award it to yourself.
+ * `open` — no selection. You participate by turning up and contributing. Real
+ *   value for a first contribution, no signal value as a credential.
+ */
+export type Tier = "paid" | "open";
 
 /** Full names, since the acronyms mean nothing to a general reader. */
 export const PROGRAMME_NAME: Record<Programme, string> = {
@@ -216,6 +246,8 @@ export const PROGRAMME_NAME: Record<Programme, string> = {
   C4GT: "Code for GovTech",
   SOB: "Summer of Bitcoin",
   OUTREACHY: "Outreachy",
+  GSSOC: "GirlScript Summer of Code",
+  HACKTOBERFEST: "Hacktoberfest",
 };
 
 /**
@@ -239,12 +271,33 @@ export const PROGRAMME_NAME: Record<Programme, string> = {
    the 11px text they are used for. The variables are defined per theme in
    globals.css. Anything drawn in the DOM must use this map so it follows the
    theme. */
+/* THE LAST TWO WERE ADDED BY A MERGE AND WERE PUT THROUGH THE SAME VALIDATOR.
+   `npm run palette -- --legacy` sweeps all seven, and the seven-colour set fails on
+   exactly the pairs the five-colour set already failed on — three GSOC/OUTREACHY
+   distances, which are the known adjacent-hue problem the note above describes.
+   Adding these two costs nothing.
+
+   Getting there took three attempts and the reason is worth recording, because the
+   obvious pick is the wrong one. GSSoC's own branding is pink, and a pink sits on
+   top of LFX's magenta: dE 13.8 against a floor of 15. Moving it to a mid red then
+   collided with SOB's orange under deuteranopia and with C4GT's teal under
+   protanopia — because red-green CVD collapses all three of those onto the same
+   axis, so no amount of hue-shifting inside the red-orange-green arc separates
+   them. The only two things that survive red-green CVD are the blue-yellow axis and
+   LIGHTNESS, which is why GSSoC ended up as a very dark red on light and a very
+   light pink on dark rather than as anything in the middle.
+
+   Colour still never carries identity alone here — every programme is directly
+   labelled with its own name — but the set is no longer weaker than the one it
+   extends. Re-run the sweep before adding an eighth. */
 export const PROGRAMME_COLOUR: Record<Programme, string> = {
   GSOC: "var(--prog-gsoc)",
   LFX: "var(--prog-lfx)",
   C4GT: "var(--prog-c4gt)",
   SOB: "var(--prog-sob)",
   OUTREACHY: "var(--prog-outreachy)",
+  GSSOC: "var(--prog-gssoc)",
+  HACKTOBERFEST: "var(--prog-hacktoberfest)",
 };
 
 /* WebGL cannot read custom properties — a shader uniform needs a real number. The
@@ -256,6 +309,8 @@ export const PROGRAMME_COLOUR_HEX: Record<Programme, string> = {
   C4GT: "#1F9D6B",
   SOB: "#B8871F",
   OUTREACHY: "#8B6DE8",
+  GSSOC: "#FFB3B3",
+  HACKTOBERFEST: "#C3D98A",
 };
 
 export const PROGRAMME_SHORT: Record<Programme, string> = {
@@ -264,6 +319,8 @@ export const PROGRAMME_SHORT: Record<Programme, string> = {
   C4GT: "C4GT",
   SOB: "SoB",
   OUTREACHY: "Outreachy",
+  GSSOC: "GSSoC",
+  HACKTOBERFEST: "Hacktoberfest",
 };
 
 export type Selection = {
@@ -297,8 +354,16 @@ export type Selection = {
 
 /* The 2026 GSoC cohort, as supplied by the club. `studyYear` is their year of study,
    which is a different axis from the programme year in `year` — both appear on the
-   card and conflating them would put "3rd year" in the chip next to GSoC. */
-const GSOC_2026: [name: string, studyYear: string][] = [
+   card and conflating them would put "3rd year" in the chip next to GSoC.
+
+   THE THIRD SLOT IS THE MENTORING ORG, and it is the one thing still to fill in.
+   It is left empty here rather than guessed: every one of these students was picked
+   BY somebody, and which organisation that was is the fact a reader wants next after
+   the name — but a plausible-looking foundation typed in from memory is precisely the
+   claim `org`'s doc comment above exists to keep out. The hall card holds the slot
+   open and prints "org to be announced" while it is empty, so the gap is visible on
+   the page instead of silently absent, and closing it is one string per line here. */
+const GSOC_2026: [name: string, studyYear: string, org?: string][] = [
   ["Prateek Singh", "3rd year"],
   ["Ojas Maheshwari", "3rd year"],
   ["Parth Dagia", "3rd year"],
@@ -315,7 +380,7 @@ const GSOC_2026: [name: string, studyYear: string][] = [
   ["Kumar Amityush", "2nd year"],
 ];
 
-const GSOC_2025: [name: string, studyYear: string][] = [
+const GSOC_2025: [name: string, studyYear: string, org?: string][] = [
   ["Sauhard Gupta", "3rd year"],
 ];
 
@@ -345,18 +410,20 @@ const GSOC_2025: [name: string, studyYear: string][] = [
  * programmes get real entries the same way these did.
  */
 export const SELECTIONS: Selection[] = [
-  ...GSOC_2026.map(([name, studyYear]) => ({
+  ...GSOC_2026.map(([name, studyYear, org]) => ({
     name,
     programme: "GSOC" as Programme,
     year: "2026",
     studyYear,
+    org,
     consented: true,
   })),
-  ...GSOC_2025.map(([name, studyYear]) => ({
+  ...GSOC_2025.map(([name, studyYear, org]) => ({
     name,
     programme: "GSOC" as Programme,
     year: "2025",
     studyYear,
+    org,
     consented: true,
   })),
 ];
@@ -445,6 +512,8 @@ export const LOOKING_FOR: LookingFor[] = [
 
 export type ProgrammeInfo = {
   key: Programme;
+  /** See the note over `Tier`. Drives the two groups the programmes page renders. */
+  tier: Tier;
   what: string;
   who: string;
   /** Rough shape of the year — not exact dates, which move annually. */
@@ -458,6 +527,8 @@ export type ProgrammeInfo = {
 export const PROGRAMMES: ProgrammeInfo[] = [
   {
     key: "GSOC",
+
+    tier: "paid",
     what: "Google pays you to write code for an open-source organisation over a summer, with a mentor from that organisation assigned to you.",
     who: "Anyone 18+ who is new to the organisation. You do not need to be a student, and you do not need existing open-source experience.",
     when: "Organisations announced early in the year, applications a few weeks later, coding over the summer.",
@@ -467,6 +538,8 @@ export const PROGRAMMES: ProgrammeInfo[] = [
   },
   {
     key: "LFX",
+
+    tier: "paid",
     what: "The Linux Foundation's mentorship programme, running across CNCF, Kubernetes, Node.js and the rest of its projects.",
     who: "Beginners are explicitly the target. Terms run several times a year, so a miss is a few months rather than a year.",
     when: "Three terms annually, so there is almost always one open or opening.",
@@ -476,6 +549,8 @@ export const PROGRAMMES: ProgrammeInfo[] = [
   },
   {
     key: "C4GT",
+
+    tier: "paid",
     what: "Code for GovTech: open-source contribution to digital public infrastructure — the software Indian government services actually run on.",
     who: "Indian students, with a strong bias toward people who want their work used at national scale rather than starred on GitHub.",
     when: "An annual summer cohort plus year-round contribution windows.",
@@ -485,6 +560,7 @@ export const PROGRAMMES: ProgrammeInfo[] = [
   },
   {
     key: "SOB",
+    tier: "paid",
     what: "Summer of Bitcoin: a paid summer programme contributing to Bitcoin and Lightning open-source projects.",
     who: "Students, with a real ramp for people who have never touched the codebase. The C++ is intimidating and the community knows it.",
     when: "Applications early in the year, coding over the summer.",
@@ -492,7 +568,57 @@ export const PROGRAMMES: ProgrammeInfo[] = [
     weDo: "Work through the onboarding curriculum together, because almost nobody finishes it alone.",
     url: "https://www.summerofbitcoin.org/",
   },
+
+  // ---- The open tier ------------------------------------------------------
+  // Everything above requires somebody else to pick you. These two do not, and
+  // that is the entire reason they are on the page: the honest answer to "which
+  // of these can I actually do right now" is "these, today", and a first-year
+  // who only ever sees the selective five concludes the answer is "none".
+  {
+    key: "GSSOC",
+    tier: "open",
+    what:
+      "GirlScript Summer of Code: a three-month Indian open-source programme with assigned mentors and a points leaderboard. Beginner-focused by design, and much easier to get into than anything above.",
+    who: "Open to beginners, including first-years with no merged work at all. This is usually the first name on this page that somebody can act on today.",
+    when: "Registrations around the start of the edition, then roughly three months of contribution.",
+    pays:
+      "No stipend. Certificates, swag and a leaderboard — plus mentors, which is the part that is actually worth having.",
+    weDo:
+      "Nothing to prepare. Register when it opens and pick a project in a language you can already run. Use it to learn the mechanics — fork, branch, PR, review, merge — so the paid programmes below are not your first time using Git in anger.",
+    url: "https://gssoc.girlscript.tech/",
+  },
+  {
+    key: "HACKTOBERFEST",
+    tier: "open",
+    what:
+      "A month-long event every October: get a handful of pull requests merged into participating repositories and you get swag. No selection, no application, no stipend.",
+    who: "Anyone. This is the lowest barrier in open source, and the single best month of the year to make a first contribution because half the internet is reviewing pull requests at once.",
+    when: "October, every year. Registration opens in late September.",
+    pays: "Swag, or a tree planted in your name. That is the whole reward.",
+    weDo:
+      "Have one project picked and built on your machine before 1 October, so you spend the month contributing rather than setting up. Come to a session in September and we will do it with you.",
+    url: "https://hacktoberfest.com/",
+  },
 ];
+
+/**
+ * The honest caveat about Hacktoberfest, kept next to it rather than buried.
+ *
+ * This is on the page because the club's position is not "do all of these". In
+ * 2020 Hacktoberfest's reward structure produced enough junk pull requests that
+ * maintainers publicly asked people to stop, and the programme changed its rules
+ * in response. Recommending it without saying so would be the kind of omission
+ * this site exists not to make — and a maintainer reading this page would spot it
+ * instantly.
+ */
+export const HACKTOBERFEST_CAVEAT =
+  "One warning, because we would rather say it than have a maintainer say it to you: the point is not four merged PRs. Hacktoberfest earned a bad reputation from people opening whitespace changes to farm swag, and maintainers still remember. Fix something that was actually broken, or do not open the PR.";
+
+/* Derived rather than written out as two arrays, so a programme cannot be in
+   neither group or in both. Adding one to PROGRAMMES with a `tier` puts it in the
+   right place on the page automatically. */
+export const PAID = PROGRAMMES.filter((p) => p.tier === "paid");
+export const OPEN_ENTRY = PROGRAMMES.filter((p) => p.tier === "open");
 
 // ---------------------------------------------------------------------------
 // WHAT YOU ACTUALLY GET — the argument that outlasts the stipend.

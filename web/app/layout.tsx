@@ -79,6 +79,10 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
+import Nav from "@/components/Nav";
+import Reveal from "@/components/Reveal";
+import Footer from "@/components/Footer";
+
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://scaleropensourcelabs.com";
 
@@ -125,7 +129,29 @@ export default function RootLayout({
               "(function(){try{var m=localStorage.getItem('osc-theme');if(m==='light'||m==='dark'){document.documentElement.setAttribute('data-theme',m)}}catch(e){}})()",
           }}
         />
+
+        {/* Skip link. It barely mattered when the site was one page — a reader
+            tabbed past the bar once. With a persistent nine-item bar in front of
+            every one of seven routes, a keyboard reader would otherwise tab through
+            the whole of it on every single navigation. First focusable element in
+            the document, visible only when focused. */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-raise focus:px-4 focus:py-2.5 focus:text-sm focus:font-semibold focus:text-ink focus:shadow-lg focus:ring-1 focus:ring-seam"
+        >
+          Skip to content
+        </a>
+
+        {/* The chrome every route shares. Here rather than imported per page so a
+            route cannot exist without it — the single-page site mounted these inside
+            page.tsx, which is correct for one page and seven chances to forget at
+            seven. Reveal renders nothing; it opts the document in to the scroll
+            settle, and doing that once at the root is also what stops each route
+            re-registering its own observer on navigation. */}
+        <Nav />
+        <Reveal />
         {children}
+        <Footer />
       </body>
     </html>
   );

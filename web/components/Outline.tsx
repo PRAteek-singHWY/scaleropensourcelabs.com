@@ -36,6 +36,7 @@
 //    only thing that showed this.
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { createPortal } from "react-dom";
 
 type Item = { id: string; label: string };
@@ -54,6 +55,16 @@ export default function Outline() {
   const [items, setItems] = useState<Item[]>([]);
   const [active, setActive] = useState<string>("");
   const panel = useRef<HTMLElement>(null);
+  // The rail lives in the nav, which lives in the root layout, so it survives every
+  // client-side navigation while the sections it indexes are swapped out from under
+  // it. Without this the list was scanned once and then frozen: a reader who opened
+  // the rail on /projects saw the home page's eight sections, clicked one, and got
+  // nothing — the anchors pointed at ids that were no longer in the document.
+  //
+  // Re-scanning per route also means `active` has to be cleared, which the effect
+  // below does implicitly by re-running: a stale id from the previous page would
+  // otherwise keep one entry highlighted until the reader scrolled.
+  const pathname = usePathname();
 
   useEffect(() => {
     setOpen(localStorage.getItem(KEY) === "1");
@@ -110,7 +121,7 @@ export default function Outline() {
     );
     document.querySelectorAll("section[id]").forEach((s) => io.observe(s));
     return () => io.disconnect();
-  }, []);
+  }, [pathname]);
 
   const toggle = () => {
     const next = !open;

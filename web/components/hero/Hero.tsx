@@ -7,25 +7,22 @@
 // claim doing the work and hard numbers immediately under it.
 //
 // Reading the SSB page closely, the pattern is consistent — a positioning
-// sentence, two calls to action, and figures placed where the eye lands first. It
-// is text-heavy on purpose and carries almost no imagery. So the strongest move
-// here is to state the claim and then evidence it with the count of people who got
-// in, which is the one number nobody else on campus can print.
+// sentence, two calls to action, and no imagery to speak of. So this states the
+// claim and then gets out of the way: the selection count that used to sit under
+// the buttons is now made once, at the head of the hall, where the names that
+// back it are on the same screen. Saying it twice on one scroll made the reader
+// re-read rather than recognise it.
 //
 // This is a server component: no canvas, no capability detection, no scroll
 // listener, no state. The previous hero needed all four and could only be checked
 // by rendering it. This one cannot fail in a way HTML cannot express.
 //
 // One height rule: it deliberately does NOT force h-screen. A viewport-locked hero
-// pushes the evidence below the fold on a laptop, which is exactly where the
-// argument dies.
+// pushes the section under it off the fold on a laptop, which is exactly where the
+// argument continues.
 
-import {
-  PROGRAMME_COLOUR,
-  PROGRAMME_SHORT,
-  PROJECTS,
-  selectionStats,
-} from "@/content/club";
+import Link from "next/link";
+import { PROJECTS, selectionStats } from "@/content/club";
 import Terminal from "@/components/hero/Terminal";
 import Icon from "@/components/Icon";
 import Term from "@/components/fx/Term";
@@ -125,8 +122,6 @@ function FloatingBadges() {
 }
 
 export default function Hero() {
-  const stats = selectionStats();
-
   return (
     <header
       // Vertical rhythm in three steps rather than two. The nav floats now, so
@@ -287,7 +282,7 @@ export default function Hero() {
                 weight instead of the font's, it cannot fall back to a missing
                 glyph, and it can move on hover independently of the label —
                 which is what `group-hover:translate-x-1` below is doing. */}
-            <a href="#hall" className="btn btn-pop group gap-2">
+            <Link href="/hall-of-fame" className="btn btn-pop group gap-2">
               See who got in
               <Icon
                 name="arrow-right"
@@ -295,8 +290,8 @@ export default function Hero() {
                 strokeWidth={2.75}
                 className="transition-transform duration-200 ease-in-out group-hover:translate-x-1"
               />
-            </a>
-            <CelebrateLink href="#apply" className="btn btn-secondary">
+            </Link>
+            <CelebrateLink href="/join" className="btn btn-secondary">
               Join the club
               <span aria-hidden className="btn-tag">
                 ⚡
@@ -327,45 +322,6 @@ export default function Hero() {
           <Terminal />
         </div>
       </div>
-
-      {/* The evidence, in the hero, above the fold. Derived from the published list
-          so it can never overstate — and hidden entirely when there is nothing to
-          show, because "0 selected" is a worse first impression than no claim. */}
-      {stats.total > 0 && (
-        // Deliberately the same construction as the one at the head of the hall
-        // (components/hall/Hall.tsx): giant figure, baseline-aligned clause,
-        // programme tags. It is the same claim in two places, so it has to be the
-        // same object — the hero states it and the hall proves it, and a reader
-        // scrolling between them should recognise it rather than re-read it.
-        <div className="mt-8 flex flex-wrap items-end gap-x-5 gap-y-3 border-t border-seam pt-5 sm:mt-16">
-          <p className="flex items-baseline gap-3">
-            <span className="font-display text-[clamp(3.625rem,calc(6vw_+_0.125rem),4.625rem)] font-bold leading-[0.85] tracking-[-0.04em]">
-              {stats.total}
-            </span>
-            <span className="text-body text-haze">
-              selected into international programmes
-            </span>
-          </p>
-          <ul className="flex flex-wrap items-center gap-2">
-            {stats.programmes.map(({ programme, count }) => (
-              <li
-                key={programme}
-                // --raise rather than --sunk: see the note in Hall.tsx. The
-                // programme colours have no contrast margin to spend on a tint.
-                className="flex items-center gap-1.5 rounded-full border border-edge bg-raise px-3 py-1.5 font-mono text-xs"
-              >
-                <span
-                  className="font-medium"
-                  style={{ color: PROGRAMME_COLOUR[programme] }}
-                >
-                  {PROGRAMME_SHORT[programme]}
-                </span>
-                <span className="text-dust">×{count}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </header>
   );
 }

@@ -22,14 +22,21 @@
 // something: the outgoing answer closes as the incoming one opens, so the section
 // keeps roughly its height and the page below it does not jump.
 //
-// The first is open on arrival. A column of seven closed rows gives a reader
-// nothing to judge whether opening one is worth it, and reads as a page still
-// loading rather than as a section with a resting state.
+// EVERYTHING IS CLOSED ON ARRIVAL. The first answer used to be open, on the
+// argument that a column of closed rows gives a reader nothing to judge whether
+// opening one is worth it. In place it read the other way round: one expanded row
+// among six collapsed ones looks like a row someone left open rather than a
+// deliberate resting state, and it puts the section's first answer — "no, you do
+// not need DSA" — in front of a reader who has not asked the question, while the
+// six questions they might actually have are pushed down past it.
+//
+// Closed, the section is a list of the seven things people ask, which is what its
+// heading says it is and what a reader scans it for.
 
 import { useId, useState } from "react";
 
 export default function Faq({ items }: { items: { q: string; a: string }[] }) {
-  const [open, setOpen] = useState<number | null>(0);
+  const [open, setOpen] = useState<number | null>(null);
   // Prefixed per instance rather than per item: two FAQs on one page would
   // otherwise both emit #panel-0 and every aria-controls would point at the first.
   const base = useId();

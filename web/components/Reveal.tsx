@@ -38,6 +38,7 @@
 // effect. They do not settle or stagger — they get stuck on. See the block there.
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 // 0.1s per child, but not past this many. The hall grid runs to twenty-five
 // cards and the last one would otherwise begin its entrance two and a half
@@ -48,6 +49,24 @@ import { useEffect } from "react";
 const MAX_STAGGER_STEPS = 8;
 
 export default function Reveal() {
+  // KEYED ON THE PATHNAME, and this is the whole of what the move to routes cost
+  // this component.
+  //
+  // It mounts once, at the root, so on a client-side navigation React keeps it alive
+  // while every section under it is replaced. With an empty dependency array the
+  // effect ran exactly once, against the home page's DOM, and then never again — so
+  // from the second route onward `[data-reveal]` was on nothing, the observer was
+  // watching detached nodes, and every section on every page after the first simply
+  // appeared with no settle. Nothing errored; the site just quietly stopped animating
+  // and only the first route a reader landed on ever moved.
+  //
+  // Adding `pathname` tears the whole thing down and rebuilds it against the new
+  // DOM. That is only safe because the cleanup below is complete — it disconnects
+  // both observers and removes every attribute, class and custom property this
+  // effect added. An incomplete teardown here would leave stale `--reveal-i` values
+  // on recycled nodes and stagger the next page in the previous page's order.
+  const pathname = usePathname();
+
   useEffect(() => {
     const root = document.documentElement;
 
@@ -190,7 +209,7 @@ export default function Reveal() {
         el.style.removeProperty("--reveal-i");
       });
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }

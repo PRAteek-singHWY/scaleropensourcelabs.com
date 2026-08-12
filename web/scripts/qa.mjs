@@ -19,8 +19,11 @@ import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import { mkdirSync, writeFileSync } from "node:fs";
 
-import { SITE, assertOurSite } from "./assert-site.mjs";
-const URL = process.argv[2] ?? SITE;
+import { ROUTES, SITE, assertOurSite } from "./assert-site.mjs";
+// A BASE url now, not a page url: the sweep visits every route under it. Passing a
+// single page here was correct when the site was one page and is now a way to check
+// one sixth of it and report "clean".
+const BASE = (process.argv[2] ?? SITE).replace(/\/$/, "");
 const OUT = "study/qa";
 mkdirSync(OUT, { recursive: true });
 
@@ -60,12 +63,55 @@ for (const vp of VIEWPORTS) {
     if (vp.outline) {
       await page.addInitScript(() => localStorage.setItem("osc-outline", "1"));
     }
-    await page.goto(URL, { waitUntil: "domcontentloaded", timeout: 60_000 });
+
+    // THE THEME IS SET BEFORE FIRST PAINT, NOT AFTER NAVIGATION, and this is a
+    // determinism fix rather than a tidy-up.
+    //
+    // It used to be `setAttribute("data-theme", …)` after each goto, followed by a
+    // 900ms settle. That looks sufficient and is not: flipping the attribute on a
+    // live document re-resolves every custom property and re-runs the colour
+    // transitions attached to .nav-link, .btn and friends, so for a brief window
+    // the page is genuinely half-themed — dark backgrounds already painted, some
+    // text still carrying light-theme ink. Measured in that window the contrast
+    // pass reports ratios like 1.02:1, which is not a design fault but light ink on
+    // a dark ground caught mid-swap.
+    //
+    // The symptom was intermittency, which is the expensive kind of wrong: three
+    // consecutive sweeps of one unchanged build returned 0, then 40, then 26
+    // issues, on different routes each time. A checker that disagrees with itself
+    // teaches people to ignore it.
+    //
+    // Writing localStorage instead makes the site's OWN anti-flash script (see
+    // layout.tsx) stamp data-theme synchronously before anything paints — the exact
+    // path a returning reader takes. There is no swap to catch mid-flight because
+    // the page is never in the other theme to begin with.
+    await page.addInitScript((t) => {
+      try {
+        localStorage.setItem("osc-theme", t);
+      } catch {}
+    }, theme);
+
+    // One page object per viewport/theme, reused across routes. Cheaper than 48
+    // browser contexts, and the theme attribute has to be re-applied after each
+    // navigation anyway because a full page load resets the DOM.
+    for (const route of ROUTES) {
+    // "load" rather than "domcontentloaded". The stylesheet is what every
+    // measurement in this file depends on, and domcontentloaded does not wait for
+    // it — so the sweep could begin resolving colours against a partially applied
+    // stylesheet. Same class of bug as the theme race above.
+    await page.goto(BASE + route.path, { waitUntil: "load", timeout: 60_000 });
     // Before measuring anything, confirm this is our site and not whatever else
     // happens to be listening. See assert-site.mjs for why.
     await assertOurSite(page);
+    // Belt and braces. The init script above has already stamped this before paint;
+    // re-asserting it is a no-op that costs nothing and keeps the run correct if the
+    // anti-flash script is ever changed or removed. Because the value is already
+    // what it is being set to, no transition fires.
     await page.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);
-    await page.waitForTimeout(2500);
+    // Was 2500 when a WebGL scene had to initialise. Nothing on the page is
+    // async now and reducedMotion means the reveals do not animate, so this is just
+    // settling time for fonts and layout.
+    await page.waitForTimeout(900);
 
     const result = await page.evaluate(
       ({ vpWidth, isMobile }) => {
@@ -87,12 +133,41 @@ for (const vp of VIEWPORTS) {
         // 1. Horizontal overflow — the page body must never scroll sideways.
         if (document.documentElement.scrollWidth > vpWidth + 1) {
           add("overflow-page", `body scrollWidth ${document.documentElement.scrollWidth} > ${vpWidth}`);
+
+          // Naming the CULPRIT rather than the symptoms, which the first version of
+          // this did not do. The fixed nav carries `inset-x-0`, so it stretches to
+          // whatever width the document ends up being — it therefore reports as
+          // overflowing whenever ANYTHING else does. Being first in the DOM, it and
+          // its four children consumed the entire five-item budget, and every real
+          // cause was reported as "the nav is too wide" on every page. Two of the
+          // actual bugs were invisible behind that for a full sweep.
+          //
+          // So: skip elements that merely stretch (position:fixed, and anything
+          // wider than the viewport that has a wide descendant), and report the
+          // LEAF-most offenders — the deepest elements that overflow but contain
+          // nothing that also overflows. Those are the ones with the real content in
+          // them.
+          const offenders = [];
           for (const el of document.querySelectorAll("*")) {
             const r = el.getBoundingClientRect();
-            if (r.width > 0 && r.right > vpWidth + 2 && !el.closest("[class*=overflow-x-auto]")) {
-              add("overflow-el", `${el.tagName.toLowerCase()}.${(el.className || "").toString().slice(0, 40)} right=${Math.round(r.right)}`, el);
-              if (out.filter((o) => o.kind === "overflow-el").length > 4) break;
-            }
+            if (r.width === 0 || r.right <= vpWidth + 2) continue;
+            // Inside a deliberate horizontal scroller: not a page-overflow bug.
+            if (el.closest("[class*=overflow-x-auto]")) continue;
+            // Positioned against the viewport, not the document flow.
+            if (getComputedStyle(el).position === "fixed") continue;
+            offenders.push(el);
+          }
+          const leaves = offenders.filter(
+            (el) => !offenders.some((o) => o !== el && el.contains(o)),
+          );
+          for (const el of leaves.slice(0, 6)) {
+            const r = el.getBoundingClientRect();
+            add(
+              "overflow-el",
+              `${el.tagName.toLowerCase()}.${(el.className || "").toString().slice(0, 46)} ` +
+                `right=${Math.round(r.right)} w=${Math.round(r.width)} text="${(el.textContent || "").trim().slice(0, 24)}"`,
+              el,
+            );
           }
         }
 
@@ -113,9 +188,67 @@ for (const vp of VIEWPORTS) {
             const target = el.closest("label") || el;
             const r = target.getBoundingClientRect();
             if (r.width === 0 || r.height === 0) continue;
+
+            // EXEMPTION 1: visually-hidden controls. The skip link is a 1x1
+            // clipped element until it receives focus, at which point it is a
+            // full-size button. Reported as "1x1 Skip to content", which is a
+            // failure no finger can encounter and no fix would improve — padding a
+            // clipped element just makes a bigger clipped element.
+            const cs = getComputedStyle(target);
+            // Tailwind's `.sr-only` clips with the LEGACY `clip` property, not
+            // `clip-path`. Testing only clipPath let this exemption silently never
+            // fire, and the skip link kept being reported at 1x1 — a checker quietly
+            // not doing the thing it claims to do, which is the failure mode this
+            // whole suite exists to avoid. Both properties are tested now.
+            const clipped = cs.clipPath !== "none" || cs.clip !== "auto";
+            if (clipped && r.width <= 2 && r.height <= 2) continue;
+
+            // EXEMPTION 2: links inline in a sentence. WCAG 2.5.8 explicitly
+            // exempts these, and for a good reason rather than as a loophole: their
+            // height is set by the line-height of the prose around them, and padding
+            // one to 44px makes it overlap the lines above and below, so it starts
+            // swallowing taps meant for its neighbours. A bigger box that steals
+            // adjacent targets is worse than a small one.
+            //
+            // Tested precisely rather than by guessing: the element must be an
+            // inline <a> whose parent also contains real text of its own. A
+            // standalone link in its own block has no sibling text and is NOT
+            // exempt, which is the case that actually matters and the one
+            // globals.css has a `.tap` utility for.
+            if (el.tagName === "A" && cs.display.startsWith("inline")) {
+              const parent = el.parentElement;
+              const siblingText = parent
+                ? [...parent.childNodes]
+                    .filter((n) => n.nodeType === 3)
+                    .map((n) => n.textContent.trim())
+                    .join("")
+                : "";
+              if (siblingText.length > 0) continue;
+            }
+
             if (r.height < 40) {
               add("small-tap", `${Math.round(r.width)}x${Math.round(r.height)} "${(el.textContent || "").trim().slice(0, 24)}"`, el);
             }
+          }
+        }
+
+        // 3b. `.tap` combined with a margin or padding utility.
+        //
+        // A LINT RULE RATHER THAN A MEASUREMENT, and it is here because the failure
+        // is invisible to every other check in this file: `.tap` sets margin-block
+        // and padding-block and is declared after Tailwind's utilities, so it wins
+        // on source order and any mt-/pt- class on the same element does nothing.
+        // The layout is then subtly wrong — a card's link sitting 25px off — while
+        // contrast, overflow and tap size all pass. Seven links shipped like this.
+        for (const el of document.querySelectorAll(".tap")) {
+          const cls = (el.className || "").toString();
+          const clash = cls.match(/\b(m[tby]|p[tby])-[a-z0-9.]+/g);
+          if (clash) {
+            add(
+              "tap-margin-clash",
+              `${clash.join(" ")} on .tap — move the spacing to a wrapper (see globals.css)`,
+              el,
+            );
           }
         }
 
@@ -156,6 +289,33 @@ for (const vp of VIEWPORTS) {
         for (const el of document.querySelectorAll("p,span,li,a,h1,h2,h3,dt,dd,td")) {
           const t = (el.textContent || "").trim();
           if (!t || el.children.length) continue;
+
+          // NOTHING WITH NO AREA. A contrast ratio for text that occupies zero
+          // pixels is not a fact about anything a reader can see.
+          //
+          // This is here because of the margin notes. They hang in the gutter at
+          // large widths and collapse to 0x0 below it — correct behaviour, since
+          // there is no gutter on a phone — and the deferred pixel pass below then
+          // tried to screenshot a zero-area box, which throws. Every one came back
+          // as `unmeasurable-bg (could not capture)`: six on one route, in both
+          // themes, at every mobile run. All false. The check was reporting that it
+          // could not measure elements that were deliberately not painted.
+          //
+          // The two scripts had simply never met before — this sweep came from the
+          // multi-page branch and the notes from the design one — so the pairing is
+          // new even though neither part is.
+          //
+          // IT ALSO KEEPS THE SWEEP FROM FALLING OVER, which was not the intent and
+          // is the better reason to keep it. Each deferred element gets a locator
+          // screenshot, and a locator screenshot scrolls to its own target; asking
+          // Playwright to scroll to and capture six zero-area boxes left the page in
+          // a state where the full-page screenshot at the foot of this loop then
+          // timed out at 30s and took the whole run with it. Verified by running this
+          // file with and without these two lines against the same build: guarded
+          // completes all 56 combinations, unguarded dies on the sixth.
+          const box = el.getBoundingClientRect();
+          if (box.width === 0 || box.height === 0) continue;
+
           const cs = getComputedStyle(el);
           const fg = parse(cs.color);
           const bg = bgOf(el);
@@ -248,13 +408,17 @@ for (const vp of VIEWPORTS) {
       }
     }
 
-    const tag = `${vp.name}-${theme}`;
-    await page.screenshot({ path: `${OUT}/${tag}.png`, fullPage: false });
-    report.push({ viewport: vp.name, theme, examined: result.examined, issues });
+    const tag = `${route.name}-${vp.name}-${theme}`;
+    // fullPage, unlike before. A viewport-sized shot of a 6,000px page is evidence
+    // about the hero and nothing else, and the sections below the fold are exactly
+    // where the layout bugs on this project have always been.
+    await page.screenshot({ path: `${OUT}/${tag}.png`, fullPage: true });
+    report.push({ route: route.path, viewport: vp.name, theme, examined: result.examined, issues });
 
     const byKind = issues.reduce((m, i) => ((m[i.kind] = (m[i.kind] || 0) + 1), m), {});
     const summary = Object.entries(byKind).map(([k, v]) => `${k}:${v}`).join("  ") || "clean";
-    console.log(`  ${tag.padEnd(16)} ${summary}`);
+    console.log(`  ${tag.padEnd(34)} ${String(result.examined).padStart(4)} nodes  ${summary}`);
+    }
 
     await page.close();
   }
@@ -267,13 +431,24 @@ writeFileSync(`${OUT}/report.json`, JSON.stringify(report, null, 2));
 // elements and finds nothing wrong also reports "0 issues"; this makes the
 // difference visible. The floor is deliberately well below the ~434 currently
 // examined, so it catches a collapse rather than tracking normal drift.
-const FLOOR = 250;
-const thin = report.filter((r) => (r.examined ?? Infinity) < FLOOR);
+// Guard against a silent collapse in coverage, now summed per viewport/theme ACROSS
+// routes. The old per-combination floor of 250 was tuned for one 26,000px page; six
+// shorter pages each examine far fewer nodes, so applied per route it would fail
+// permanently and get deleted, which is how a real guard becomes noise. The floor is
+// deliberately well under what the six pages currently examine together, so it
+// catches a collapse rather than tracking normal drift.
+const FLOOR = 600;
+const byCombo = new Map();
+for (const r of report) {
+  const k = `${r.viewport}-${r.theme}`;
+  byCombo.set(k, (byCombo.get(k) ?? 0) + (r.examined ?? 0));
+}
+const thin = [...byCombo.entries()].filter(([, n]) => n < FLOOR);
 if (thin.length > 0) {
   console.log(
     `\n  !! coverage collapsed: ${thin
-      .map((r) => `${r.viewport}-${r.theme} examined ${r.examined}`)
-      .join(", ")} (floor ${FLOOR})`,
+      .map(([k, n]) => `${k} examined ${n}`)
+      .join(", ")} (floor ${FLOOR} across ${ROUTES.length} routes)`,
   );
 }
 

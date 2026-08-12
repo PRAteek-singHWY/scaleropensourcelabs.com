@@ -18,6 +18,23 @@
 // of people — numbering them would imply a ranking that does not exist, which is
 // the exact thing the client removed the leaderboard to avoid.
 
+// THE CARD HEADINGS ARE h2 AND WERE h3, and the reason is not inside this file.
+//
+// On the single-page site the hall was one section among fourteen, its own heading
+// was an h2 under the page's h1, and h3 on each card was correct. The hall is now
+// its own route: its section heading IS the page title and was promoted to h1, so
+// h3 on the cards left an h1 → h3 jump with nothing at h2 between them. A screen
+// reader navigating by heading level reports that as a missing level and the reader
+// has no way to tell whether they skipped something.
+//
+// Caught by the heading-order check in scripts/qa.mjs, which is the only thing on
+// this project that would have. Nothing renders differently — these carry their own
+// size and weight and never relied on the tag.
+//
+// If this component is ever mounted under a page that already has an h1 and a
+// section h2, these need to go back to h3.
+
+import Link from "next/link";
 import Portrait from "@/components/Portrait";
 import ContribWall from "@/components/hall/ContribWall";
 import {
@@ -132,7 +149,10 @@ export default function Hall() {
           the card width in a single breakpoint and the text visibly reflows as the
           window resizes. Mobile stays at one, unchanged: two 155px cards side by
           side is where the name and the work sentence stop being readable at all. */}
-      <ul className="mt-8 grid gap-x-7 gap-y-12 sm:mt-16 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      <ul
+        className="mt-8 grid gap-x-7 gap-y-12 sm:mt-16 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        data-reveal-group
+      >
         {people.map((p, i) => {
           const work = workByMember.get(p.name);
           return (
@@ -200,11 +220,60 @@ export default function Hall() {
                   the electric-blue sticker the section eyebrows wear — this one is a fact
                   about a person rather than a label the site applied to itself,
                   and against a photograph's straight edge a tilt would read as a
-                  misalignment rather than as a sticker. */}
-              <p className="mt-5">
+                  misalignment rather than as a sticker.
+
+                  THE ORG SITS ON THIS ROW, beside the programme, because it is half
+                  of the same fact — "GSoC 2026" says which programme, the org says
+                  who inside it actually picked them, and the two read as one
+                  credential. It was briefly on the mono line below the name, next to
+                  the year of study, which put the organisation in with the small
+                  subordinate facts and left the credential looking finished without
+                  it.
+
+                  It is NOT a second .chip. That class is 14px bold uppercase with
+                  0.1em tracking; a second one of those at this width competes with
+                  the violet badge for the same job and the pair reads as two
+                  credentials rather than one. Mono and quiet is the same treatment
+                  the repo names on the projects page get — a machine-ish fact
+                  attached to a human one.
+
+                  ALWAYS RENDERED, even when the org is unknown, which is a change
+                  from "a missing org renders as nothing". Every card in this cohort
+                  is missing it, so rendering nothing meant the wall never answered
+                  the question a reader asks straight after the programme. The slot
+                  holds its place and says it is empty.
+
+                  It says "org TBA" rather than naming a plausible foundation, and it
+                  wears a dashed keyline so it cannot be misread as an org called
+                  that. club.ts's rule is unchanged: a missing org must never render
+                  as a wrong one. A slot that admits it is empty is not a claim. Fill
+                  `org` in club.ts's cohort tuples and the placeholder is replaced per
+                  person, with no edit here.
+
+                  "org TBA" AND NOT "org to be announced", which is the phrase this
+                  started as, and the reason is measured rather than stylistic. The
+                  space left beside the violet chip is 188px at the 4-column top end
+                  but only 92px at 1024 and 107px at 820 — the spelt-out phrase is
+                  178px and wrapped to its own line at every width below the widest,
+                  turning a 27px row into 59px and leaving the pill orphaned under
+                  the badge it was meant to sit beside. "org TBA" is 77px and fits
+                  everywhere. Anything longer than about 90px will wrap again.
+
+                  A long REAL org — "The Linux Foundation" measures 186px — will
+                  wrap here too, and that is the acceptable half of the trade: by
+                  then the row is carrying a fact worth a second line, not a note
+                  saying there is nothing to show. */}
+              <p className="mt-5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
                 <span className="chip chip-violet chip-true">
                   {PROGRAMME_SHORT[p.programme]} {p.year}
                 </span>
+                {p.org ? (
+                  <span className="font-mono text-xs text-haze">{p.org}</span>
+                ) : (
+                  <span className="rounded-full border border-dashed border-seam px-2 py-0.5 font-mono text-xs text-dust">
+                    org TBA
+                  </span>
+                )}
               </p>
 
               {/* Reserves two lines, so a long name cannot push everything below
@@ -219,18 +288,16 @@ export default function Hall() {
                   this heading whatever the number below is. That is the reason for
                   the unit, and it is why loosening the leading here needed no second
                   edit to keep the card bottoms aligned. */}
-              <h3 className="mt-3.5 min-h-[2lh] font-display text-display-md font-bold leading-[1.3] tracking-[-0.02em]">
+              <h2 className="mt-3.5 min-h-[2lh] font-display text-display-md font-bold leading-[1.3] tracking-[-0.02em]">
                 {p.name}
-              </h3>
+              </h2>
 
-              {/* Year of study and organisation share one mono line, because they
-                  are the same kind of fact — small, factual, subordinate to the
-                  name. Joined rather than stacked so an entry with only one of them
-                  does not leave a visible gap where the other would sit. */}
-              {(p.studyYear || p.org) && (
-                <p className="mt-2 font-mono text-xs text-dust">
-                  {[p.studyYear, p.org].filter(Boolean).join(" · ")}
-                </p>
+              {/* Year of study alone on the mono line. The organisation used to
+                  share it — it has moved up beside the programme chip, where it
+                  belongs, and this line is left holding the one fact that really is
+                  subordinate to the name. */}
+              {p.studyYear && (
+                <p className="mt-2 font-mono text-xs text-dust">{p.studyYear}</p>
               )}
 
               {p.work && <p className="mt-3 text-body text-haze">{p.work}</p>}
@@ -294,7 +361,7 @@ export default function Hall() {
             action row below is a <span> — an <a> inside an <a> is invalid and browsers
             recover from it by splitting the outer link. */}
         <li className="flex">
-          <a href="#apply" className="group flex w-full flex-col">
+          <Link href="/join" className="group flex w-full flex-col">
             {/* Same frame as a portrait — the `card` border, the `tilt` hover, the
                 4/5 aspect and the panel radius — so the slot sits in the grid rhythm
                 instead of beside it. Only the fill changes.
@@ -338,9 +405,9 @@ export default function Hall() {
             {/* min-h-[2lh] like every other heading in this grid, so this card's
                 bottom edge lines up with the rest of its row rather than sitting a
                 line high because the phrase is short. */}
-            <h3 className="mt-3.5 min-h-[2lh] font-display text-display-md font-bold leading-[1.3] tracking-[-0.02em] text-ink">
+            <h2 className="mt-3.5 min-h-[2lh] font-display text-display-md font-bold leading-[1.3] tracking-[-0.02em] text-ink">
               Next could be you!
-            </h3>
+            </h2>
 
             {/* Sits in the "3rd year · org" slot the other cards use, so the column
                 of small mono lines stays unbroken. Deliberately NOT "no experience
@@ -361,7 +428,7 @@ export default function Hall() {
                 Apply now →
               </span>
             </div>
-          </a>
+          </Link>
         </li>
       </ul>
 

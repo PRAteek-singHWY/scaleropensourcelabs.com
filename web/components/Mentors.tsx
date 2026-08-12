@@ -54,7 +54,7 @@ export default function Mentors() {
 
       <div className="mt-8 space-y-px overflow-hidden rounded-tile bg-seam">
         {mentors.map((m) => (
-          <article key={m.name} className="bg-raise p-8 sm:p-10">
+          <article key={m.name} className="list-row bg-raise p-8 sm:p-10">
             <div className="grid gap-5 lg:grid-cols-[18rem_1fr] lg:gap-8">
               <div>
                 <h3 className="text-body-lg font-semibold">{m.name}</h3>
@@ -74,14 +74,22 @@ export default function Mentors() {
                   </span>
                 </p>
                 {m.credential.url && (
-                  <a
-                    href={m.credential.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="tap mt-2 inline-block font-mono text-xs text-accent link-u hover:brightness-125"
-                  >
-                    Official record ↗
-                  </a>
+                  // mt-2 on the wrapper, not on the link. `.tap` sets margin-block
+                  // and is declared after Tailwind's utilities, so the utility loses
+                  // on source order and the spacing simply never appears. Latent
+                  // rather than visible today only because MENTORS is empty — it
+                  // would have shipped wrong the moment a real mentor was added.
+                  // Lint for it lives in scripts/qa.mjs.
+                  <div className="mt-2">
+                    <a
+                      href={m.credential.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="tap inline-block font-mono text-xs text-accent link-u hover:brightness-125"
+                    >
+                      Official record ↗
+                    </a>
+                  </div>
                 )}
               </div>
 

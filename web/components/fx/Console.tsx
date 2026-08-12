@@ -13,6 +13,8 @@
 // footer — visibly a toy, not a broken control.
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { JOIN_HREF } from "@/content/site";
 
 type Line = { id: number; text: string; tone: "in" | "out" };
 
@@ -36,6 +38,7 @@ export default function Console() {
   ]);
   const [value, setValue] = useState("");
   const next = useRef(1);
+  const router = useRouter();
 
   const push = (text: string, tone: Line["tone"]) =>
     setLines((l) => [...l, { id: next.current++, text, tone }]);
@@ -47,33 +50,39 @@ export default function Console() {
 
     switch (cmd) {
       case "join": {
-        // The form is a real element on this page, so this is a real navigation
-        // rather than a simulated one. scrollIntoView respects the smooth
-        // behaviour and scroll-padding already set on <html>, so the field lands
-        // clear of the floating nav without this needing to know the nav's height.
+        // SCROLL IF THE TARGET IS HERE, ROUTE IF IT IS NOT — and the branch is the
+        // whole reason this changed. The console lives in the footer, and the footer
+        // is now on all six routes, so the form is on exactly one of the pages this
+        // command can be typed from. The old version looked up #af-name, got null on
+        // five pages out of six, and did nothing at all: the reader typed `join`,
+        // saw "opening the application form…", and stayed exactly where they were.
+        //
+        // On /join itself the in-page path is still the better one. scrollIntoView
+        // respects the smooth behaviour and scroll-padding already set on <html>, so
+        // the field lands clear of the floating nav without this needing to know the
+        // nav's height, and it does not throw away a page the reader is already on.
         const field = document.getElementById("af-name");
         push("opening the application form…", "out");
-        field?.scrollIntoView({ block: "center" });
-        // focus() after the scroll, and preventScroll so the browser does not
-        // immediately jump the element to the top of the viewport and undo the
-        // centring above.
-        window.setTimeout(() => field?.focus({ preventScroll: true }), 450);
+        if (field) {
+          field.scrollIntoView({ block: "center" });
+          // focus() after the scroll, and preventScroll so the browser does not
+          // immediately jump the element to the top of the viewport and undo the
+          // centring above.
+          window.setTimeout(() => field.focus({ preventScroll: true }), 450);
+        } else {
+          router.push(JOIN_HREF);
+        }
         break;
       }
       case "who": {
-        // Same deal as `join`: #team is a real section on this page, so answer
-        // the question and then take them there. block:"start" rather than
+        // Same branch as `join`, against the team page. block:"start" rather than
         // "center" because the section has a heading — landing on it reads as
-        // arriving at the team, and scroll-padding-top on <html> keeps that
-        // heading clear of the floating nav.
+        // arriving at the team, and scroll-padding-top on <html> keeps that heading
+        // clear of the floating nav.
         const team = document.getElementById("team");
-        push(
-          team
-            ? "students at scaler school of technology. scrolling up to them…"
-            : "students at scaler school of technology. see #team.",
-          "out",
-        );
-        team?.scrollIntoView({ block: "start" });
+        push("students at scaler school of technology. taking you to them…", "out");
+        if (team) team.scrollIntoView({ block: "start" });
+        else router.push("/team");
         break;
       }
       case "clear":

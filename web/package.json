@@ -10,11 +10,15 @@
     "typecheck": "tsc --noEmit",
     "qa": "node scripts/qa.mjs",
     "smoke": "node scripts/smoke.mjs",
-    "browsers": "node scripts/browsers.mjs"
+    "browsers": "node scripts/browsers.mjs",
+    "palette": "node scripts/palette.mjs",
+    "rules": "node scripts/rules.mjs",
+    "rules:emulator": "node scripts/rules-emulator.mjs"
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",
+    "firebase": "^12.17.1",
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1"

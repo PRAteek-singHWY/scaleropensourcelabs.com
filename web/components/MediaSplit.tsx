@@ -169,7 +169,7 @@ export default function MediaSplit() {
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2 lg:gap-6">
         {/* ---- Left: the frame ------------------------------------------- */}
-        <div className="overflow-hidden rounded-[24px] border-2 border-black bg-raise shadow-[4px_4px_0_0_#000]">
+        <div className="zoom overflow-hidden rounded-[24px] border-2 border-black bg-raise shadow-[4px_4px_0_0_#000]">
           {PHOTO ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

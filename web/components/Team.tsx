@@ -227,14 +227,18 @@ function Node({
       </div>
       <Caption designation={designation} name={member.name} tone={tone} />
       {member.github && (
-        <a
-          href={`https://github.com/${member.github}`}
-          target="_blank"
-          rel="noreferrer"
-          className="tap mt-2 inline-block font-mono text-xs text-haze hover:text-accent"
-        >
-          @{member.github}
-        </a>
+        // mt-2 on the wrapper — same `.tap` source-order trap as in Mentors.tsx, and
+        // latent for the same reason: no TEAM_* entry carries a github handle yet.
+        <div className="mt-2">
+          <a
+            href={`https://github.com/${member.github}`}
+            target="_blank"
+            rel="noreferrer"
+            className="tap inline-block font-mono text-xs text-haze hover:text-accent"
+          >
+            @{member.github}
+          </a>
+        </div>
       )}
     </div>
   );
@@ -381,7 +385,7 @@ export default function Team() {
       </div>
 
       {/* ---- The same structure, stacked. Below lg only --------------------- */}
-      <ul className="mt-7 space-y-6 lg:hidden">
+      <ul className="mt-7 space-y-6 lg:hidden" data-reveal-group>
         {[...TEAM_OFFICERS, ...TEAM_LEADS].map((m) => {
           const shadow = SHADOWS.find((s) => s.principal === m.designation);
           const officer = TEAM_OFFICERS.includes(m);
