@@ -1,0 +1,19 @@
+{
+  "name": "osc-functions",
+  "description": "Emails the organisers when somebody applies to the club",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "serve": "firebase emulators:start --only functions,firestore --project demo-osc",
+    "logs": "firebase functions:log",
+    "test": "node test-format.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.3.0",
+    "nodemailer": "^6.9.16"
+  }
+}
