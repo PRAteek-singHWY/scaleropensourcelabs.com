@@ -155,8 +155,13 @@ export default function Hall() {
       >
         {people.map((p, i) => {
           const work = workByMember.get(p.name);
+          // data-achiever marks a real person's card. The "Open spot" tile below is a
+          // sibling <li> in this same grid and legitimately has no portrait, so a
+          // cross-engine check asserting "every card carries a portrait" needs to tell
+          // the two apart by something other than copy text. Same convention as
+          // data-reveal-group above: a hook, not a style.
           return (
-          <li key={`${p.name}-${p.programme}-${p.year}`} className="flex">
+          <li key={`${p.name}-${p.programme}-${p.year}`} className="flex" data-achiever>
             {/* Full-height flex column so the action row can be pinned to the
                 bottom. Grid already stretches the cells to equal height, which made
                 the card BOTTOMS align and hid the real problem: with sentences of

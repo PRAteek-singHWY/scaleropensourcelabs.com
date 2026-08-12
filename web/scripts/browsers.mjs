@@ -75,9 +75,16 @@ for (const [name, engine] of Object.entries(ENGINES)) {
     const box = (s) => { const e = q(s); if (!e) return null; const r = e.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; };
     return {
       // The frosted nav plate — saturate() inside backdrop-filter.
-      plate: cs("header", "backdropFilter") || cs("header", "webkitBackdropFilter"),
+      //
+      // Measured on `.nav-plate`, not on `header`. `header` is now only the fixed
+      // positioning wrapper (`fixed inset-x-0 top-3`) and is deliberately
+      // transparent; the plate — blur, saturate and the token background — moved to
+      // the `nav` inside it. Probing `header` reported `none` / `rgba(0, 0, 0, 0)`
+      // in all three engines, which reads as "the palette collapsed" when in fact
+      // the plate was one element further in.
+      plate: cs(".nav-plate", "backdropFilter") || cs(".nav-plate", "webkitBackdropFilter"),
       // rgb(var(--x) / a): the token format the whole palette depends on.
-      tokenAlpha: cs("header", "backgroundColor"),
+      tokenAlpha: cs(".nav-plate", "backgroundColor"),
       // Container queries, which size the monogram initials.
       cqSupported: CSS.supports("container-type", "inline-size"),
       // The `lh` unit, added for the card name min-height. Newer than the rest.
@@ -116,20 +123,34 @@ for (const [name, engine] of Object.entries(ENGINES)) {
   const hall = await pg.evaluate(() => {
     const q = (s) => document.querySelector(s);
     const box = (s) => { const e = q(s); if (!e) return null; const r = e.getBoundingClientRect(); return { w: Math.round(r.width), h: Math.round(r.height) }; };
-    const cards = document.querySelectorAll("#achievers ul > li");
+    // `#hall`, not `#achievers`: the section was renamed and the grid moved into
+    // components/hall/Hall.tsx. The old id matched nothing, so this reported zero
+    // cards AND no panel — the exact "section silently vanished" signature the
+    // invariant below exists to catch, produced by the check rather than the page.
+    //
+    // `[data-achiever]` rather than `ul > li`, because the grid also holds the
+    // "Open spot" tile, which has no portrait by design and would fail the
+    // every-card-has-a-portrait assertion forever.
+    const cards = document.querySelectorAll("#hall [data-achiever]");
     return {
-      monogramFont: (() => { const e = q('#achievers [role="img"] span'); return e ? getComputedStyle(e).fontSize : null; })(),
-      nameBox: box("#achievers h3"),
+      monogramFont: (() => { const e = q('#hall [role="img"] span'); return e ? getComputedStyle(e).fontSize : null; })(),
+      // Card names are h2 now, not h3.
+      nameBox: box("#hall [data-achiever] h2"),
       cardGrid: cards.length,
       // An EMPTY grid is a legitimate production state — no member has consented yet,
       // so the section renders its honest empty panel instead. What must never happen
       // is neither: no cards AND no panel means the section silently vanished.
-      emptyPanel: !!q("#achievers .border-dashed"),
+      //
+      // Scoped to `.rounded-tile.border-dashed` — the empty panel in Hall.tsx. A bare
+      // `.border-dashed` also matches the dashed "org TBA" chip and the open-spot
+      // tile's dashed inner ring, both of which live INSIDE cards, so it would report
+      // "panel shown" on a section that has cards and no panel at all.
+      emptyPanel: !!q("#hall .rounded-tile.border-dashed"),
       // Internal consistency instead of a hardcoded count: every card must carry a
       // portrait (a real <img> or the monogram fallback) and a heading. This cannot
       // drift when the content array changes, which is what broke the old check.
       cardsWithPortrait: [...cards].filter((li) => li.querySelector('img, [role="img"]')).length,
-      cardsWithHeading: [...cards].filter((li) => li.querySelector("h3")).length,
+      cardsWithHeading: [...cards].filter((li) => li.querySelector("h2")).length,
     };
   });
 
