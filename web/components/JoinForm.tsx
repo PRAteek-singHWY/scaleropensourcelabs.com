@@ -40,9 +40,8 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { HEARD_FROM, INTERESTS, LEVELS, LEVEL_LABEL, PATHS } from "@/content/join";
-import { LINKS } from "@/content/club";
+import { LINKS } from "@/content/site";
 import { APPLICATIONS, getDb, isConfigured } from "@/lib/firebase";
-import { celebrate } from "@/components/fx/celebrate";
 /** ISO date. Renders only while genuinely in the future. */
 const DEADLINE = process.env.NEXT_PUBLIC_COHORT_DEADLINE ?? "";
 
@@ -72,13 +71,7 @@ function deadlineLabel(): string | null {
 // white field on a white card is distinguished only by its 1px border. --sunk is the
 // recessed fill and exists for exactly this.
 const field =
-  // The halo on focus is the same 3px accent ring at 18% that .card wears on
-  // hover, so a focused field and a hovered tile are visibly the same system
-  // saying the same thing. It rides the `transition` already here — Tailwind's
-  // bare `transition` covers box-shadow — and it is additive to the border
-  // recolour rather than a replacement for it, so the affordance still survives
-  // being flattened by a forced-colours mode.
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
+  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
 
 function Fields() {
   const params = useSearchParams();
@@ -92,17 +85,17 @@ function Fields() {
     <>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="af-name" className="label mb-2 block">
+          <label htmlFor="jf-name" className="label mb-2 block">
             Name
           </label>
-          <input id="af-name" name="name" required className={field} autoComplete="name" />
+          <input id="jf-name" name="name" required className={field} autoComplete="name" />
         </div>
         <div>
-          <label htmlFor="af-email" className="label mb-2 block">
+          <label htmlFor="jf-email" className="label mb-2 block">
             Email
           </label>
           <input
-            id="af-email"
+            id="jf-email"
             name="email"
             type="email"
             required
@@ -115,11 +108,11 @@ function Fields() {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="af-year" className="label mb-2 block">
+          <label htmlFor="jf-year" className="label mb-2 block">
             Year and branch
           </label>
           <input
-            id="af-year"
+            id="jf-year"
             name="year_branch"
             required
             className={field}
@@ -127,19 +120,19 @@ function Fields() {
           />
         </div>
         <div>
-          <label htmlFor="af-github" className="label mb-2 block">
+          <label htmlFor="jf-github" className="label mb-2 block">
             GitHub{" "}
             <span className="normal-case tracking-normal text-dust">(optional)</span>
           </label>
           <input
-            id="af-github"
+            id="jf-github"
             name="github"
             className={field}
             placeholder="octocat"
             autoComplete="off"
             spellCheck={false}
           />
-          <p className="mt-2 text-[15px] leading-relaxed text-dust">
+          <p className="mt-2 text-[13px] leading-relaxed text-dust">
             Leave it blank if you have never used it. That is genuinely fine.
           </p>
         </div>
@@ -179,11 +172,11 @@ function Fields() {
           cards would make this form look twice as long as it is — which costs
           completions on the one page where that matters most. */}
       <div>
-        <label htmlFor="af-path" className="label mb-2 block">
+        <label htmlFor="jf-path" className="label mb-2 block">
           Which path interests you
         </label>
         <select
-          id="af-path"
+          id="jf-path"
           name="path"
           className={field}
           defaultValue={preselected}
@@ -235,11 +228,11 @@ function Fields() {
       </fieldset>
 
       <div>
-        <label htmlFor="af-why" className="label mb-2 block">
+        <label htmlFor="jf-why" className="label mb-2 block">
           One line on why open source interests you
         </label>
         <textarea
-          id="af-why"
+          id="jf-why"
           name="why"
           required
           rows={3}
@@ -250,10 +243,10 @@ function Fields() {
       </div>
 
       <div>
-        <label htmlFor="af-heard" className="label mb-2 block">
+        <label htmlFor="jf-heard" className="label mb-2 block">
           How you heard about us
         </label>
-        <select id="af-heard" name="heard_from" className={field} defaultValue="">
+        <select id="jf-heard" name="heard_from" className={field} defaultValue="">
           <option value="" disabled>
             Pick one
           </option>
@@ -341,18 +334,6 @@ export default function JoinForm() {
         ),
       ]);
       setState("done");
-      // The confetti, and it fires HERE rather than anywhere earlier — after the
-      // write has been confirmed, not when the button is pressed. A celebration on
-      // submit would fire over a request that is still in flight and might yet fail,
-      // which is the one moment on this site where a bit of delight would become a
-      // lie.
-      //
-      // Deliberately not awaited, and the void is the point rather than tidiness:
-      // celebrate() dynamically imports canvas-confetti, so it can reject on a slow
-      // or blocked network. Awaited, a failed confetti chunk would throw into the
-      // catch below and tell somebody whose application HAD been saved that it had
-      // not. The success state is already set above and does not depend on it.
-      void celebrate();
     } catch (err) {
       setState("error");
       // The raw Firebase message is not shown. "Missing or insufficient permissions"
@@ -372,7 +353,7 @@ export default function JoinForm() {
 
   if (state === "done") {
     return (
-      <div className="card card-still rounded-tile bg-raise p-7">
+      <div className="rounded-panel border border-seam bg-raise p-8 sm:p-10">
         <p className="text-display-md font-semibold">You&apos;re in the queue.</p>
         <p className="measure mt-4 text-body text-haze">
           Somebody will message you before the next session. There is nothing else to
@@ -383,13 +364,13 @@ export default function JoinForm() {
   }
 
   return (
-    <div className="card card-still rounded-tile bg-raise shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
-      <div className="border-b border-seam px-7 py-5">
+    <div className="rounded-panel border border-seam bg-raise shadow-[0_13px_27px_-5px_rgba(50,50,93,0.18),0_8px_16px_-8px_rgba(0,0,0,0.25)]">
+      <div className="border-b border-seam px-7 py-5 sm:px-9">
         <p className="label">Open to all years, no experience needed</p>
         <p className="mt-2 text-body-lg font-semibold">Join the club</p>
       </div>
 
-      <form onSubmit={onSubmit} className="space-y-4 px-7 py-6">
+      <form onSubmit={onSubmit} className="space-y-6 px-7 py-7 sm:px-9 sm:py-8">
         {/* useSearchParams needs a Suspense boundary or the page cannot be
             statically rendered — Next throws at build time rather than at runtime,
             which is the good version of this error. The fallback is a plain height
@@ -405,13 +386,13 @@ export default function JoinForm() {
             name="updates"
             className="mt-0.5 h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
           />
-          <span className="text-[15px] leading-relaxed text-haze">
+          <span className="text-[13px] leading-relaxed text-haze">
             Message me about sessions and application deadlines.
           </span>
         </label>
 
         {deadline && (
-          <p className="text-[15px] font-medium text-ember">
+          <p className="text-[13px] font-medium text-ember">
             Applications for this cohort close {deadline}.
           </p>
         )}
@@ -419,13 +400,13 @@ export default function JoinForm() {
         <button
           type="submit"
           disabled={state === "sending"}
-          className="btn btn-pop w-full disabled:opacity-60"
+          className="btn btn-primary w-full disabled:opacity-60"
         >
-          {state === "sending" ? "Sending…" : "Apply to join"}
+          {state === "sending" ? "Sending…" : "Send it"}
         </button>
 
         {state === "error" && (
-          <p className="text-[15px] leading-relaxed text-ember" role="alert">
+          <p className="text-[13px] leading-relaxed text-ember" role="alert">
             {message}{" "}
             <a href={`mailto:${LINKS.email}`} className="underline">
               {LINKS.email}
@@ -439,13 +420,13 @@ export default function JoinForm() {
             site criticises elsewhere, and it is the applicant's information, not
             ours. Kept to two sentences and placed where it is read before submitting
             rather than in a policy page nobody opens. */}
-        <p className="border-t border-seam pt-5 text-[15px] leading-relaxed text-dust">
+        <p className="border-t border-seam pt-5 text-[13px] leading-relaxed text-dust">
           What we do with this: your answers go to the club organisers and nowhere
           else. Nothing here is published on the site — the names on it are only there
           because those people were asked and said yes.
         </p>
 
-        <p className="text-[15px] leading-relaxed text-dust">
+        <p className="text-[13px] leading-relaxed text-dust">
           Not ready to apply? Turn up to a build day instead — no signup, no form, and
           nobody will ask whether you have contributed before.
         </p>

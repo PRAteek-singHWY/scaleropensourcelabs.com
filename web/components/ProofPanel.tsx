@@ -6,7 +6,7 @@
 // links to a source" would undercut the argument it decorates.
 //
 // So the visual is the evidence itself. Our product is merged code, and a product
-// page shows the product. Every number below comes from PROJECTS and is checkable
+// page shows the product. Every number below comes from UPSTREAM and is checkable
 // against the repo it names.
 //
 // The form was chosen before the colour, and it is deliberately NOT a chart:
@@ -29,10 +29,10 @@
 // Text wears text tokens throughout. The accent appears on the marks and on the
 // figure that names the rank, never on a label.
 
-import { PROJECTS } from "@/content/club";
+import { UPSTREAM } from "@/content/projects";
 
 export default function ProofPanel() {
-  const lead = PROJECTS.find((p) => p.published && p.proof);
+  const lead = UPSTREAM.find((p) => p.published && p.proof);
   if (!lead) return null;
 
   // Parsed from the proof label rather than duplicated, so the panel cannot drift
@@ -48,13 +48,13 @@ export default function ProofPanel() {
   const pct = Math.round((landed / opened) * 100);
 
   return (
-    <figure className="card card-still mt-8 overflow-hidden rounded-panel bg-raise">
-      <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-8">
+    <figure className="mt-14 overflow-hidden rounded-panel border border-seam bg-raise">
+      <div className="grid grid-cols-1 gap-10 p-8 sm:p-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-16">
         {/* ---- The hero figure: the one number this section leads with ---- */}
         <div>
           <p className="label">Contributor rank</p>
           <p className="mt-4 flex items-baseline gap-3">
-            <span className="text-[clamp(3.125rem,calc(7vw_+_0.125rem),5.625rem)] font-semibold leading-[0.9] tracking-tightest text-accent">
+            <span className="text-[clamp(3rem,7vw,5.5rem)] font-semibold leading-[0.9] tracking-tightest text-accent">
               #{place}
             </span>
             <span className="text-body-lg text-haze">of {field}</span>
@@ -65,7 +65,7 @@ export default function ProofPanel() {
               href={lead.url}
               target="_blank"
               rel="noreferrer"
-              className="tap font-mono text-sm text-accent link-u hover:brightness-125"
+              className="tap font-mono text-sm text-accent hover:brightness-125"
             >
               {lead.repo} ↗
             </a>
@@ -103,7 +103,7 @@ export default function ProofPanel() {
             </span>
           </p>
 
-          <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-seam pt-6">
+          <dl className="mt-8 grid grid-cols-2 gap-6 border-t border-seam pt-6">
             <div>
               <dt className="label">Opened</dt>
               <dd className="mt-1.5 text-display-md font-semibold">{opened}</dd>
@@ -118,7 +118,7 @@ export default function ProofPanel() {
         </div>
       </div>
 
-      <figcaption className="border-t border-seam px-8 py-4 text-[15px] text-dust sm:px-12">
+      <figcaption className="border-t border-seam px-8 py-4 text-[13px] text-dust sm:px-12">
         {lead.what} Counted from the public repository — open the link and check.
       </figcaption>
     </figure>

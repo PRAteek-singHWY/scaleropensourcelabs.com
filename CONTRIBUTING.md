@@ -12,23 +12,45 @@ git clone https://github.com/<org>/<repo>.git
 cd <repo>/web
 npm install
 npm run dev          # http://localhost:3000
+                     # port 3000 is often taken; use `npm run dev -- -p 3001`
+                     # and pass SITE_URL=http://localhost:3001 to the checks
 ```
 
 No credentials, no database, no `.env`. If `npm run dev` needs anything from you
 beyond those commands, that is a bug — please open an issue.
 
-## The one file that matters
+## The files that matter
 
-Almost every contribution is an edit to **`web/content/club.ts`**. It
-holds all the site's content as typed arrays. You do not need to touch a React
-component to add a person, a project, or an answer.
+Almost every contribution is an edit to one file under **`web/content/`**. They hold
+all the site's content as typed arrays, one module per page, so you do not need to
+touch a React component to add a person, a project, or an answer.
+
+| File | What lives there | Page |
+| --- | --- | --- |
+| `site.ts` | Links, the page list, the footer's institutional copy | every page |
+| `essence.ts` | What open source is, career impact, the ICPC comparison, member stories | Essence |
+| `projects.ts` | Build-day projects, club repos, upstream contributions | Projects |
+| `programs.ts` | The seven programmes, tiers, the reverse clock | Programs |
+| `people.ts` | Core team, alumni, achievers, organisations | Hall of Fame |
+| `join.ts` | The four entry paths, what we look for, culture, FAQ, form options | How to Join |
+
+This used to be a single `club.ts`. It was split when the site became five pages,
+because one 800-line file holding five pages' content meant every content PR touched
+it and every one of them conflicted.
+
+> **Editing the join form's options?** `join.ts` holds the four paths, the three
+> experience levels and the interest checkboxes — and `firestore.rules` at the repo
+> root keeps a **second copy** of those values, because Firestore rules cannot import
+> anything. Change one without the other and every applicant who picks the new option
+> gets a permission error on submit, while the page still renders perfectly. Run
+> `npm run rules` to check, and see [FIREBASE.md](FIREBASE.md).
 
 ```ts
-// content/club.ts
-export const SELECTIONS: Selection[] = [
+// content/people.ts
+export const ACHIEVERS: Achiever[] = [
   {
     name: "Full Name",
-    programme: "GSOC",              // GSOC | LFX | C4GT | SOB | OUTREACHY
+    achievement: { kind: "programme", programme: "GSOC" },  // or { kind: "hackathon", event: "..." }
     year: "2026",
     org: "The organisation that selected them",
     work: "One specific sentence on what they actually built.",
@@ -41,6 +63,19 @@ export const SELECTIONS: Selection[] = [
 ```
 
 Run `npm run typecheck`. If it passes, the shape is right.
+
+### Placeholder content, and why it is there
+
+Several sections render obvious placeholders — "Placeholder One", "Example
+Foundation" — in development and **nothing at all** in production. That is
+deliberate: a card grid cannot be designed or reviewed against an empty array, but a
+production build must never ship an invented name. The switch is
+`process.env.NODE_ENV`, so it is structural rather than a note asking somebody to
+remember.
+
+When you add real entries, the placeholders disappear on their own — the
+`published*()` helpers return real content whenever there is any. Do not delete the
+scaffolds; the next person redesigning that section needs them.
 
 ## Two rules that get PRs closed
 
@@ -85,14 +120,23 @@ Match the voice already there. Concretely:
 
 ```bash
 npm run typecheck    # must pass
+npm run palette      # must pass — categorical colour constraints
 npm run build        # must pass
-npm run qa           # must report 0 issues — needs `npm run dev` in another terminal
+npm run smoke        # needs `npm run dev` in another terminal
+npm run qa           # must report 0 issues — same
+npm run browsers     # all three engines
 ```
 
-`npm run qa` drives real Chromium across three viewports × both themes. It checks
-contrast, tap-target sizes, text size, heading order, alt text and horizontal
-overflow. **Zero issues is the bar**, and it is not negotiable for a site whose
+`npm run qa` drives real Chromium across **all six routes** × four viewports × both
+themes — 48 combinations. It checks contrast, tap-target sizes, text size, heading
+order, alt text, horizontal overflow, and that `.tap` is never combined with a margin
+utility. **Zero issues is the bar**, and it is not negotiable for a site whose
 audience includes people reading it on a phone on campus wifi.
+
+`npm run smoke` is the one that catches a dead bundle: it asserts hydration, the Join
+button's visibility on every route, and that the outline and scroll reveals re-derive
+after a client-side navigation. Run it before `qa`, because a page serving no
+JavaScript passes most of what `qa` checks.
 
 If you changed anything visual, also **look at it in both themes**. On this project
 that has caught bugs every single time — including a wordmark rendering at 1.11:1
@@ -117,7 +161,8 @@ declared token and the element was rendering transparent.
 
 Look for the `good first issue` label. Genuinely useful starting points:
 
-- Add a selection, mentor or project to `content/club.ts` (with consent + proof).
+- Add an achiever, a project or a core team member to the right file in
+  `web/content/` (with consent + proof).
 - Add an FAQ entry for a question you actually had before joining.
 - Fix a `npm run qa` failure on a viewport we have not looked at closely.
 - Improve a section's copy to be more specific and less promotional.

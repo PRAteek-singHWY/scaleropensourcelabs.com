@@ -56,14 +56,14 @@ export default function OrgWall() {
             </p>
           </div>
 
-          <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3" data-reveal-group>
+          <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {g.items.map((o) => (
               <li key={`${o.name}-${o.relation}`}>
                 <a
                   href={o.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="lift group flex h-full flex-col rounded-tile border border-seam bg-raise p-5 transition-colors duration-300 ease-glide hover:border-accent/60"
+                  className="group flex h-full flex-col rounded-tile border border-seam bg-raise p-5 transition-colors duration-300 ease-glide hover:border-accent/60"
                 >
                   <span className="font-mono text-body-lg text-ink transition-colors group-hover:text-accent">
                     {o.name}

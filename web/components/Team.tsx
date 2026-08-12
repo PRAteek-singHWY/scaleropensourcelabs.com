@@ -51,7 +51,7 @@ import {
   TEAM_OFFICERS,
   TEAM_SHADOWS,
   type TeamMember,
-} from "@/content/club";
+} from "@/content/people";
 
 // One column per lead. The officers split the same width evenly above them, which
 // is what puts their centres on column boundaries — see the header note. This
@@ -143,13 +143,15 @@ const DASHED = "border-dashed border-dust/50";
    `.label` put this section in the page outline as "President". These are the same
    declarations that class carries (0.875rem / 0.07em / dust), just under a selector
    Outline does not treat as a section title.
-   Note the size: the `label` FONT-SIZE token in tailwind.config is 0.6875rem/0.18em,
-   which is a different thing from the `.label` class in globals.css. Matching the
-   class means spelling both values out.
+   Note the size: the `label` FONT-SIZE token in tailwind.config sets its own
+   line-height, which is a different thing from the `.label` class in globals.css.
+   Matching the class means spelling the values out. They were re-measured off the
+   OSC Figma along with everything else — 0.75rem at 0.08em, up from 0.875rem at
+   0.07em — so these track the class rather than the values it used to have.
    It also removes a workaround — with no `.label` specificity to beat, the officer
    tint is a plain `text-accent` rather than an inline style. */
 const CAPTION =
-  "font-label text-[1rem] font-semibold uppercase leading-[1.2] tracking-[0.07em]";
+  "font-label text-[0.75rem] uppercase leading-[1.2] tracking-[0.08em]";
 
 function VLine({
   x,
@@ -227,18 +229,14 @@ function Node({
       </div>
       <Caption designation={designation} name={member.name} tone={tone} />
       {member.github && (
-        // mt-2 on the wrapper — same `.tap` source-order trap as in Mentors.tsx, and
-        // latent for the same reason: no TEAM_* entry carries a github handle yet.
-        <div className="mt-2">
-          <a
-            href={`https://github.com/${member.github}`}
-            target="_blank"
-            rel="noreferrer"
-            className="tap inline-block font-mono text-xs text-haze hover:text-accent"
-          >
-            @{member.github}
-          </a>
-        </div>
+        <a
+          href={`https://github.com/${member.github}`}
+          target="_blank"
+          rel="noreferrer"
+          className="tap mt-2 inline-block font-mono text-xs text-haze hover:text-accent"
+        >
+          @{member.github}
+        </a>
       )}
     </div>
   );
@@ -258,7 +256,7 @@ export default function Team() {
           Below lg the stacked list takes over. Both are `display:none` at the other
           breakpoint, which also keeps the accessibility tree to exactly one copy. */}
       <div
-        className="mt-8 hidden lg:grid"
+        className="mt-16 hidden lg:grid"
         style={{ gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))` }}
         role="img"
         aria-label="Organisation chart of the club team. The same structure is listed below."
@@ -385,7 +383,7 @@ export default function Team() {
       </div>
 
       {/* ---- The same structure, stacked. Below lg only --------------------- */}
-      <ul className="mt-7 space-y-6 lg:hidden" data-reveal-group>
+      <ul className="mt-12 space-y-10 lg:hidden">
         {[...TEAM_OFFICERS, ...TEAM_LEADS].map((m) => {
           const shadow = SHADOWS.find((s) => s.principal === m.designation);
           const officer = TEAM_OFFICERS.includes(m);
@@ -445,7 +443,7 @@ export default function Team() {
       {/* The key. A dashed line means nothing on its own, and a reader should not
           have to infer it from the two cards it happens to connect. */}
       {SHADOWS.length > 0 && (
-        <p className="mt-8 flex items-center gap-3 border-t border-seam pt-6 font-mono text-xs text-dust">
+        <p className="mt-16 flex items-center gap-3 border-t border-seam pt-6 font-mono text-xs text-dust">
           <span
             aria-hidden
             className="h-0 w-8 shrink-0 border-t border-dashed border-dust/50"

@@ -1,158 +1,144 @@
 "use client";
 
-// Nav, as a floating glass plate rather than a bar welded to the top edge.
+// The site nav. Five pages, one persistent action.
 //
-// The register is still quiet — a nav's job on a page like this is to be
-// findable, not to announce itself; the hero is doing the announcing — but it is
-// detached: inset from all three edges, rounded, and lifted off the page by a
-// 4%-black shadow. That single change is most of what separates a 2019 site header
-// from a current one, and it costs nothing structurally.
+// It was a server component when the site was one page and every item was a hash
+// link. A multi-page site needs the current page marked, and the only honest source
+// for "which page am I on" is the router — so this is a client component now. The
+// cost is small: the nav is a handful of links and the pathname hook is the whole
+// of its interactivity.
 //
-// The plate itself (fill, blur, shadow) is `.plate` in globals.css, shared with
-// the outline panel. Two rules matter here:
+// THE JOIN BUTTON IS THE POINT OF THIS COMPONENT.
 //
-//   * Its width matches the content measure (88rem), not the viewport. A plate
-//     that runs edge to edge is a bar with rounded corners; one that lines up
-//     with the copy underneath reads as part of the same layout, and the links
-//     land directly above the text they lead to.
+// It is pinned here rather than repeated down the page or parked in a bottom bar.
+// The previous design used Apple's sticky buy-bar pattern — a fixed strip that
+// appeared past the hero and hid over the form — which made sense when the form
+// existed exactly once, 12,000px down a single page. With a dedicated /join route
+// reachable from a nav that is always on screen, that bar became a second control
+// doing the same job, and two competing persistent CTAs is worse than one. The bar
+// is gone, along with the reserved-height rule it needed in globals.css.
 //
-//   * Its bottom edge is 4.25rem from the top of the viewport (0.75rem inset +
-//     3.5rem plate), 4.5rem at sm+. `scroll-padding-top: 5.5rem` and `.page-top`
-//     in globals.css are both derived from that. Change the inset or the height
-//     and they move too.
+// "Subtle highlight", read literally: it is the accent-filled control in a bar of
+// 12px grey links, and nothing else here is filled. It does not pulse, grow, or
+// change colour on scroll. A button that animates to get attention on every page
+// reads as desperate, and this one does not need to — it is the only filled thing
+// in the bar.
 //
-//     THE PLATE IS 3.5rem AND WAS 3rem. It grew for one reason: the Join button
-//     has to be a 44px touch target, and 44 inside 48 leaves 2px of air either
-//     side — a control wedged into a bar rather than sitting in one. The cheap fix
-//     was shrinking the button to 40px, which passes every floor except the one
-//     that applies (WCAG 2.5.5, and smoke.mjs asserts it). Three coupled numbers
-//     moved instead of one accessibility floor.
-//
-// IT IS A CLIENT COMPONENT AGAIN, and for a new reason. It was one when the site
-// had scroll-linked dark sections, went back to being a server component when
-// those left, and is one now because the site is six routes instead of one long
-// page: the only honest source for "which page am I on" is the router. The cost is
-// small — the nav is a handful of links and the pathname hook is the whole of its
-// interactivity.
-//
-// THE JOIN BUTTON IS WHY THE RIGHT-HAND GROUP IS ARRANGED THE WAY IT IS.
-//
-// It is pinned here rather than repeated down every page. When the form existed
-// exactly once, 12,000px down a single scroll, a CTA that appeared past the hero
-// was the only way to keep the action reachable. With a dedicated /join route and
-// a bar that is always on screen, the action is never more than one click away
-// from anywhere, so the bar carries it and the pages do not have to.
-//
-// "Subtle highlight", read literally: it is the only filled control in a strip of
-// plain links. It does not pulse, grow, or change colour on scroll. A button that
-// animates for attention on every page reads as desperate, and this one does not
-// need to.
+// The frosted plate is measured off apple.com rather than approximated: their
+// global nav computes to rgba(255,255,255,0.8) with
+// `backdrop-filter: saturate(1.8) blur(20px)`. The saturate is the part usually
+// missing — a plain blur greys out whatever passes beneath it, and the 1.8 boost is
+// what makes their glass look like glass rather than frosted plastic.
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Outline from "@/components/Outline";
 import ThemeToggle from "@/components/ThemeToggle";
-import { JOIN_HREF, LINKS, PAGES } from "@/content/site";
+import { JOIN_HREF, PAGES } from "@/content/site";
 
 export default function Nav() {
   const pathname = usePathname();
 
   return (
-    <header className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-6">
+    <header className="plate fixed inset-x-0 top-0 z-50 border-b border-seam/60">
       <nav
         aria-label="Main"
-        // 88rem, tracking `.section`. This number is not independent: the plate's
-        // whole idea is that its width IS the content measure, so a section that
-        // widened to 88rem while the nav stayed at 80rem would put the plate's edges
-        // 64px inside every heading beneath it — visible on any screen wide enough
-        // for the cap to bind, and exactly the kind of 64px misalignment that reads
-        // as "slightly off" without being locatable.
-        // nav-plate is the reading-progress rule along the bottom edge, and
-        // nothing else — see the block in globals.css. It is a scroll-driven
-        // pseudo-element, so it costs no state here and browsers without
-        // animation-timeline get the bar exactly as it was.
-        className="nav-plate plate mx-auto flex h-14 max-w-[88rem] items-center justify-between gap-3 rounded-2xl border border-seam/70 px-3 sm:gap-4 sm:px-6"
+        className="mx-auto flex h-14 max-w-[76rem] items-center gap-4 px-6 sm:px-8"
       >
         <Link
           href="/"
-          className="-my-3 inline-block shrink-0 py-3 text-sm font-extrabold tracking-tight text-ink transition-colors duration-200 ease-in-out hover:text-accent"
+          // Blue, not ink. In the frames the wordmark is the ONE accent-coloured
+          // thing on the left of the bar, which is what separates it from the six
+          // grey nav items rather than relying on weight alone.
+          className="-my-3 inline-block shrink-0 py-3 font-display text-lg leading-none tracking-tight text-accent transition-opacity duration-300 ease-glide hover:opacity-70"
         >
           OSC
         </Link>
 
-        {/* Six links plus a logo, a toggle and a filled button do not fit across
-            390px, and the failure mode used to be silent: they overflowed, the body's
-            overflow-x:hidden clipped them, and the last items simply were not there.
-            Nothing reported an overflow because nothing could scroll.
-
-            So the strip scrolls, and the affordance for that is EXPLICIT rather than
-            left to chance. An earlier version relied on a partially-cut last item to
-            say "there is more this way", which is only true when a word boundary
-            happens to fall in the right place — measured across widths it was false
-            at 390px, the single most common phone size, where the strip looked like
-            it simply ended.
-
-            The fade is mask-image rather than an overlaid gradient because the nav is
-            a translucent plate: a solid gradient in --bg would be a visible block
-            sitting over the blur, whereas a mask fades the links themselves and works
-            over any backdrop. Removed at md, where there is room for all six. */}
-        <ul className="scroll-strip flex min-w-0 flex-1 items-center gap-4 overflow-x-auto [mask-image:linear-gradient(to_right,#000_calc(100%-1.75rem),transparent)] sm:gap-5 md:[mask-image:none] lg:flex-none lg:justify-center">
+        {/* The link strip scrolls on narrow viewports rather than wrapping or being
+            clipped. This is not hypothetical caution: at 390px the previous nav
+            overflowed and the body's overflow-x:hidden silently ate the last two
+            items — which were Apply and the theme control. Nothing reported an
+            overflow because nothing could scroll.
+    
+            An earlier version of this comment claimed "a partially-cut last item is
+            the affordance that says there is more this way". Measured across nine
+            widths, that is simply not true, and it is least true where it matters
+            most:
+    
+              360px  1/5 links visible, next item partially shown
+              390px  2/5 links visible, next item NOT shown at all
+              560px  4/5 links visible, next item NOT shown at all
+              768px  5/5, no scrolling needed
+    
+            At 390px — the single most common phone width — three of the five pages
+            were undiscoverable and the strip looked like it simply ended after
+            "Projects". Whether a partial item happens to land in view is an accident
+            of where a word boundary falls, not a design.
+    
+            So the affordance is explicit now: the strip's content fades out at its
+            right edge while it is scrollable, and the fade is removed at `md`, which
+            is where the measurement above shows scrolling stops being necessary.
+            Done with mask-image rather than an overlaid gradient because the nav is a
+            translucent frosted plate — a solid gradient in --bg would be a visible
+            block over the blur, whereas a mask fades the links themselves and works
+            over any backdrop.
+    
+            Two links at 390px is as good as this gets without cutting something the
+            brief asks for. The strip only gets 129px there; the rest is spent on the
+            logo, the theme toggle and the Join button, and tightening the gap changes
+            nothing because the constraint is those fixed items rather than the
+            spacing. Shortening the button to "Join" would buy a third link and was
+            rejected — the persistent action's label is worth more than one more nav
+            item, especially since the strip swipes and the footer lists all five
+            pages. */}
+        <ul className="scroll-strip flex min-w-0 flex-1 items-center gap-5 overflow-x-auto [mask-image:linear-gradient(to_right,#000_calc(100%-1.75rem),transparent)] sm:gap-6 md:[mask-image:none]">
           {PAGES.map((p) => {
-            // Exact match for "/", prefix match for the rest — so /projects marks
+            // Exact match for "/", prefix match for the rest, so /projects marks
             // itself and "/" does not mark itself on every page.
-            const current =
-              p.href === "/" ? pathname === "/" : pathname.startsWith(p.href);
+            const current = p.href === "/" ? pathname === "/" : pathname.startsWith(p.href);
             return (
               <li key={p.href}>
                 <Link
                   href={p.href}
                   aria-current={current ? "page" : undefined}
-                  className={`nav-link -my-3 inline-block whitespace-nowrap py-3 ${
-                    current ? "!text-accent" : ""
+                  // Mono caps, per the frames. `uppercase` is a CSS transform rather
+                  // than a change to PAGES — the labels stay title-case in content,
+                  // so the footer's page list and the document titles are unaffected.
+                  className={`-my-3 inline-block whitespace-nowrap py-3 font-mono text-label uppercase transition-colors duration-300 ease-glide hover:text-ink ${
+                    current ? "font-medium text-accent" : "text-haze"
                   }`}
                 >
                   {p.label}
                   {/* The current page carries a rule under it as well as heavier
-                      ink. Colour alone is the only signal a colourblind reader would
-                      get, and this bar has no other way of saying where you are. */}
-                  {/* .nav-rule keeps that exactly as it was — the current page's
-                      rule is at scaleX(1) in the first frame, so nothing about
-                      where you are waits on a transition — and gives every other
-                      link the same rule, drawn left to right on hover and on
-                      focus. The state is read from aria-current above, so there is
-                      no second source of truth for "here". */}
-                  <span aria-hidden className="nav-rule mt-0.5 block h-px" />
+                      ink. Weight alone is a very quiet signal at 12px, and it is
+                      the only signal a colourblind reader would get. */}
+                  <span
+                    aria-hidden
+                    className={`mt-1 block h-px ${current ? "bg-accent" : "bg-transparent"}`}
+                  />
                 </Link>
               </li>
             );
           })}
         </ul>
 
-        <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-          {/* lg+ only. It was sm+ when the bar held six links and no button; the
-              button is worth more than a link that is repeated in the footer. */}
-          <a
-            href={LINKS.github}
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link -my-3 hidden py-3 lg:inline-block"
-          >
-            GitHub ↗
-          </a>
-          {/* Renders its own toggle here and the panel as a fixed element. Only
-              appears at lg+ — there is no room for a side rail on a phone. */}
+        <div className="flex shrink-0 items-center gap-3">
+          {/* Only appears at lg+; there is no room for a side rail on a phone. */}
           <Outline />
           <ThemeToggle />
-          {/* Never marked as the current page, even on /join — it is an action, and
-              an action that greys itself out at the moment it becomes relevant is a
-              bug. It stays filled and clickable throughout.
+          {/* Never marked as the current page even when the reader is on /join —
+              it is an action, and an action that greys itself out at the moment it
+              is relevant is a bug. It stays filled and clickable throughout.
 
-              YELLOW, not the blue fill. The blue is `.btn-primary` and appears on
-              in-page CTAs all over the site; if the bar wore it too, the one control
-              that is on screen at every scroll position would look like every other
-              button. Yellow makes it the single loudest thing in the chrome. */}
+              YELLOW, not accent-filled. The frames make this the only yellow element
+              in the bar; the earlier note here said "it is the accent-filled control
+              in a bar of grey links, and nothing else here is filled", and that
+              argument survives the colour change intact — what changed is which
+              colour does the filling. Yellow also stops it competing with the blue
+              wordmark at the other end of the same bar. */}
           <Link href={JOIN_HREF} className="btn btn-pop btn-compact shrink-0">
-            Join
+            Join the Club
           </Link>
         </div>
       </nav>

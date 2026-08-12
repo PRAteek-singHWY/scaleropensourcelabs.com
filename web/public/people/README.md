@@ -1,6 +1,6 @@
 # Member photos
 
-Drop one image per person here and reference it from `content/club.ts`:
+Drop one image per person here and reference it from `content/people.ts`:
 
 ```ts
 { name: "Full Name", photo: "/people/full-name.jpg", … }
@@ -13,7 +13,7 @@ list the person is in before cropping.
 
 | Where | Shape | Crop | Minimum |
 | --- | --- | --- | --- |
-| `SELECTIONS`, `MENTORS` — the hall and mentor cards | 4:5 tall | Portrait | 832 x 1040 |
+| `ACHIEVERS`, `CORE_TEAM`, `ALUMNI` — the Hall of Fame cards | 4:5 tall | Portrait | 832 x 1040 |
 | `TEAM_OFFICERS`, `TEAM_LEADS`, `TEAM_SHADOWS` — the org chart | Circle | **Square** | 448 x 448 |
 
 The chart's circles render at 112px (officers), 96px (leads) and 72px (shadows), so
@@ -54,8 +54,8 @@ as monograms. Adding them is a one-line change per person and needs no layout wo
 
 A photo needs the same consent as the name.
 
-- For `SELECTIONS` and `MENTORS`, `consented: true` covers both, and it is not to
-  be set on someone else's behalf.
+- For `ACHIEVERS`, `CORE_TEAM` and `ALUMNI`, `consented: true` covers both, and it
+  is not to be set on someone else's behalf.
 - `TEAM_*` has no `consented` field, because holding a team office is the
   club's own structure to state. A **photo** is still that person's to give — ask
   before adding one.

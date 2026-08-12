@@ -25,394 +25,114 @@
    rendered pixels were sampled. Consuming a token as a whole colour in plain CSS
    therefore needs rgb(var(--x)).
 
-   Light is the default because both references — apple.com and Scaler's School of
-   Business — are light. Dark is a full peer, not an inversion: the neutrals are
-   re-picked with a blue cast and the accent is darkened for the light ground,
-   because #5FD4FF on white is unreadable.
+   VALUES ARE MEASURED OFF THE OSC FIGMA, NOT CHOSEN. The file defines no Figma
+   variables (`get_variable_defs` returns {}), so there was no token list to read:
+   the hex values below come from the design context's own CSS and from sampling
+   the rendered frames pixel by pixel down an empty right-hand column, where
+   whatever colour appears IS the section's ground rather than a glyph.
 
-   There is no longer a pinned-dark set. The hero and hall held one because a
-   solar system on a white page is nonsense; with the 3D removed every section
-   follows the reader's theme, which is the simpler and more honest system.
+   Light is the default, and here dark IS very nearly a true inversion — that is
+   what the frames do, and it is unusual enough to be worth stating: bg and ink
+   swap exactly (#fbfaf7 <-> #0b0b0c), and the inverted full-bleed sections on the
+   home page flip with them. The one thing that is re-picked rather than swapped is
+   the accent, for the usual reason: #1b1bff reaches 7.60:1 on the light ground but
+   only 2.48:1 on the dark one, so dark gets its own lighter step of the same hue
+   at 5.53:1. Both measured, both AA.
    --------------------------------------------------------------------------- */
 
 :root {
   color-scheme: light;
 
-  --bg: 250 250 252;          /* page — #FAFAFC, the soft cream-grey */
-  /* WHITE, and lighter than the page. The alternating band used to be a warm
-     cream a shade DARKER than the page; in a neo-pop system the relationship
-     inverts, because the bands now read as sheets laid on the surface rather than
-     as recesses cut into it. Everything that sits on a band gets a black keyline
-     and a hard shadow, and both need a white ground to bite against. */
-  --band: 255 255 255;
-  --raise: 255 255 255;       /* cards — pure white now READS as raised, because the
-                                 page under it is not also pure white */
-  --sunk: 245 246 248;        /* recessed fills */
-  --seam: 209 213 219;        /* #D1D5DB hairlines and the outlined button's border */
-  /* #E2E8F0. Two jobs, one value, and they are the same value on purpose: the
-     dot grid the page sits on, and the 1px edge of every card that sits on it.
-     A card border a shade lighter than --seam is what lets a tile read as a
-     surface floating on the grid rather than as a box ruled onto it. */
-  --edge: 226 232 240;
-  --ink: 10 10 10;            /* #0A0A0A — pitch black now, 19.0:1. The charcoal it
-                                 replaces was chosen to take the edge off; this
-                                 register wants the edge. */
-  --slate: 55 65 81;          /* #374151 — the softer charcoal for controls: nav links
-                                 and the outlined button. 10.1:1. Deliberately a step
-                                 lighter than --ink so a control never out-shouts the
-                                 sentence it sits beside. */
-  --haze: 102 102 102;        /* #666666 secondary text — 5.6:1 */
-  --dust: 106 106 114;        /* tertiary text — 5.3:1 */
+  --bg: 251 250 247;          /* #fbfaf7 — warm off-white, not pure white */
+  --band: 255 252 239;        /* #fffcef — the cream alternating band */
+  --raise: 255 255 255;       /* cards sit slightly above the warm page */
+  --sunk: 245 244 239;        /* recessed fills */
+  --seam: 224 222 214;        /* hairlines */
+  --ink: 11 11 12;            /* #0b0b0c */
+  /* The frames set secondary and tertiary text as ink at 62% and 42%. Flattened to
+     opaque values here rather than kept translucent, so they stay correct on cards
+     and bands — a translucent ink shifts with whatever is behind it, and the design
+     uses these on four different grounds.
 
-  /* THE ELECTRIC BLUE, in two steps.
-     #0038FF is notyourcollege.com's --color-primary, read straight off their
-     stylesheet, and it replaces the cobalt pair (#2563EB / #1D4ED8) this file
-     carried before. The change is the single largest visible one in the pass:
-     that cobalt is a considered, slightly greyed corporate blue, and theirs is
-     the pure ink-jet blue a sixteen-year-old reads as "loud". Everything else in
-     this stylesheet was already in their register — the hard black shadow, the
-     yellow, the keylines — and the muted blue was the one thing quietly pulling
-     the page back toward a prospectus.
+     DARKENED FROM THE FIGMA'S LITERAL VALUES, and this is a deliberate deviation.
+     Ink at 42% over this page measures 2.87:1, and the QA sweep found 162 nodes of
+     real body copy using it — language chips, card captions, the trademark note.
+     The design does use 42% legitimately, but only for the DECORATIVE placeholder
+     text inside the dashed "repository slot" and "mentor slot" cards, where the grey
+     is the point. Applied to actual prose it is simply below AA.
 
-       --sky    #1B4BFF  6.0:1  large display type — the headline's second word
-       --accent #0038FF  7.0:1  text-size links, UI fills, the number badges
-
-     The two-step split survives the recolour unchanged, and so does the rule
-     behind it: the deeper one carries anything read at 13px. What is new is that
-     BOTH steps now clear the 4.5 body floor — the old --sky sat at 5.0:1 and was
-     display-only by necessity as much as by design. Measured on white and on the
-     #FAFAFC page: 6.98/6.69 for --accent, 6.01/5.76 for --sky. Every pair in this
-     block is therefore equal or better than the cobalt it replaces, which is the
-     bar a palette change has to clear here before taste gets a say.
-
-     NOT USED AS A GROUND FOR BLACK. #0038FF is dark — black on it is 3.01:1 and
-     fails outright — so anything filled with it takes white or --bg on top. That
-     is the opposite of the yellow's behaviour two blocks down and the reason the
-     two loud fills are not interchangeable. */
-  --sky: 27 75 255;
-  --accent: 0 56 255;
-  /* #F0F3FF — their --color-primary-bg exactly. Doubles as the outlined button's
-     hover tint and as the quiet chip's fill; --accent on it is 6.3:1. */
-  --accent-soft: 240 243 255;
-
-  /* The sticker badge. Self-contained (its own fill, its own text colour), so
-     unlike everything else here it does not need to invert between themes — only
-     to stay separated from the ground it sits on. Cobalt at 8.4:1 under white. */
-  --sticker: 0 71 171;        /* #0047AB */
-
-  /* #FFD600, high-visibility yellow. NEVER text on a light ground — it measures
-     1.4:1 on white. It is a FILL: the primary button, the marker badge, the sticky
-     note. Pitch black sits on it at 14.9:1, which is the highest-contrast pair in
-     the palette and the reason this colour can be used as loudly as it is. */
-  --pop: 255 214 0;
+     So both steps are pinned to the contrast floor instead: every value below clears
+     4.5:1 on all four grounds (bg, band, raise, sunk) with the worst case measured,
+     not assumed. --dust bottoms out at 4.62:1 on --sunk. */
+  --haze: 92 92 95;           /* 6.05:1 worst ground */
+  --dust: 110 110 113;        /* 4.62:1 worst ground */
+  --accent: 27 27 255;        /* #1b1bff — 7.60:1 here */
+  --accent-soft: 232 232 255;
+  /* The yellow. NEVER text on a light ground — #ffe01a on #fbfaf7 is 1.50:1.
+     Fill and highlight only; ink sits on it at 15.6:1. */
+  --pop: 255 224 26;
   --ember: 180 85 26;
 
-  /* THE CAVEAT RED. The one colour on the page that exists to say "read this
-     before you assume the thing above applies to you" — currently the single
-     qualifier under the mentorship card. Deliberately NOT --ember: that burnt
-     orange is decorative and reads as warm, and a qualifier that reads warm is a
-     qualifier nobody stops on.
-
-     It follows the same rule as --accent rather than --pop: it inverts, because
-     it is only ever TEXT and never a fill. #B91C1C measures 6.5:1 on white and
-     6.2:1 on the #FAFAFC page; the dark step is #F87171 at 6.4:1 on --raise, the
-     card ground it actually appears on. Both clear the 4.5 body floor at the
-     12px this is set in, which is the bar a red has to clear here — a warning
-     nobody can read is worse than no warning. */
-  --flag: 185 28 28;
-
-  /* The headline gradient, re-struck in the electric register: #0038FF → #6B21FF
-     at 135deg, replacing #2563EB → #7C3AED.
-
-     The violet end moves as far as the blue one does, and it has to. A gradient is
-     read as one object, so leaving the far stop on the old cobalt-era violet while
-     the near stop went electric would have made the ramp look like it was fading
-     into the previous palette rather than travelling through this one. Same hue
-     RELATIONSHIP, both ends turned up.
-
-     Both stops measured against this page rather than trusted: 6.4:1 and 6.1:1 for
-     the violet on white and on #FAFAFC, 7.0:1 and 6.7:1 for the blue. The pair
-     clears the 4.5 body floor everywhere along the ramp, never mind the 3:1 the
-     display size would have allowed — and it does so by a wider margin than the
-     5.1/5.6 the old pair managed. That matters because gradient text is the one
-     thing on this page the QA sweep genuinely cannot measure — see .tone-grad. */
-  --tone-a: 0 56 255;
-  --tone-b: 107 33 255;
-
-  /* Programme colours, LIGHT theme.
-     Not simply darkened versions of the dark set — that failed. Darkening
-     compressed green and amber together: worst adjacent CVD separation fell to
-     5.8 (deuteranopia) and normal-vision to 14.1, both under the floor. This set
-     was found by searching hue/saturation/lightness within each programme's
-     family under three simultaneous constraints — >=4.5:1 on white, >=15 normal
-     ΔE, >=6 CVD ΔE — and lands at 21.9 and 13.3, better separation than the dark
-     palette manages. C4GT reads teal rather than green and SoB burnt orange
-     rather than olive; both stay recognisable and both buy the separation. */
-  --prog-gsoc: #1148D0;
-  --prog-lfx: #77225D;
-  --prog-c4gt: #03817D;
-  --prog-sob: #B35605;
-  --prog-outreachy: #6B3FBF;
-  --prog-gssoc: #6E0F0F;
-  --prog-hacktoberfest: #4C5B2F;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: 11 13 20;
-    --band: 17 20 29;
-    --raise: 20 24 34;
-    --sunk: 15 18 26;
-    --seam: 42 48 62;
-    --edge: 32 38 51;
-    --ink: 244 245 250;
-    --slate: 214 220 232;
-    --haze: 156 162 178;
-    --dust: 130 137 154;
-    /* #0038FF measures 2.78:1 on this ground — and the electric recolour made that
-       WORSE, not better, which is exactly the trap this token block exists to
-       stop. A blue gets its punch on white by being dark; the darker it is, the
-       less of it survives on near-black. So dark does not follow light here and
-       must not be "kept in step" with it: periwinkle at 8.1:1 is the same hue
-       family re-picked for the surface, which is the rule the whole dark set
-       follows. The two themes agree on the HUE and disagree on the value, on
-       purpose. */
-    --sky: 129 165 255;
-    --accent: 129 165 255;
-    --accent-soft: 14 40 58;
-    --sticker: 27 95 217;
-    /* Yellow IS text-safe here (13.7:1), unlike on white. Useful asymmetry. */
-    --pop: 255 214 0;
+    --bg: 11 11 12;
+    --band: 20 20 20;
+    --raise: 24 24 25;
+    --sunk: 15 15 16;
+    --seam: 42 42 44;
+    --ink: 251 250 247;
+    --haze: 155 154 153;
+    --dust: 132 132 131;
+    /* #1b1bff only reaches 2.48:1 on this ground, so dark gets its own step of the
+       same hue at 5.53:1. Sampled from the dark frames, not computed — the design
+       already made this call. */
+    --accent: 107 123 255;
+    --accent-soft: 26 28 56;
+    /* Yellow IS text-safe here (16.4:1), unlike on the light ground. Useful
+       asymmetry, and the frames rely on it. */
+    --pop: 255 224 26;
     --ember: 255 138 61;
-    /* #B91C1C is 1.7:1 on this ground — a dark red dies on near-black the same
-       way the dark blue does. Same hue family re-picked for the surface. */
-    --flag: 248 113 113;
-    /* Lifted a step for the dark ground, for the same reason --sky is: the light
-       stops #0038FF and #6B21FF measure 2.8:1 and 3.0:1 on #0B0D14 — the blue
-       under even the 3:1 a display size would have allowed, the violet exactly on
-       it and nowhere near the 4.5 this gradient's own note insists on. These are
-       the same two hues at 8.0:1 and 6.6:1. */
-    --tone-a: 96 165 250;
-    --tone-b: 167 139 250;
-    --prog-gsoc: #4A86E8;
-    --prog-lfx: #D64FA0;
-    --prog-c4gt: #1F9D6B;
-    --prog-sob: #B8871F;
-    --prog-outreachy: #8B6DE8;
-    --prog-gssoc: #FFB3B3;
-    --prog-hacktoberfest: #C3D98A;
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: 11 13 20;
-  --band: 17 20 29;
-  --raise: 20 24 34;
-  --sunk: 15 18 26;
-  --seam: 42 48 62;
-  --edge: 32 38 51;
-  --ink: 244 245 250;
-  --slate: 214 220 232;
-  --haze: 156 162 178;
-  --dust: 130 137 154;
-  /* See the media-query block above: this is the brief's #3AAEEA, which only
-     works on a dark ground. */
-  --sky: 129 165 255;
-  --accent: 129 165 255;
-  --accent-soft: 14 40 58;
-  --sticker: 27 95 217;
-  /* Amber IS text-safe here (9.1:1), unlike on white. Useful asymmetry. */
-  --pop: 255 214 0;
+  --bg: 11 11 12;
+  --band: 20 20 20;
+  --raise: 24 24 25;
+  --sunk: 15 15 16;
+  --seam: 42 42 44;
+  --ink: 251 250 247;
+  /* Same contrast-floor treatment as the light set above; --dust bottoms out at
+     4.74:1 on --raise, which is the worst ground on this side. */
+  --haze: 155 154 153;
+  --dust: 132 132 131;
+  /* #1b1bff only reaches 2.48:1 on this ground, so dark gets its own step of the
+     same hue at 5.53:1. Sampled from the dark frames, not computed. */
+  --accent: 107 123 255;
+  --accent-soft: 26 28 56;
+  /* Yellow IS text-safe here (16.4:1), unlike on the light ground. */
+  --pop: 255 224 26;
   --ember: 255 138 61;
-  /* See the media-query block above: the light red is unreadable on this ground. */
-  --flag: 248 113 113;
-  /* See the media-query block above for why dark gets its own gradient stops. */
-  --tone-a: 96 165 250;
-  --tone-b: 167 139 250;
-  --prog-gsoc: #4A86E8;
-  --prog-lfx: #D64FA0;
-  --prog-c4gt: #1F9D6B;
-  --prog-sob: #B8871F;
-  --prog-outreachy: #8B6DE8;
-  --prog-gssoc: #FFB3B3;
-  --prog-hacktoberfest: #C3D98A;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  /* Kept in step with :root by hand — see the note at the head of this file. */
-  --bg: 250 250 252;
-  --band: 255 255 255;
+  --bg: 251 250 247;          /* #fbfaf7 */
+  --band: 255 252 239;        /* #fffcef */
   --raise: 255 255 255;
-  --sunk: 245 246 248;
-  --seam: 209 213 219;
-  --edge: 226 232 240;
-  --ink: 10 10 10;
-  --slate: 55 65 81;
-  --haze: 102 102 102;
-  --dust: 106 106 114;
-  --sky: 27 75 255;
-  --accent: 0 56 255;
-  --accent-soft: 240 243 255;
-  --sticker: 0 71 171;
-  --pop: 255 214 0;
-  --tone-a: 0 56 255;
-  --tone-b: 107 33 255;
+  --sunk: 245 244 239;
+  --seam: 224 222 214;
+  --ink: 11 11 12;            /* #0b0b0c */
+  --haze: 92 92 95;
+  --dust: 110 110 113;
+  --accent: 27 27 255;        /* #1b1bff */
+  --accent-soft: 232 232 255;
+  --pop: 255 224 26;          /* #ffe01a */
   --ember: 180 85 26;
-  --flag: 185 28 28;
-  --prog-gsoc: #1148D0;
-  --prog-lfx: #77225D;
-  --prog-c4gt: #03817D;
-  --prog-sob: #B35605;
-  --prog-outreachy: #6B3FBF;
-  --prog-gssoc: #6E0F0F;
-  --prog-hacktoberfest: #4C5B2F;
-}
-
-/* ---------------------------------------------------------------------------
-   THE INVERTED SURFACE — one band that runs opposite to the page.
-
-   Used by the footer, and available to any band that wants to close a page on a
-   hard tonal switch. It works by REDEFINING THE TOKENS FOR A SUBTREE rather than
-   setting colours on the elements inside it: everything below inherits the flip,
-   including the accent, and a component dropped into it needs no dark-mode
-   variant of its own.
-
-   The accent has to flip with the rest, and that is the part usually forgotten.
-   #0038FF gets its punch by being dark, so it measures 2.78:1 on the near-black
-   ground this class installs — the same trap the dark-theme block above exists to
-   avoid. Inside `.inverse` the accent therefore becomes the periwinkle, which is
-   the same hue re-picked for the surface at 8.1:1.
-
-   THE VALUES ARE COPIES, kept in step with the two blocks above by hand. Pointing
-   them at the theme's own variables is impossible: `.inverse` has to state the
-   OPPOSITE of whatever is currently active, and there is no CSS reference to "the
-   other theme's value of --bg". Change a token above and change it here. */
-.inverse {
-  color-scheme: dark;
-  --bg: 11 13 20;
-  --band: 17 20 29;
-  --raise: 20 24 34;
-  --sunk: 15 18 26;
-  --seam: 42 48 62;
-  --edge: 32 38 51;
-  --ink: 244 245 250;
-  --slate: 214 220 232;
-  --haze: 156 162 178;
-  --dust: 130 137 154;
-  --sky: 129 165 255;
-  --accent: 129 165 255;
-  --accent-soft: 14 40 58;
-  --sticker: 27 95 217;
-  --pop: 255 214 0;
-  --ember: 255 138 61;
-  --flag: 248 113 113;
-  --tone-a: 96 165 250;
-  --tone-b: 167 139 250;
-  --prog-gsoc: #4a86e8;
-  --prog-lfx: #d64fa0;
-  --prog-c4gt: #1f9d6b;
-  --prog-sob: #b8871f;
-  --prog-outreachy: #8b6de8;
-  --prog-gssoc: #FFB3B3;
-  --prog-hacktoberfest: #C3D98A;
-  background: rgb(var(--bg));
-  color: rgb(var(--ink));
-}
-
-/* On a dark page the inverted surface is the LIGHT one. Both cases — the OS
-   preference and the explicit choice — in the same order and for the same reason
-   as the token blocks at the top of this file. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .inverse {
-    color-scheme: light;
-    --bg: 250 250 252;
-    --band: 255 255 255;
-    --raise: 255 255 255;
-    --sunk: 245 246 248;
-    --seam: 209 213 219;
-    --edge: 226 232 240;
-    --ink: 10 10 10;
-    --slate: 55 65 81;
-    --haze: 102 102 102;
-    --dust: 106 106 114;
-    --sky: 27 75 255;
-    --accent: 0 56 255;
-    --accent-soft: 240 243 255;
-    --sticker: 0 71 171;
-    --pop: 255 214 0;
-    --ember: 180 85 26;
-    --flag: 185 28 28;
-    --tone-a: 0 56 255;
-    --tone-b: 107 33 255;
-    --prog-gsoc: #1148d0;
-    --prog-lfx: #77225d;
-    --prog-c4gt: #03817d;
-    --prog-sob: #b35605;
-    --prog-outreachy: #6b3fbf;
-    --prog-gssoc: #6E0F0F;
-    --prog-hacktoberfest: #4C5B2F;
-  }
-}
-
-:root[data-theme="dark"] .inverse {
-  color-scheme: light;
-  --bg: 250 250 252;
-  --band: 255 255 255;
-  --raise: 255 255 255;
-  --sunk: 245 246 248;
-  --seam: 209 213 219;
-  --edge: 226 232 240;
-  --ink: 10 10 10;
-  --slate: 55 65 81;
-  --haze: 102 102 102;
-  --dust: 106 106 114;
-  --sky: 27 75 255;
-  --accent: 0 56 255;
-  --accent-soft: 240 243 255;
-  --sticker: 0 71 171;
-  --pop: 255 214 0;
-  --ember: 180 85 26;
-  --flag: 185 28 28;
-  --tone-a: 0 56 255;
-  --tone-b: 107 33 255;
-  --prog-gsoc: #1148d0;
-  --prog-lfx: #77225d;
-  --prog-c4gt: #03817d;
-  --prog-sob: #b35605;
-  --prog-outreachy: #6b3fbf;
-  --prog-gssoc: #6E0F0F;
-  --prog-hacktoberfest: #4C5B2F;
-}
-
-/* ---------------------------------------------------------------------------
-   TYPE — one family, weights doing the work.
-
-   This used to be three faces: Anton for display, Staatliches for labels and
-   buttons, Poppins for body. That trio is what the brief means by "rigid,
-   condensed, blocky" — Anton is a poster face, and a poster face reading
-   OPEN SOURCE at 128px is shouting at a sixteen-year-old rather than talking to
-   them.
-
-   All three are replaced by Plus Jakarta Sans, aliased here rather than loaded
-   three times: --font-sans is set by next/font on <html>, and display and label
-   simply point at it. Nothing downstream changes — every component still asks
-   for font-display or font-label and gets the right thing — but there is now one
-   family on the page instead of three, and hierarchy comes from weight and size.
-
-   The consequence, and it is not optional: Anton and Staatliches ship a single
-   heavy weight, so `font-display` alone used to look bold. Plus Jakarta Sans
-   defaults to 400. Every display and label usage therefore has to state its
-   weight, which is why font-extrabold appears alongside font-display at each
-   call site and why .btn/.chip/.step/.label below all carry a font-weight.
-   --------------------------------------------------------------------------- */
-:root {
-  /* --font-display is now set by next/font in layout.tsx (Space Grotesk) rather than
-     aliased to --font-sans. The alias is gone; only --font-label still points at
-     the body face, because buttons and eyebrows want the neutral one. */
-  --font-label: var(--font-sans);
 }
 
 html {
@@ -423,20 +143,19 @@ html {
      of this file — a smooth scroll is exactly the kind of large-field movement that
      preference exists to suppress.
 
-     scroll-padding-top is load-bearing alongside it: the nav is `fixed` and
-     outside flow, so an anchor target would otherwise come to rest behind the
-     plate. The browser applies this offset to every scroll-into-view — the nav
-     links, the outline rail, the sticky CTA and a deep link pasted into the
-     address bar all land in the same place.
+     scroll-padding-top is load-bearing alongside it: the nav is `fixed`, which is
+     outside flow, so an anchor target would otherwise come to rest with its first
+     nav-height behind the plate. The browser applies this offset to every
+     scroll-into-view — the nav links, the outline rail, and a deep link pasted into
+     the address bar all land in the same place.
 
-     The number tracks the nav, and the nav FLOATS: 0.75rem of top inset plus a
-     3.5rem plate is a 4.25rem bottom edge (4.5rem at sm+, where the inset grows).
-     5.5rem clears that with a rem of air, so a heading does not land flush against
-     the glass. Change the nav's inset or height and this has to move with it — the
-     plate went from 3rem to 3.5rem when the Join button had to reach a 44px touch
-     target, and this number went with it. */
+     KEEP THIS EQUAL TO THE NAV HEIGHT. It is h-14 (3.5rem) in components/Nav.tsx,
+     up from the h-11 it was written against; `.page-top` further down this file
+     carries the same 3.5rem for the same reason, so the two move together. A stale
+     value here does not fail loudly — it just parks every anchor a few pixels under
+     the plate, which is easy to look straight past. */
   scroll-behavior: smooth;
-  scroll-padding-top: 5.5rem;
+  scroll-padding-top: 3.5rem;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -448,146 +167,40 @@ body {
   transition: background-color 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* THE DOT GRID.
-   The page now sits on graph paper rather than on blank white, which is most of
-   what separates "document" from "designed surface" at a glance. 1.5px dots on a
-   24px pitch, in --edge.
-
-   Painted as a FIXED PSEUDO-ELEMENT rather than as `body { background-image }`,
-   and this is not a stylistic preference — it is the difference between the QA
-   sweep working and not working.
-
-   scripts/qa.mjs resolves the background behind every text node by climbing
-   ancestors, and at each level it checks background-IMAGE first: if it finds one,
-   the pair is declared unmeasurable and deferred to a per-element pixel
-   screenshot, because a gradient's painted colour cannot be read from the
-   cascade. Put the dot grid on `body` and every one of the ~580 text nodes on the
-   page climbs to body, finds a gradient, and defers — turning an eight-viewport
-   sweep into thousands of individual element screenshots, all to rediscover that
-   the dots cover about 1.2% of the surface and the answer was --bg all along.
-
-   A pseudo-element is not an ancestor of anything, so the climb still terminates
-   at body's opaque background-color and every pair stays measurable.
-
-   Fixed rather than scrolling: the pattern is uniform, so there is no way to
-   perceive that it is not moving, and the browser gets to keep one tile.
-
-   z-index -1 puts it above the page background and below all content. The band
-   pseudo-element is also at -1 and comes later in tree order, so a band paints
-   over the grid — which is the intended rhythm: dotted section, solid band,
-   dotted section. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image: radial-gradient(rgb(var(--edge)) 1.5px, transparent 1.5px);
-  background-size: 24px 24px;
-}
-
 :focus-visible {
   outline: 2px solid rgb(var(--accent));
   outline-offset: 3px;
   border-radius: 2px;
 }
 
-/* The quiet label — small field and card labels. Condensed caps rather than mono
-   now, so it belongs to the same voice as the buttons and chips. Section eyebrows
-   use .chip instead; this is for the ones inside cards, where fourteen yellow
-   blocks would be a fairground. */
+/* The quiet label — small field and card labels, 12px mono caps per the frames.
+   Section eyebrows use .chip, which is now the same face at the same size and
+   differs only in that it is not indented inside a card; the two are kept separate
+   because the Figma treats a section's eyebrow and a card's field label as different
+   objects, and they have drifted apart before. */
 .label {
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 1rem;
-  /* Stated, not inherited from the face — see the type note above. */
-  font-weight: 600;
-  letter-spacing: 0.07em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgb(var(--dust));
+  /* --haze, not --dust. The frames set card and field labels at ink 62%, which is the
+     secondary step; --dust is 42% and was failing AA on the cream band at 3.9:1. */
+  color: rgb(var(--haze));
   line-height: 1.2;
 }
 
-/* The measure. Now 88rem = 1408px, via 76 then 80 — see the note directly above
-   the rule for why it moved again and what caps it there.
-   The brief describes the old container as ~800px, which it was not — it was
-   1216px. What actually read as narrow was not this cap but the two things
-   below it: `.measure` at 34em held every paragraph to about 545px, and the
-   hero was a single left-hand column with the right 40% of a 1440px screen
-   permanently empty. Widening the cap alone would have moved the empty space
-   rather than filled it, so all three changed together.
-
-   The horizontal padding is 2rem from sm up, per the brief. It stays at 1.5rem
-   on a phone deliberately: 2rem each side takes 64px out of a 390px viewport,
-   and the display headline is already the tightest fit on the page there. */
-/* 88rem = 1408px, up from 80rem, and the side padding drops a step with it. Both
-   are the "very broad margins" complaint: at 80rem a 1440px screen kept 80px of
-   empty page down each side before the 32px of padding even started, and anything
-   wider kept more.
-   NOT WIDER THAN 88rem, and the ceiling is structural rather than taste. The three
-   margin stickers and the gutter notes hang into the space between the container
-   and the viewport with negative insets — `-right-36` is 144px — and they are gated
-   on `min-[1600px]` precisely because below that there is no gutter to hang in. The
-   gutter at 1600px is (1600 - 1408 - 96)/2 = 48px per side at 80rem's old padding;
-   push the container much past this and those insets start hanging off the SCREEN
-   instead, which is the exact bug the note in page.tsx describes — a document
-   silently wider than the viewport, clipped by `overflow-x: hidden` so nothing
-   reports it. Verified with a per-viewport overflow sweep after this change rather
-   than assumed. */
+/* The measure. WIDENED from 76rem to match the Figma, which lays every page out on
+   a 1440 canvas with 40px gutters — so content runs 40..1400 and the container is the
+   full canvas width, not a narrower centred column. 90rem = 1440px, and the 40px
+   gutter is `px-10` from sm up. Below sm the gutter drops to 24px, which the frames
+   do not specify because they are desktop-only; 40px on a 390px phone would spend a
+   fifth of the screen on margin. */
 .section {
-  @apply mx-auto w-full max-w-[88rem] px-4 sm:px-6;
+  @apply mx-auto w-full max-w-[90rem] px-6 sm:px-10;
 }
 
-/* Where a route's first band starts. Stated once here rather than as a pt-* utility
-   repeated on every page, because the number is derived from the nav and a copy of
-   it per route is a copy per route that can drift.
-
-   THE DERIVATION: the nav floats rather than sitting on the top edge — 0.75rem of
-   inset plus a 3.5rem plate puts its bottom at 4.25rem, and 4.5rem at sm+ where the
-   inset grows. These values clear that with 1.75rem / 3rem of air, so a page title
-   has room to breathe under the glass instead of tucking against it. Move the nav's
-   inset or height and this moves too, along with `scroll-padding-top` above.
-
-   DO NOT PAIR THIS WITH A pt-* UTILITY. Every custom class in this file is declared
-   after `@tailwind utilities`, so at equal specificity source order hands the win to
-   this rule and the utility silently does nothing — the reader sees `pt-20` in the
-   markup and 6rem on the screen. Use `.page-top` for the clearance and `pb-*` for
-   whatever the band needs underneath. */
-.page-top {
-  padding-top: 6rem;
-}
-@media (min-width: 640px) {
-  .page-top {
-    padding-top: 7.5rem;
-  }
-}
-
-/* 34em was a book measure — the 60-75 characters typography texts recommend for
-   long-form reading. This page is not a book: its paragraphs are two to four
-   sentences, sitting beside cards and tables, and at 34em they left a column of
-   white running down the right of every section. 44em is still inside the
-   comfortable range for a short paragraph and stops the page reading as a
-   narrow document poured into a wide frame. */
-/* 50em, via 34 then 44. The same complaint drove each move: a narrow measure inside
-   a wide container leaves a column of white down the right of every section, and
-   that column is a real part of what reads as "blank space" here — there are 20
-   `.measure` blocks on the page.
-   THE UNIT IS THE TRAP, and it is why this is 50 and not the 56 tried first. `em`
-   resolves against THE ELEMENT'S OWN font-size, and these paragraphs are not one
-   size: `text-body` is 19px but `text-body-lg` clamps up to ~25px. At 56em the
-   large ones computed to 1402px — WIDER THAN THE 1408px CONTAINER MINUS ITS
-   PADDING — so the cap silently stopped capping and every standfirst on the page
-   ran the full 1360px at about 112 characters a line. Measured, not eyeballed: the
-   median rendered `.measure` came back at exactly the container width, which is the
-   tell that a max-width has stopped doing anything.
-   50em keeps the large ones near 1250px and the body ones near 950px — still past
-   the 60-75 characters the textbooks want for long-form, and defensible for the
-   reason the 44em note gave: these are two-to-four-sentence blocks beside cards and
-   tables, not a chapter, so the return-sweep fatigue that punishes long lines never
-   gets a run at them.
-   If the right-hand white still reads as too much, the honest lever is the
-   container, not this — pushing this number further just removes the cap again. */
 .measure {
-  max-width: 50em;
+  max-width: 34em;
 }
 
 /* Grows a STANDALONE link's touch target to 44px without moving it.
@@ -600,55 +213,32 @@ body::before {
    Only for links that stand alone. A link inside a sentence is explicitly
    exempt from 2.5.8 (its size is constrained by the line-height around it), and
    padding one would overlap the lines above and below — a bigger box that
-   swallows taps meant for its neighbours is worse than a small one. */
+   swallows taps meant for its neighbours is worse than a small one.
+
+   NEVER COMBINE THIS WITH A MARGIN OR PADDING UTILITY ON THE SAME ELEMENT.
+   `margin-block` here is declared after `@tailwind utilities`, so at equal
+   specificity it WINS on source order — `mt-6`, `mt-3` and `mt-auto` all silently
+   lose to it, and `pt-6` silently breaks the -14px compensation instead. This was
+   live on seven links across four pages: every one had dead spacing, and the
+   `mt-auto` on the home page's cards meant a row of cards had their links at
+   different heights. Nothing failed; it just looked slightly wrong, which is the
+   hardest kind of bug to find in a screenshot.
+
+   Put the spacing on a wrapper element instead. scripts/qa.mjs fails the build if
+   the two are ever combined again. */
 .tap {
   padding-block: 14px;
   margin-block: -14px;
 }
 
-/* The frosted plate — the nav and the outline panel.
-   rgba(255,255,255,0.8) over a 12px blur, per the brief, with the saturate kept
-   from the Apple pass because a plain blur greys out whatever passes beneath it
-   and the boost is what makes glass look like glass rather than frosted plastic.
-   Written as plain CSS rather than Tailwind utilities because backdrop-filter
-   needs both functions in one declaration and `backdrop-blur-md` emits blur
-   alone.
-
-   The fill is a TOKEN at 0.8, not a literal rgba(255,255,255,0.8): in light that
-   resolves to exactly the value asked for, and in dark it stays glass instead of
-   becoming a white bar over a black page.
-
-   The shadow is what makes it read as floating rather than as a bar welded to
-   the top of the viewport. It is deliberately almost nothing — 4% black — so it
-   registers as depth rather than as a drawn edge. */
+/* The frosted nav plate, measured off apple.com: their nav is
+   rgba(255,255,255,0.8) over `saturate(1.8) blur(20px)`. Written as plain CSS
+   rather than Tailwind utilities because backdrop-filter needs both functions in
+   one declaration and `backdrop-blur-xl` emits blur alone. */
 .plate {
   background: rgb(var(--bg) / 0.8);
-  -webkit-backdrop-filter: saturate(1.6) blur(12px);
-  backdrop-filter: saturate(1.6) blur(12px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-}
-
-/* Nav links. Charcoal at rest, azure on hover, and the transition is the 180ms
-   ease-in-out the brief asks for site-wide.
-
-   The hover colour is --accent (4.8:1) and not --sky: this is body-size text at any
-   of the sizes this step has held, so it has to clear 4.5:1, and the brighter step
-   does not. */
-.nav-link {
-  color: rgb(var(--slate));
-  /* 16px, via 13 then 14. Sentence case and sans, so it has the same short-lowercase
-     problem the type scale was corrected for — and unlike the badges and buttons
-     around it, this one is not capitals, so it was reading a size smaller than
-     everything beside it. The plate had room at 14px with the nav well short of its
-     wrap point; 16px spends most of that margin, so the sm breakpoint is worth a look
-     if a seventh link is ever added. */
-  font-size: 1rem;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  transition: color 180ms ease-in-out;
-}
-.nav-link:hover {
-  color: rgb(var(--accent));
+  -webkit-backdrop-filter: saturate(1.8) blur(20px);
+  backdrop-filter: saturate(1.8) blur(20px);
 }
 
 /* ---------------------------------------------------------------------------
@@ -658,1386 +248,119 @@ body::before {
    that type alone was not doing.
    --------------------------------------------------------------------------- */
 
-/* The sticker badge — the hero's "SCALER SCHOOL OF TECHNOLOGY", and every
-   section eyebrow, because they are the same device and splitting them would put
-   one tilted pastel badge on a page of straight blue ones.
+/* Section eyebrow. THIS REVERSED DIRECTION and the reversal is the design's, not a
+   simplification: the previous pass put every section label in a filled yellow
+   block, read off notyourcollege.com. The OSC Figma sets all of them — PROJECTS,
+   PROGRAMMES, HALL OF FAME, UPSTREAM WORK, INDEX, JOIN — as plain 12px mono caps in
+   secondary grey, and uses yellow only for the primary action and a small number of
+   accents. Fourteen yellow blocks per page was the louder system; this is the one
+   in the file.
 
-   An actual sticker: pill radius, a saturated fill, and
-   tilted 1.5 degrees off true. The tilt is the entire trick — it is what makes a
-   label read as something PLACED on the page rather than something typeset into
-   it, and it is why this costs one line and buys more than any amount of colour
-   would.
-
-   ELECTRIC BLUE, replacing the lime this badge wore before, and the argument for
-   the lime is worth stating because it was a good one that stopped being true.
-   It ran: the fills on this page do sorting work, yellow is the primary action,
-   COBALT IS GONE, so the badges are free to be purely decorative. That last
-   clause was the load-bearing one — lime was available precisely because no
-   other element on the page wanted to be the loud non-yellow colour.
-
-   The recolour above takes that vacancy back. #0038FF is now the page's second
-   voice rather than a muted link colour, and a neon lime sitting next to it
-   belongs to no palette on the reference at all — theirs is blue, yellow, black,
-   white and nothing else. Fourteen lime section eyebrows were the single largest
-   remaining thing pulling this page away from the register it is aiming at.
-
-   FILL AND TEXT COME FROM TOKENS, which is what makes this survive both themes
-   without a variant — and it is the one thing the lime did buy that had to be
-   replaced rather than dropped. A lime pill carries its own fill and its own
-   black text, so it never had to invert; a fixed #0038FF pill would have, badly.
-   The blue is dark, so on the near-black page it is a dark block on a dark ground
-   — 2.78:1 of separation, under the 3:1 floor a UI boundary wants, and the badge
-   would have quietly dissolved into the page for every dark-theme reader.
-
-   --accent / --bg is the pairing .step already proved for exactly this problem
-   (see the note there): the accent inverts between themes and --bg inverts with
-   it, so the pill is deep blue with near-white on it in light and light
-   periwinkle with near-black on it in dark. 6.98:1 light, 5.63:1 dark, one rule.
-
-   The rotation is deliberately tiny. At -1.5deg a 200px badge's corners move
-   about 2.5px; at -4deg it looks like a rendering bug. */
+   Kept as `.chip` rather than renamed. The class is applied across six routes, and
+   a rename would be a large diff whose only content is a word — the selector is the
+   seam between "section label" and its styling, which is exactly what should absorb
+   a change of mind about the styling. */
 .chip {
   display: inline-block;
-  padding: 0.4rem 0.85rem;
-  border-radius: 9999px;
-  background: rgb(var(--accent));
-  color: rgb(var(--bg));
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  color: rgb(var(--haze));
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   line-height: 1;
-  transform: rotate(-1.5deg);
 }
 
-/* THE FLOAT, and .chip-true is the switch that decides who gets it.
-   That distinction already exists and already means the right thing: a plain
-   .chip is a sticker PLACED on the page, and .chip-true straightens the ones
-   that are really column headers or data labels (see the note above it). A badge
-   that is stuck on can drift; one that labels a table column cannot, or the
-   header starts wandering away from the column it names.
+/* Highlighter. Their body copy marks the load-bearing phrase in yellow instead
+   of bolding it. Drawn as a background gradient sitting on the text baseline so
+   it reads as a marker stroke rather than a filled box, and left inset slightly
+   so descenders are not clipped.
 
-   So the selector is the tilt, not a new modifier class — every top pill badge
-   on the page picks this up without a single call site changing, and every
-   straightened one is excluded for the reason it was straightened.
-
-   The keyframes are below, and they are the same ones Hero.tsx's `animate-float`
-   utility names — one definition of `float` for both, rather than a Tailwind copy
-   and a hand-written copy racing on cascade order. They read --rest for the
-   resting angle and fall back to -1.5deg, which is exactly this rule's tilt, so a
-   chip floats around where it already sits instead of jumping to a shared angle
-   on the first frame. */
-.chip:not(.chip-true) {
-  animation: float 3s ease-in-out infinite;
-}
-
-/* 8px of travel, which is enough to read as drifting and not enough to read as a
-   bug — these badges sit over cards with hard edges, so any larger amplitude
-   makes them look detached rather than layered.
-
-   THE ROTATION IS THE HALF THAT MAKES IT A FLOAT. A badge that only moves on one
-   axis reads as an element being animated; one that relaxes a degree toward true
-   at the top of its arc and settles back on the way down reads as an object with
-   weight. With no --rest declared the cycle is exactly -1.5deg → -0.5deg →
-   -1.5deg, which is .chip's own tilt.
-
-   --rest IS THE CONTRACT, and it is why this is one keyframe rather than one per
-   floating element. Every consumer already declares its resting angle: .chip sets
-   -1.5deg above, and each margin sticker passes its own value in as an inline
-   custom property from Sticker.tsx. Reading it here returns each element to ITS
-   angle — a hard-coded rotate would have straightened a +4deg sticker to -1.5deg
-   on the first frame.
-
-   Suppressed by the prefers-reduced-motion block at the foot of this file, which
-   zeroes animation-duration and pins iteration-count to 1. That parks each badge
-   at its 0% keyframe, which is its natural position — so the reduced-motion
-   rendering is the static design rather than a frozen mid-animation pose. */
-@keyframes float {
-  0% {
-    transform: translateY(0px) rotate(var(--rest, -1.5deg));
-  }
-  50% {
-    transform: translateY(-8px) rotate(calc(var(--rest, -1.5deg) + 1deg));
-  }
-  100% {
-    transform: translateY(0px) rotate(var(--rest, -1.5deg));
-  }
-}
-
-/* The hover glow on a card or bento cell — see .card and .bento below. Pulses the
-   border between full and half-strength accent rather than fading it in once,
-   because a static recolour arriving on a 200ms transition is indistinguishable
-   from the card simply having a blue border. The movement is the part that reads
-   as the card answering the pointer.
-
-   BORDER-COLOUR, not box-shadow, and the choice is load-bearing twice over.
-   .card and .bento carry different diffuse shadows, so a shadow keyframe would
-   have to be duplicated per class and would clobber each one's own lift. And an
-   animated declaration outranks a static one whatever the specificity, which is
-   what lets a hover state reach past the per-theme `:root[data-theme] .bento`
-   rules that would otherwise beat it. */
-@keyframes accent-pulse {
-  0%,
-  100% {
-    border-color: rgb(var(--sky));
-  }
-  50% {
-    border-color: rgb(var(--sky) / 0.45);
-  }
-}
-
-/* Electric violet, for the one chip that is DATA rather than decoration: the
-   programme credential on a hall card ("GSOC 2026"). Same pill, different fill,
-   and no tilt — see .chip-true below. A reader should be able to tell at a glance
-   which badges are labels the site applied to itself and which are facts about a
-   person. 11.5:1. */
-.chip-violet {
-  background: #ddd6fe;
-  color: #4c1d95;
-}
-
-/* Mint and neutral, for the two headers of the "what we look for" pair. The
-   colour IS the argument there — one card is the answer and one is the thing
-   being dismissed — so they cannot both wear the electric-blue default. 8.3:1 and
-   8.4:1.
-
-   These exist as modifier classes rather than as `bg-[#d1fae5] text-[#065f46]`
-   utilities at the call site for a reason worth knowing: this stylesheet is
-   emitted after Tailwind's utilities layer, so `.chip`'s own background and color
-   beat any background or text utility of equal specificity. A chip recoloured
-   inline silently stays electric blue. */
-.chip-mint {
-  background: #d1fae5;
-  color: #065f46;
-}
-.chip-quiet {
-  background: #e2e8f0;
-  color: #374151;
-}
-/* The page's yellow, as a chip. One user only: the open slot at the end of the
-   hall ("Open spot"), which is the single card in that grid that is an invitation
-   rather than a record — so it gets the colour the page reserves for the primary
-   action instead of the violet the credentials wear.
-
-   #FFD600 with pitch black on it, the same 14.9:1 pair .btn-pop uses, and stated
-   as literals for the same reason .chip-violet is: these fills do not invert. A
-   yellow badge is yellow on both grounds, and pinning the foreground to #000
-   rather than rgb(var(--ink)) is what stops the dark theme putting near-white on
-   it. */
-.chip-pop {
-  background: #ffd600;
-  color: #000000;
-}
-
-/* The red-flag header. Rose rather than a true red, and dark rose text on it at
-   6.1:1 — a saturated red fill with white on it lands at 3.9 and fails, which is
-   the same trap the emerald pill hit. */
-.chip-red {
-  background: #fecdd3;
-  color: #9f1239;
-}
-
-/* ---- The red-flag / green-flag pair --------------------------------------
-   OPAQUE fills and borders, not `bg-[#EF4444]/[0.04]` utilities, and this is the
-   fourth time the same trap has been paid for on this page — it is worth naming
-   properly.
-
-   scripts/qa.mjs resolves a text node's background by walking ancestors and
-   reading backgroundColor, then taking the first three channels of whatever it
-   finds. Given "rgba(239, 68, 68, 0.04)" it reads SOLID RED, discards the alpha,
-   and scores four struck-through lines of grey text at 1.42:1 against a surface
-   that exists nowhere. The emerald card did the same at 2.33:1.
-
-   Pre-composited, the same wash measures 4.9:1 and 5.6:1 — which is what it
-   always actually was on screen. The rule for this codebase: a translucent fill
-   is only safe where no text sits on top of it. .plate gets away with it because
-   the nav's text is measured against the token underneath; a card cannot. */
-.flag-bad {
-  background: #fef2f2;
-  border-color: #fca5a5;
-}
-.flag-good {
-  background: #ecfdf5;
-  border-color: #6ee7b7;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .flag-bad {
-    background: #2a1518;
-    border-color: #7f2a32;
-  }
-  :root:not([data-theme="light"]) .flag-good {
-    background: #0c2e23;
-    border-color: #1f6b52;
-  }
-}
-:root[data-theme="dark"] .flag-bad {
-  background: #2a1518;
-  border-color: #7f2a32;
-}
-:root[data-theme="dark"] .flag-good {
-  background: #0c2e23;
-  border-color: #1f6b52;
-}
-:root[data-theme="light"] .flag-bad {
-  background: #fef2f2;
-  border-color: #fca5a5;
-}
-:root[data-theme="light"] .flag-good {
-  background: #ecfdf5;
-  border-color: #6ee7b7;
-}
-
-/* The glow on the OSC-way stars. A drop-shadow filter rather than a box-shadow,
-   because the sparkle is an SVG path and a box-shadow would halo its bounding
-   RECTANGLE — a soft green square around a four-point star, which is exactly the
-   kind of detail that looks cheap without anyone being able to say why. */
-.star-glow {
-  filter: drop-shadow(0 0 5px rgb(16 185 129 / 0.55));
-}
-
-/* Straightens a chip. Used where the badge sits inside a tight grid cell against
-   a photograph, or as a card header where it labels a column rather than
-   stickering one — a tilt reads as "placed on top of" and needs slack around it
-   that a card header does not have. */
-.chip-true {
-  transform: none;
-}
-
-/* The lozenge — a phrase lifted out of a sentence into its own tinted pill.
-   This replaces the yellow highlighter in the hero specifically, and the reason
-   is contrast rather than taste: the marker is a background GRADIENT, and a
-   gradient is invisible to every automated contrast check (scripts/qa.mjs has a
-   whole pixel-sampling pass built to work around it). A lozenge is a flat fill,
-   so the pair is measurable, and it also survives being read at a glance on a
-   phone in a way a marker stroke behind display type does not.
-
-   Both fills are OPAQUE on purpose. A translucent tint would composite to the
-   right colour on screen and still be scored as its own un-composited rgb by the
-   QA sweep — reported as amber-on-amber, a failure that is not real. Opaque
-   means measured equals painted.
-
-   The dark pairs are re-picked, not the light ones dimmed: same hue family, a
-   deep fill with a bright text colour, at 9.3:1 and 10.4:1. */
-.lozenge {
-  /* inline-FLEX, and it has to be declared here rather than as an `inline-flex`
-     utility at the call site. This stylesheet is emitted after Tailwind's
-     utilities layer, so `.lozenge`'s own `display` wins at equal specificity —
-     the utility version compiled, applied nothing, and left the icon and the
-     words as ordinary inline content that wrapped mid-pill. The rendered result
-     was a two-line orange box with the git-merge mark stranded on its own line
-     above "commit log".
-
-     white-space: nowrap is the other half: a pill is one object, and a phrase
-     that breaks across two lines inside its own fill stops looking like a tag and
-     starts looking like a layout fault. Both phrases are short enough to hold one
-     line down to a 390px viewport.
-
-     vertical-align: middle centres the pill on the surrounding x-height. The
-     default (baseline) aligns the pill's inner baseline with the sentence's,
-     which pushes a padded box visibly low. */
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35em;
-  white-space: nowrap;
-  vertical-align: middle;
-  padding: 4px 12px;
-  border-radius: 8px;
-  font-weight: 700;
-  /* Keeps the pill from dragging the line box open in a tight display leading. */
-  line-height: 1.15;
-  /* Both are what make the wipe above possible, and both have to be stated
-     rather than left to the initial values. `background-size` starts out `auto`,
-     which for a gradient computes to the box and therefore LOOKS right — but
-     `auto` is not a length, so there is nothing to interpolate from 0% to and the
-     animation would step rather than wipe. And an under-sized background repeats
-     by default, so a half-drawn fill would tile itself across the rest of the
-     pill instead of stopping. */
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  /* It is a tag, not a highlight, so it gets a tag's affordance: a small lift
-     under the pointer. Cheap, and it turns two static phrases into the two things
-     on the page that answer back. */
-  transition:
-    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 200ms ease-in-out;
-}
-.lozenge:hover {
-  transform: translateY(-1px) rotate(-1deg);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-/* THE PILL WIPE. Both hero pills fill left to right on load, like a highlighter
-   dragged across the phrase.
-
-   A CSS ANIMATION, NOT THE SCROLL REVEAL, and that is forced rather than
-   preferred. These two pills are the only ones on the page that are above the
-   fold at every viewport, and the scroll machinery deliberately marks
-   already-visible things as arrived without animating them — because the page
-   paints once before any script runs, so an above-the-fold element told to
-   animate FROM empty visibly empties itself first. Keyframes have no such
-   problem: the `from` state is the first painted state, with or without
-   JavaScript, and there is no frame in which the pill is full, then not, then
-   filling.
-
-   It is also why this survives the bundle failing, which the reveals go to some
-   length to guarantee and this gets for nothing.
-
-   THE TEXT AND BORDER TRAVEL WITH THE FILL. `.lozenge-*` sets near-black text
-   because it is guaranteed a saturated ground; for the 400ms before the wipe
-   starts there is no ground, and #1a1d20 on the dark theme's page is an invisible
-   phrase. So the pill begins at the ambient ink colour with no border and
-   resolves to its own — which also means the hairline does not sit there as an
-   empty outline waiting to be filled.
-
-   ONE `from` BLOCK AND NO `to`, which is doing real work: the implicit
-   to-keyframe is each element's own computed value, so this single rule lands
-   the warm pill on #FF9900 with a 25% border and the mint one on #10B981 with a
-   20% border without naming either.
-
-   Gated on the media query rather than left to the global reduced-motion block
-   at the foot of this file. That block zeroes DURATIONS but not delays, so under
-   `reduce` the pill would still sit empty for 400ms and then snap — a flash is
-   exactly what somebody setting that preference is asking not to get. */
-@media (prefers-reduced-motion: no-preference) {
-  .lozenge {
-    animation: pill-wipe 650ms cubic-bezier(0.33, 1, 0.68, 1) 400ms both;
-  }
-}
-@keyframes pill-wipe {
-  from {
-    background-size: 0% 100%;
-    color: rgb(var(--ink));
-    border-color: transparent;
-  }
-}
-/* Saturated fills rather than the pale tints these used to be, per the brief:
-   #FF9900 and #10B981, both with near-black on them (7.9:1 and 6.7:1).
-
-   Black, not white, and that is a measurement rather than a taste call — white on
-   #10B981 is 2.5:1 and fails outright. Saturated mid-tone fills are almost always
-   like this: they look like "dark" colours and behave like light ones, so the
-   instinct to reach for white text is the wrong one roughly every time.
-
-   The hairline border is the brief's, and it earns its place at this saturation:
-   #FF9900 against a cream band has very little edge of its own, and 25% black
-   gives the pill a defined boundary without reading as an outline. */
-/* background-IMAGE, not the `background` shorthand these carried, and the change
-   is not cosmetic on either count.
-
-   The shorthand had to go regardless: it resets background-size and
-   background-repeat to their initial values, and it is declared after `.lozenge`,
-   so it would have silently undone the two lines up there that the wipe depends
-   on. A longhand leaves them standing.
-
-   An image rather than a colour, because background-size has nothing to scale
-   otherwise — a background-COLOUR always fills the box, so there is no width to
-   animate. A two-stop gradient of one colour is a flat fill that happens to be
-   paintable at a fraction of the box, which is the whole trick.
-
-   The cost is real and worth naming: scripts/qa.mjs resolves an element's
-   effective background by climbing ancestors reading backgroundColor, so a pill
-   painted by a gradient now reports transparent and gets handed to that script's
-   pixel-sampling pass instead of being scored directly. That pass exists for
-   precisely this case and measures what is actually painted, so the pair is still
-   checked — it is checked the slow way rather than not at all. */
-.lozenge-warm {
-  background-image: linear-gradient(#ff9900, #ff9900);
-  color: #1a1d20;
-  border: 1px solid rgb(0 0 0 / 0.25);
-  font-weight: 800;
-}
-.lozenge-mint {
-  background-image: linear-gradient(#10b981, #10b981);
-  color: #1a1d20;
-  border: 1px solid rgb(0 0 0 / 0.2);
-  font-weight: 800;
-}
-
-/* NO DARK-THEME OVERRIDES, and their removal is the point rather than an omission.
-   The pale versions needed them: a #FEF3C7 pill is a bright rectangle punched into
-   a near-black page, so dark got deep fills with light text instead. A saturated
-   fill has no such problem — #FF9900 and #10B981 read as deliberate objects on
-   both grounds, and black on them measures the same 7.9:1 and 6.7:1 whatever is
-   behind. Six rules deleted because the colours got louder, which is the sort of
-   trade the rest of this file usually goes the other way. */
-
-/* THE MARKER BADGE.
-   Was a background GRADIENT drawn as a stroke across the lower two-thirds of the
-   x-height — a marker pen. It is a flat yellow badge now, per the brief: #FFD600,
-   pitch black on it, 2px 6px, 4px radius.
-
-   Three things improve by the change, which is why it is not a lateral move:
-
-     * It is MEASURABLE. A gradient background is invisible to the contrast walker
-       in scripts/qa.mjs, which is why that script grew an entire pixel-sampling
-       pass to work around this one class. A flat fill is an ordinary pair:
-       14.9:1, checked like everything else.
-
-     * It needs NO DARK-THEME VARIANT. The marker did: a stroke covering part of
-       the glyph height leaves ascenders standing on the page, which on near-black
-       is 1.03:1 and the letter tops simply vanish — so dark had to switch to a
-       different mechanic (yellow AS the text). A badge carries its own ground and
-       its own foreground, so one rule serves both themes and the six override
-       rules that used to follow this one are gone.
-
-     * The emphasis no longer depends on colour alone. A badge is a shape change
-       as well as a colour change, which survives being read in greyscale.
-
-   inline-block with a small negative vertical margin: the padding would otherwise
-   push the line box open and stripe the paragraph with uneven leading wherever a
-   marked phrase appears. */
+   The mark is behind TEXT that stays ink-coloured — the yellow never carries the
+   meaning, which is what keeps it legible for a colourblind reader and at 1.41:1
+   would otherwise be unreadable. */
 .mark {
-  display: inline-block;
-  background: rgb(var(--pop));
-  color: #000000;
-  padding: 2px 6px;
-  margin-block: -2px;
-  border-radius: 4px;
-  font-weight: 700;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+  /* Light theme: a yellow marker stroke behind ink text — the device as their site
+     uses it. The stroke covers the lower two-thirds of the x-height, so ink is on
+     yellow at 13.37:1 where it overlaps and on white at 18.89:1 above it. Both
+     fine, because the page under it is light.
+
+     Dark theme is a DIFFERENT MECHANIC, not this one inverted, and that is the
+     whole point. A marker only covers part of the glyph height, so ink text over
+     it leaves the ascenders standing on the page — on a near-black ground that is
+     1.03:1 and the letter tops simply vanish. Making the stroke tall enough to
+     cover them stops it being a marker and becomes a filled block.
+
+     So on dark the emphasis is carried by the yellow itself as TEXT. #FFD600 on
+     this ground is 13.74:1, brilliant and unambiguous, and needs no stroke at all.
+     Same brand signal, mechanic chosen for the surface. */
+  background: linear-gradient(
+    to top,
+    transparent 0.16em,
+    rgb(var(--pop) / 0.85) 0.16em,
+    rgb(var(--pop) / 0.85) 0.78em,
+    transparent 0.78em
+  );
+  padding: 0 0.08em;
+  color: rgb(17 17 17);
 }
 
-/* Two-tone headline: OPEN in charcoal, SOURCE in sky. Two tones mid-sentence is
-   what stops display type at 100px reading as a wall of letters.
-
-   --sky, not --accent, because every use of this is display-sized and the
-   brighter step is the one the brief is actually after. See the token block for
-   why the two exist. */
-.tone {
-  color: rgb(var(--sky));
-}
-
-/* The hero headline's second word, as a neon indigo→violet ramp.
-   Separate from .tone rather than folded into it: .tone is on every section
-   heading on the page (see Duo), and fourteen gradient headings is a screensaver.
-   One gradient, on the biggest word, reads as emphasis.
-
-   THE COLOUR FALLBACK IS LOAD-BEARING. `background-clip: text` needs
-   `color: transparent` to show the gradient through the glyphs — and if the clip
-   is not applied for any reason, transparent text on a transparent background is
-   an INVISIBLE HEADLINE. Not a degraded one: gone. So the solid colour is
-   declared first and unconditionally, and only inside @supports does the element
-   go transparent. Anything that cannot do the effect keeps a readable word.
-
-   TRANSPARENCY VIA -webkit-text-fill-color, NOT via `color: transparent`, and the
-   difference is the whole reason this element is checkable at all.
-
-   Both make the glyphs show the gradient. But `color: transparent` also makes
-   getComputedStyle report rgba(0,0,0,0) — and scripts/qa.mjs takes the first
-   three channels of that, gets BLACK, and measures a colour the eye never
-   receives. It passed in light (black on near-white, 21:1, meaningless) and
-   failed in dark at 1.08:1 (black on near-black, equally meaningless). One false
-   pass and one false failure from the same declaration.
-
-   -webkit-text-fill-color overrides the fill while leaving `color` computing as
-   the real violet, so the sweep measures an actual stop of the actual gradient:
-   5.6:1 light, 7.2:1 dark. It is supported by every engine that supports
-   background-clip: text, so the fallback story below is unchanged.
-
-   Even so, the sampled figure is only ever ONE stop. The other is checked by hand
-   in the --tone-a/--tone-b comments: 5.1 light, 8.0 dark. */
-.tone-grad {
-  color: rgb(var(--tone-b));
-}
-@supports (-webkit-background-clip: text) or (background-clip: text) {
-  .tone-grad {
-    background-image: linear-gradient(
-      135deg,
-      rgb(var(--tone-a)),
-      rgb(var(--tone-b))
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .mark {
+    background: none;
+    padding: 0;
+    color: rgb(var(--pop));
+    font-weight: 600;
   }
 }
-
-/* THE HARD SHADOW — the token the whole neo-pop layer is built on.
-   A solid black rectangle offset 4px down and right, no blur. It goes on buttons,
-   cards and inputs, and the black keyline that comes with it is not optional: an
-   unblurred shadow with no border reads as a printing misregistration rather than
-   as depth.
-
-   This reinstates a device an earlier pass removed in favour of a soft tinted
-   lift. Both are defensible; they belong to different registers, and this one is
-   the register now.
-
-   HOVER LIFTS, ACTIVE PRESSES — and the two halves belong to different objects.
-
-   A button now RISES to meet the pointer: a 1.03 spring scale with the shadow
-   pushed out from 4px to 6px, so the gap under the object opens as it comes up.
-   The press is still there, but it is the :active state alone, which is the more
-   honest split — hover is "this is reachable", the click is the push. It also
-   frees hover to say something a press could not: an object that only ever sinks
-   has no way to signal that it is the thing you want.
-
-   THE SHADOW AND THE TRAVEL STILL SUM TO A CONSTANT, which is the invariant the
-   original press was built on and the reason it reads as one physical object
-   rather than two rectangles sliding past each other. The constant is now set by
-   the state the press STARTS from: hover sits at a 6px offset, so :active
-   travels 6px and drops the shadow to nothing, and the bottom-right corner stays
-   exactly where it was through the whole gesture. (It was 4px when hover was the
-   press; moving one number without the other is what would make the corner
-   twitch.)
-
-   The scale is deliberately 1.03 and not more. These buttons carry a 2px black
-   keyline and uppercase 17px type; past about 1.04 the keyline visibly thickens
-   and the letterforms go soft, and the control starts reading as a zoom rather
-   than as a lift.
-
-   .hard KEEPS THE ORIGINAL PRESS, and does not join the block below. It is the
-   generic keyline-and-shadow token for cards, panels and inputs — not for
-   buttons — and a card that scales up under the pointer competes with the
-   .card/.bento lift that the same surface already has. Its hover/active pair is
-   therefore split out rather than shared. */
-.hard,
-.btn-pop,
-.btn-primary,
-.btn-secondary {
-  border: 2px solid #000000;
-  box-shadow: 4px 4px 0 0 #000000;
-  transition:
-    transform 120ms ease-out,
-    box-shadow 120ms ease-out,
-    background-color 120ms ease-out;
+:root[data-theme="dark"] .mark {
+  background: none;
+  padding: 0;
+  color: rgb(var(--pop));
+  font-weight: 600;
 }
-.hard:hover {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0 0 #000000;
-}
-.hard:active {
-  transform: translate(4px, 4px);
-  box-shadow: 0 0 0 0 #000000;
+:root[data-theme="light"] .mark {
+  background: linear-gradient(
+    to top,
+    transparent 0.16em,
+    rgb(var(--pop) / 0.85) 0.16em,
+    rgb(var(--pop) / 0.85) 0.78em,
+    transparent 0.78em
+  );
+  padding: 0 0.08em;
+  color: rgb(17 17 17);
+  font-weight: inherit;
 }
 
-/* The spring is on the BUTTONS' transition only, overriding the ease-out above.
-   cubic-bezier(0.34, 1.56, 0.64, 1) overshoots past 1 and settles back — the same
-   curve .lozenge uses, so the two lifting objects on the page share one feel. The
-   overshoot is why the duration can stay short: 160ms of a springing curve reads
-   as quicker than 200ms of an ease, because the eye reads the settle rather than
-   the travel. box-shadow keeps a plain ease-out — a shadow that overshoots its
-   own offset flickers. */
-.btn-pop,
-.btn-primary,
-.btn-secondary {
-  transition:
-    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 160ms ease-out,
-    background-color 160ms ease-out;
-}
-.btn-pop:hover,
-.btn-primary:hover,
-.btn-secondary:hover {
-  transform: scale(1.03);
-  box-shadow: 6px 6px 0 0 #000000;
-}
-.btn-pop:active,
-.btn-primary:active,
-.btn-secondary:active {
-  /* scale(1) explicitly, not omitted: `transform` is one property, so leaving the
-     scale out here does not "keep" the hovered 1.03 — it replaces the whole value
-     and the button would snap back to full size as it travels. Stating both keeps
-     the press a pure translation of the object the pointer is already on. */
-  transform: translate(6px, 6px) scale(1);
-  box-shadow: 0 0 0 0 #000000;
+/* Two-tone headline. Their display lines alternate ink and blue mid-sentence,
+   which is what stops a 100px headline reading as a wall. */
+.tone {
+  color: rgb(var(--accent));
 }
 
-/* The loud one. #FFD600 with pitch black on it at 14.9:1 — the highest-contrast
-   pair in the palette, which is what licenses using it this hard. */
+/* The yellow primary action, with a hard offset shadow and no blur. The Figma keeps
+   this device from the previous pass but smaller — measured off the frames, the
+   offset is ~3px rather than 5px, which at a pill radius reads as a printed second
+   impression rather than a drop shadow.
+
+   Ink is hardcoded rather than tokenised, deliberately: the fill is the SAME yellow
+   in both themes, so text on it must not invert with the theme. `color: rgb(var(--ink))`
+   would put #fbfaf7 on #ffe01a in dark mode — 1.06:1, invisible. The shadow does
+   use the token, because it sits on the page rather than on the yellow. */
 .btn-pop {
   background: rgb(var(--pop));
-  color: #000000;
-  font-weight: 800;
-}
-
-/* THE TACTILE CARD.
-   One class for every surface that should read as a physical tile on the dot
-   grid: feature tiles, the apply form, project cards, culture cards, the
-   institutional panel, a member's portrait frame.
-
-   Deliberately does NOT set a background. Every one of these already carries its
-   own `bg-raise` or `bg-band` utility, and because this stylesheet is emitted
-   after Tailwind's utilities layer, a `background` here would silently beat the
-   utility at equal specificity — the band-coloured banner would have turned white
-   and nothing would have said so.
-
-   The hover shadow is the brief's, and the -4px lift is what makes it read as the
-   card rising rather than as a shadow appearing underneath a stationary object.
-   All of it is suppressed under prefers-reduced-motion by the global block at the
-   foot of this file; the shadow alone would still be a fine affordance.
-
-   THE BORDER GOES ACCENT AND PULSES. The lift alone moved the card without ever
-   saying it was reachable — a shadow deepening by 8px is a change you notice only
-   if you were already looking at the edge. The border is the part in peripheral
-   vision, so that is the part that answers.
-
-   THE BLUE VIA --sky, NOT A LITERAL #1B4BFF, and the two are the same thing in
-   the theme that matters: --sky resolves to exactly #1B4BFF in light. What the
-   token buys is the other theme. #1B4BFF measures 3.23:1 on the dark page and
-   2.95:1 on the dark card this border actually sits on — under the 3:1 a non-text
-   edge needs, so it is not merely muddy there but a blue-grey line rather than a
-   glow, and on a hovered card it is the one signal meant to be visible in
-   peripheral vision. --sky re-picks the same hue as periwinkle for that surface.
-   This is the rule the whole token file follows; hard-coding the light value is
-   how the two themes drift apart.
-
-   The ring in the shadow is the "glow": a 3px accent halo at 18%, sitting outside
-   the border rather than replacing it, so the edge reads as lit rather than as
-   simply recoloured. Kept faint on purpose — every card on the page can do this,
-   and at any real opacity fourteen sections of hoverable tiles turn into a light
-   show. */
-.card {
-  border: 1px solid rgb(var(--edge));
+  color: rgb(11 11 12);
+  box-shadow: 3px 3px 0 0 rgb(var(--ink));
   transition:
-    box-shadow 200ms ease-in-out,
-    transform 200ms ease-in-out,
-    border-color 200ms ease-in-out;
+    transform 300ms cubic-bezier(0, 0, 0.5, 1),
+    box-shadow 300ms cubic-bezier(0, 0, 0.5, 1);
 }
-.card:hover {
-  /* The static half of the accent edge. It is what shows under reduced motion,
-     where the pulse below is zeroed out — so the affordance survives the
-     preference instead of disappearing with the animation. */
-  border-color: rgb(var(--sky));
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.06),
-    0 0 0 3px rgb(var(--sky) / 0.18);
-  transform: translateY(-4px);
-  animation: accent-pulse 2s ease-in-out infinite;
+.btn-pop:hover {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 0 rgb(var(--ink));
 }
-
-/* Cards that are not themselves interactive — a static panel, a portrait frame
-   inside a card that already lifts — take the border and the shadow without the
-   lift, so two nested things cannot move independently under one pointer.
-
-   They opt out of the accent edge as well, and for the same reason rather than a
-   new one: a portrait frame nested inside a hoverable card would light up
-   whenever its PARENT was hovered, so the pointer would appear to be on two
-   objects at once. `animation: none` is the load-bearing half — cancelling
-   border-color alone would leave the pulse running and overriding it, since an
-   animated declaration outranks a static one whatever the specificity. */
-.card-still:hover {
-  transform: none;
-  animation: none;
-  border-color: rgb(var(--edge));
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
-}
-
-/* ---- THE BENTO CELL -------------------------------------------------------
-   The soft counterpart to .hard, and the pair is the whole rhythm of this
-   design: controls get a black keyline and an unblurred shadow, content panels
-   get a pale border and a diffuse one. If everything wore the hard shadow the
-   page would be a wall of outlines with nothing to press.
-
-   2px #F1F5F9 and a 20px radius, per the brief. The border is barely darker than
-   the card — it is there to define the edge against the page's #FAFAFC, not to
-   draw a box.
-
-   THE RESTING EDGE IS A VARIABLE, and the change is a bug fix rather than a
-   refactor. The three per-theme rules below used to set `border-color` directly,
-   which made them `:root[data-theme] .bento` — specificity (0,3,0) against
-   `.bento:hover`'s (0,2,0). The theme rule won. The hover border-colour had
-   therefore been dead in dark mode and under an explicit light choice since those
-   rules were added, and it failed in the quietest way available: the card still
-   lifted, the shadow still deepened, and only the one signal that was supposed to
-   be in peripheral vision never fired. Nothing measures a hover state.
-
-   Setting --bento-edge instead moves the theme rules off the property entirely.
-   The `border` shorthand that reads it lives on plain `.bento` at (0,1,0), so
-   `.bento:hover` outranks it in every theme. Any future per-theme edge belongs on
-   the variable for the same reason. */
-.bento {
-  --bento-edge: #f1f5f9;
-  background: rgb(var(--raise));
-  border: 2px solid var(--bento-edge);
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-  transition:
-    box-shadow 200ms ease-in-out,
-    transform 200ms ease-in-out,
-    border-color 200ms ease-in-out;
-}
-/* Same accent edge, pulse and -4px lift as .card — see the note there for why the
-   blue comes through --sky rather than as a literal #1B4BFF. The halo is a
-   shade stronger and the diffuse shadow deeper because a bento cell is a large
-   panel: the ring has more perimeter to spread over, so at .card's 18% it reads
-   as a hairline on a 600px-wide cell instead of a glow. */
-.bento:hover {
-  border-color: rgb(var(--sky));
-  box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.07),
-    0 0 0 3px rgb(var(--sky) / 0.22);
-  transform: translateY(-4px);
-  animation: accent-pulse 2s ease-in-out infinite;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .bento {
-    --bento-edge: rgb(var(--edge));
-  }
-}
-:root[data-theme="dark"] .bento {
-  --bento-edge: rgb(var(--edge));
-}
-:root[data-theme="light"] .bento {
-  --bento-edge: #f1f5f9;
-}
-
-/* The number badge — 01 / 02 / 03 in an electric-blue pill. Tabular figures
-   because these DO align down a column of cards, and 800 because the brief asks
-   for it and the pill is small enough that anything lighter reads as grey.
-
-   TOKENS RATHER THAN A FIXED FILL, matching .chip and .step — see the long note
-   over .chip for the reasoning. This badge sits on a bento card, which is #141822
-   in dark; a hard-coded #0038FF pill on it is 1.6:1 of separation and simply
-   disappears. --accent/--bg is 6.98:1 light, 5.63:1 dark. */
-.num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.5rem;
-  height: 1.75rem;
-  padding: 0 0.6rem;
-  border-radius: 9999px;
-  background: rgb(var(--accent));
-  color: rgb(var(--bg));
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.9375rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-/* ---------------------------------------------------------------------------
-   THE TRACK TINT — three cards, three colours, one mechanic.
-
-   Each track card sets a tint class on itself and everything inside it reads
-   three custom properties: --tint (the colour at text weight, for the second
-   line of the heading and the arrow), --tint-soft (the fill behind the number
-   badge and the tags) and --tint-ink (what is legible ON that fill). Nothing
-   downstream names a colour, which is what stops a fourth track from needing a
-   fourth set of edits scattered through the markup.
-
-   The colour is doing real work rather than decorating: the three tracks are
-   ordered by difficulty and are otherwise near-identical cards, so a reader
-   scanning for "the security one" has a landmark. It is never the ONLY signal —
-   the number, the heading and the tags all say the same thing — because colour
-   alone fails for a CVD reader and in greyscale.
-
-   Every pair is measured against the surface it actually lands on rather than
-   picked by eye, and the dark values are re-picked rather than dimmed, which is
-   the rule the whole token file follows:
-
-     light   --tint on #FFFFFF card    --tint-ink on --tint-soft
-     blue    #0038FF  7.0:1            #0038FF on #DDE4FF   5.5:1
-     mint    #047857  5.5:1            #065F46 on #D1FAE5   8.3:1
-     violet  #6D28D9  7.1:1            #5B21B6 on #EDE9FE   9.0:1
-
-     dark    --tint on #141822 card    --tint-ink on --tint-soft
-     blue    #81A5FF  7.4:1            #A9C3FF on #16243D   8.6:1
-     mint    #34D399  9.8:1            #6EE7B7 on #0C2E23  10.4:1
-     violet  #A78BFA  6.6:1            #C4B5FD on #241B3D   8.1:1
-
-   The fills are OPAQUE, not the tint at 10% — a translucent fill composites to
-   the right colour on screen and is still scored as its own un-composited rgb by
-   scripts/qa.mjs. That trap is documented at length above .flag-bad; this is the
-   fifth surface to avoid it rather than the fifth to pay for it. */
-.tint-blue {
-  --tint: #0038ff;
-  --tint-soft: #dde4ff;
-  --tint-ink: #0038ff;
-}
-.tint-mint {
-  --tint: #047857;
-  --tint-soft: #d1fae5;
-  --tint-ink: #065f46;
-}
-.tint-violet {
-  --tint: #6d28d9;
-  --tint-soft: #ede9fe;
-  --tint-ink: #5b21b6;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .tint-blue {
-    --tint: #81a5ff;
-    --tint-soft: #16243d;
-    --tint-ink: #a9c3ff;
-  }
-  :root:not([data-theme="light"]) .tint-mint {
-    --tint: #34d399;
-    --tint-soft: #0c2e23;
-    --tint-ink: #6ee7b7;
-  }
-  :root:not([data-theme="light"]) .tint-violet {
-    --tint: #a78bfa;
-    --tint-soft: #241b3d;
-    --tint-ink: #c4b5fd;
-  }
-}
-:root[data-theme="dark"] .tint-blue {
-  --tint: #81a5ff;
-  --tint-soft: #16243d;
-  --tint-ink: #a9c3ff;
-}
-:root[data-theme="dark"] .tint-mint {
-  --tint: #34d399;
-  --tint-soft: #0c2e23;
-  --tint-ink: #6ee7b7;
-}
-:root[data-theme="dark"] .tint-violet {
-  --tint: #a78bfa;
-  --tint-soft: #241b3d;
-  --tint-ink: #c4b5fd;
-}
-/* An explicit light choice has to win over the OS preference in BOTH directions —
-   see the precedence note at the head of this file. */
-:root[data-theme="light"] .tint-blue {
-  --tint: #0038ff;
-  --tint-soft: #dde4ff;
-  --tint-ink: #0038ff;
-}
-:root[data-theme="light"] .tint-mint {
-  --tint: #047857;
-  --tint-soft: #d1fae5;
-  --tint-ink: #065f46;
-}
-:root[data-theme="light"] .tint-violet {
-  --tint: #6d28d9;
-  --tint-soft: #ede9fe;
-  --tint-ink: #5b21b6;
-}
-
-/* The tinted number badge. Same idea as .num, in the card's own colour and as a
-   rounded square rather than a pill, so the two are not mistaken for the same
-   sequence: .num counts culture cards, this counts difficulty. */
-.track-num {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 2.25rem;
-  height: 2.25rem;
-  padding: 0 0.5rem;
-  border-radius: 10px;
-  background: var(--tint-soft);
-  color: var(--tint-ink);
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
-}
-
-/* The small pills along the foot of a track card. Not .chip: a chip is the loud
-   electric-blue sticker that labels a whole SECTION, and three of them per card times
-   three cards would be nine of the page's loudest object in one grid. */
-.tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.65rem;
-  border-radius: 9999px;
-  background: var(--tint-soft);
-  color: var(--tint-ink);
-  font-family: var(--font-label), system-ui, sans-serif;
-  /* 15px, via 13 — and 13 rather than 12 to begin with. This is the only new small
-     element on the page set in SENTENCE
-     CASE — "Beginner friendly", "Mentor review" — so unlike .chip and .status-pill
-     beside it, it has lowercase to be short of, and at 12px Plus Jakarta Sans's
-     x-height put it below anything else readable here. The caps-bearing pills stay
-     at 0.75rem for the reason given in tailwind.config.ts. */
-  font-size: 0.9375rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-/* ---- The sticky notes -----------------------------------------------------
-   A coloured square with a strip of tape across the top corner. The tape is a
-   pseudo-element rather than a second div: it is pure decoration and there is no
-   reason for it to exist in the DOM where a screen reader has to step over it.
-
-   The whole note is tilted, and the tape is tilted the other way — a note stuck
-   on straight looks like a UI panel that happens to be yellow, and tape parallel
-   to the note it is holding looks printed on.
-
-   EVERY FILL HERE IS A FIXED HEX AND THE TEXT IS ALWAYS PITCH BLACK, which is
-   what lets these skip a dark-theme variant entirely — the same trick .chip and
-   --sticker use. A note is a piece of paper laid ON the page rather than a
-   surface cut out of it, so it does not invert with the page; it only has to be
-   separated from whatever it is lying on, and a 2px black keyline does that on
-   both grounds. The four tones measure 14.9:1 (yellow), 15.0:1 (mint), 11.6:1
-   (pink) and 12.6:1 (sky) against black, so the 13px body line clears the 4.5
-   floor with room to spare on every one of them. Do NOT add a tone by picking a colour that looks right — check it
-   against black first, because nothing in the QA sweep re-checks a fill that is
-   hard-coded rather than themed. */
-.note {
-  position: relative;
-  --note-fill: rgb(var(--pop));
-  --note-tape: 0 56 255;
-  background: var(--note-fill);
-  color: #000000;
-  border: 2px solid #000000;
-  box-shadow: 5px 5px 0 0 #000000;
-  transform: rotate(var(--tilt, -2.5deg));
-  /* A NOTE IS 160px WIDE AND 128px OF THAT IS TEXT, so a single long word in the
-     title can set wider than the paper it is written on — and because nothing
-     here clips, it does not wrap or truncate: it renders straight over the black
-     keyline and out the side. "Attendance:" and "internship." both did exactly
-     that, in bold at body-lg.
-
-     NO `hyphens: auto`. It was here for one commit and it was wrong: hyphenation
-     is opportunistic, so it does not wait for a word that cannot fit — it breaks
-     ordinary words to pack a line better, and a 13px note ended up reading
-     "ans-wer". A word that does not fit on this line belongs whole on the next
-     one. The cost of turning it off is that a word wider than 128px has nowhere
-     to go, which is a copy constraint rather than a CSS problem: keep the title
-     to words of about nine characters.
-
-     break-word stays as the backstop, so a string that genuinely cannot fit —
-     a URL, a repo name — breaks inside the paper instead of over the edge of
-     it. With the current copy it never fires. */
-  overflow-wrap: break-word;
-  /* Both properties, because the peel below moves the shadow as well as the
-     paper — a note that lifts without its shadow growing reads as a sprite
-     sliding rather than a corner coming away from the wall. Zeroed for anybody
-     who has asked for less motion by the block at the foot of this file; the
-     lifted pose still applies, it just arrives instantly. */
-  transition:
-    transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 300ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-/* The peel. It straightens TOWARD the rest angle rather than to zero — a note
-   that snaps perfectly square under the pointer looks like a modal opening. */
-.note:hover {
-  transform: rotate(calc(var(--tilt, -2.5deg) * 0.35)) translateY(-4px)
-    scale(1.02);
-  box-shadow: 9px 9px 0 0 #000000;
-}
-
-/* ---- Where a flow note sits horizontally ----------------------------------
-   ONE `left`, AND IT IS A CLAMP RATHER THAN A BREAKPOINT. The note is anchored
-   beside the column it annotates — --note-anchor, measured per note, see
-   Note.tsx — and pulled back to a flush right inset on any container too narrow
-   to honour that.
-
-   The clamp is what replaces a media query per note. A capped column's ink stops
-   at a fixed x, so the anchor is a constant; the container is not, and below
-   about 1180px the anchor would put a 224px note through the container's right
-   edge. `min()` resolves that per width with no number written twice: at 1024 it
-   yields 840px, which is the flush-right position these notes already held, and
-   from ~1180 up it yields the anchor.
-
-   1.5rem of reserve, not 1rem, and the extra 8px is the tilt: a rotated box's
-   border box is wider than the element, so a 224x190 note at 4deg measures 237
-   across and a 16px inset leaves 10px. Same arithmetic the `right-4` these
-   replaced was written against — see the placement note in Note.tsx.
-
-   --note-w TRACKS `w-40`/`xl:w-56` ON THE COMPONENT and is the one thing here
-   that can silently rot: change either width without changing this and the clamp
-   protects the wrong edge. */
-.note-flow {
-  --note-w: 10rem;
-  left: min(var(--note-anchor, 52rem), 100% - var(--note-w) - 1.5rem);
-}
-@media (min-width: 1280px) {
-  .note-flow {
-    --note-w: 14rem;
-  }
-}
-
-.note-mint {
-  --note-fill: #86efac;
-  --note-tape: 124 58 237;
-}
-.note-pink {
-  --note-fill: #f9a8d4;
-  --note-tape: 15 118 110;
-}
-.note-sky {
-  --note-fill: #7dd3fc;
-  --note-tape: 180 83 9;
-}
-/* Three more, measured the same way as the first four: 16.1:1 (lime), 12.4:1
-   (orange) and 11.3:1 (lilac) with black on them. Each takes a tape from a
-   different corner of the wheel to its own fill, because tape the same hue as
-   the paper reads as printed on rather than stuck on. */
-.note-lime {
-  --note-fill: #bef264;
-  --note-tape: 219 39 119;
-}
-.note-orange {
-  --note-fill: #fdba74;
-  --note-tape: 30 64 175;
-}
-.note-lilac {
-  --note-fill: #c4b5fd;
-  --note-tape: 21 128 61;
-}
-
-/* ---- Paper stock ----------------------------------------------------------
-   Ruled and squared paper, for the notes that want to look torn out of a pad
-   rather than peeled off a block.
-
-   ON THE ELEMENT'S OWN background-image, deliberately, and it costs something
-   worth naming: scripts/qa.mjs resolves the ground behind a text node by
-   climbing ancestors and taking the first background-IMAGE it meets as
-   unmeasurable, then defers that node to per-element pixel sampling. So every
-   line inside a ruled note moves from the arithmetic path to the screenshot
-   path. That is a slower check, not a weaker one — it measures the pixels the
-   eye actually gets, which is the right answer for text sitting on a gradient.
-   The alternative was an inset ::after overlay, which keeps the climb on a flat
-   colour but then paints over the text unless the whole note grows a stacking
-   context and every line inside it gets a z-index. Not worth it for a texture.
-
-   The rules are 12-14% black rather than a colour: on seven different fills a
-   tinted rule would have to be re-picked seven times, and a neutral one sits
-   correctly on all of them. */
-.note-ruled {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0 1.35rem,
-    rgb(0 0 0 / 0.13) 1.35rem 1.4rem
-  );
-}
-.note-grid {
-  background-image:
-    repeating-linear-gradient(
-      to bottom,
-      transparent 0 1.1rem,
-      rgb(0 0 0 / 0.1) 1.1rem 1.15rem
-    ),
-    repeating-linear-gradient(
-      to right,
-      transparent 0 1.1rem,
-      rgb(0 0 0 / 0.1) 1.1rem 1.15rem
-    );
-}
-
-/* The dog-eared corner. A real span rather than a pseudo-element, because both
-   of this note's pseudo-elements are already spoken for — ::before is the tape
-   or the pin, and ::after is what a ruled note would need if the overlay route
-   above is ever taken. It is aria-hidden at the call site.
-
-   The turned-up flap is the note's OWN fill darkened, not a grey: a folded
-   corner shows the back of the same paper, and a neutral triangle on seven
-   different colours reads as a hole punched in the note instead. */
-.note-fold {
-  position: absolute;
-  right: -2px;
-  bottom: -2px;
-  width: 1.5rem;
-  height: 1.5rem;
-  background: var(--note-fill);
-  filter: brightness(0.78);
-  border-left: 2px solid #000000;
-  border-top: 2px solid #000000;
-  clip-path: polygon(0 100%, 100% 0, 100% 100%);
-}
-
-.note::before {
-  content: "";
-  position: absolute;
-  top: -0.7rem;
-  left: 50%;
-  width: 5.5rem;
-  height: 1.4rem;
-  transform: translateX(-50%) rotate(3deg);
-  background: rgb(var(--note-tape) / 0.85);
-  border: 1px solid rgb(0 0 0 / 0.35);
-}
-
-/* The pushpin, for the notes that are not taped. Same pseudo-element, restyled
-   rather than a second one — a note has exactly one thing holding it up, and
-   modelling that as two rules that must never both apply is how you eventually
-   get a note wearing both.
-
-   The off-centre highlight is the whole illusion: a flat circle reads as a dot,
-   and the same circle lit from the top left reads as a domed pinhead. The small
-   dark offset shadow underneath it is the pin standing off the paper. */
-.note-pin::before {
-  top: -0.6rem;
-  width: 1.15rem;
-  height: 1.15rem;
-  border-radius: 9999px;
-  transform: translateX(-50%);
-  background: radial-gradient(
-    circle at 34% 30%,
-    #fecaca 0%,
-    #ef4444 45%,
-    #991b1b 100%
-  );
-  border: 1px solid rgb(0 0 0 / 0.55);
-  box-shadow: 1px 2px 0 0 rgb(0 0 0 / 0.35);
-}
-
-/* The checklist inside a note. Square boxes rather than list bullets, because
-   the joke in the one that uses it is that the last item is unticked. */
-.note-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-.note-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.4rem;
-  line-height: 1.35;
-}
-
-/* ---- Being stuck on -------------------------------------------------------
-   The note arrives as a hand puts it there: held a little above the page and
-   counter-turned, then pressed down past its rest angle and allowed to settle
-   back onto it. Reveal.tsx adds `.is-stuck` when the note scrolls into view; see
-   the note there for why notes need their own pass.
-
-   ONE GESTURE, 420ms, AND NOTHING REPEATING. There are fourteen of these down
-   the page, and that count is the whole design constraint: anything with a
-   bounce, a wobble or a swing reads as fourteen interruptions rather than
-   fourteen remarks. The rotation overshoot is 15% of a 4deg tilt — half a
-   degree, which registers as pressure rather than as movement.
-
-   IT ENDS EXACTLY ON `.note`'s OWN REST POSE, and the fill is `backwards`
-   rather than `both` for the same reason: the animation must stop OWNING the
-   transform once it is done, or the hover peel — a plain declaration — spends
-   the life of the page losing to a finished animation. Backwards fill still
-   covers the stagger delay below, which is the only frame that needs it.
-
-   The shadow travels with the paper: 14px and soft at the start (a note held off
-   the wall throws a long one), snapping to the hard 3px of contact at the press
-   and easing out to the 5px `.note` sits at. A note that lifts without its
-   shadow changing reads as a sprite sliding, which is the same argument the
-   transition on `.note` itself makes. */
-@keyframes note-stick {
-  0% {
-    opacity: 0;
-    transform: rotate(calc(var(--tilt, -2.5deg) * -0.4)) translateY(-10px)
-      scale(1.05);
-    box-shadow: 14px 14px 0 0 rgb(0 0 0 / 0.2);
-  }
-  55% {
-    opacity: 1;
-    transform: rotate(calc(var(--tilt, -2.5deg) * 1.15)) translateY(1px)
-      scale(0.995);
-    box-shadow: 3px 3px 0 0 #000000;
-  }
-  100% {
-    opacity: 1;
-    transform: rotate(var(--tilt, -2.5deg));
-    box-shadow: 5px 5px 0 0 #000000;
-  }
-}
-/* --stick-i is 0 or 1: the index of this note within its own section, written by
-   Reveal.tsx. Past 1760px a section can carry two, and the vertical stagger
-   (see Note.tsx) is not enough on its own — two notes 200px apart still enter
-   the viewport within the same frame, and two hands slapping paper down in
-   unison is the one way this effect looks mechanical. 120ms is enough to read as
-   one after the other and short enough that nobody waits for it. */
-:root.reveal-on .note.is-stuck {
-  animation: note-stick 420ms cubic-bezier(0.22, 0.9, 0.28, 1) backwards;
-  animation-delay: calc(var(--stick-i, 0) * 120ms);
-}
-
-/* Floating status pill — the little "⚡ …" tags that sit over images and panels.
-   Its own black keyline and hard shadow at half scale, so it belongs to the same
-   family as the buttons without competing with them. */
-.status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.3rem 0.7rem;
-  border-radius: 9999px;
-  background: rgb(var(--raise));
-  color: rgb(var(--ink));
-  border: 2px solid #000000;
-  box-shadow: 3px 3px 0 0 #000000;
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-/* ---------------------------------------------------------------------------
-   THE PLAYGROUND LAYER
-   Stickers, term tooltips and the hall card's tilt. All of it decoration, all of
-   it suppressed by the reduced-motion block at the foot of this file, and none of
-   it load-bearing for anything a reader needs.
-   --------------------------------------------------------------------------- */
-
-/* Margin stickers. The rest angle comes in as --rest from the component, so the
-   float and the hover keyframes can all return to each sticker's own tilt instead
-   of snapping them to a shared one.
-
-   The bare `transform` is not redundant with the animation below it. It is the
-   position the sticker holds when the float is not running — which is the whole
-   of the reduced-motion rendering, since the block at the foot of this file
-   zeroes animation-duration rather than removing the declaration. Delete it and a
-   reader who has asked for less motion gets every sticker straightened to 0deg.
-
-   THE FLOAT IS ON THIS WRAPPER, NOT ON THE .chip INSIDE IT. The inner chip
-   carries .chip-true, which is exactly what excludes it from the badge float
-   above — and that is deliberate rather than convenient. The wrapper owns
-   --rest, so floating it means the arc is drawn around this sticker's own angle;
-   floating the chip instead would have stacked the animation's -1.5deg on top of
-   the wrapper's rotation and quietly bent every sticker a degree and a half
-   further over than the component asked for. */
-.sticker {
-  transform: rotate(var(--rest, 0deg));
-  animation: float 3s ease-in-out infinite;
-}
-/* Wobble: a shake around the rest angle, not away from it — the sticker looks
-   knocked rather than repositioned. */
-@keyframes sticker-wobble {
-  0%, 100% { transform: rotate(var(--rest, 0deg)); }
-  25% { transform: rotate(calc(var(--rest, 0deg) - 5deg)); }
-  75% { transform: rotate(calc(var(--rest, 0deg) + 5deg)); }
-}
-.sticker[data-effect="wobble"]:hover {
-  animation: sticker-wobble 400ms ease-in-out;
-}
-/* BOUNCE IS A KEYFRAME NOW, and it had to become one the moment the float
-   started running. It was a plain `transform` on :hover, and a transform
-   declaration — at any specificity, short of !important — loses to a running
-   animation. The float would have won and the lift would have done nothing at
-   all, silently: the sticker keeps drifting, the pointer gets no answer, and
-   nothing in the markup or the build says why.
-
-   Same shape as before (6px up, 1.04 scale, the same overshooting spring), and
-   `forwards` is what holds the lifted pose for as long as the pointer is on it
-   instead of springing up and immediately dropping back. Naming the animation
-   also replaces the float rather than fighting it, which is how the wobble
-   variant above already behaved. */
-@keyframes sticker-bounce {
-  to { transform: rotate(var(--rest, 0deg)) translateY(-6px) scale(1.04); }
-}
-.sticker[data-effect="bounce"]:hover {
-  animation: sticker-bounce 200ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
-
-/* ---- Term tooltips --------------------------------------------------------
-   The word is a button so it can be focused; the note is nested inside it so it
-   joins the accessible name without needing a generated id. See Term.tsx. */
-.term {
-  position: relative;
-  display: inline;
-  /* A button resets to the UA's control font and centres its text. All three have
-     to be unwound or the word stops matching the sentence it sits in. */
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: 0;
-  cursor: help;
-  /* Grows the touch target to ~42px without moving anything: on an inline box,
-     padding-block does not change the line box, but it does change the hit area
-     and the rect a tester measures. At its natural 26px this failed the 40px
-     floor on mobile — an inline control inside a sentence is exempt from WCAG
-     2.5.8 by size, but there is no reason to leave it at 26px when the fix is
-     free. The negative margin keeps the sentence's leading exactly as it was. */
-  padding-block: 0.5rem;
-  margin-block: -0.5rem;
-  padding-inline: 0;
-}
-.term-word {
-  /* The affordance. Without it this is a word that happens to do something, which
-     nobody ever discovers. */
-  border-bottom: 1.5px dotted rgb(var(--accent) / 0.6);
-}
-.term:hover .term-word,
-.term:focus-visible .term-word {
-  border-bottom-color: rgb(var(--accent));
-}
-.term-note {
-  position: absolute;
-  bottom: calc(100% + 0.5rem);
-  left: 50%;
-  z-index: 30;
-  width: max-content;
-  max-width: 15rem;
-  transform: translateX(-50%) translateY(4px);
-  padding: 0.4rem 0.7rem;
-  border-radius: 8px;
-  /* Fixed dark fill with light text, not tokens: a tooltip is a floating object
-     that should look the same on both themes, and one opaque pair is one contrast
-     pair to prove (14.6:1) instead of two. */
-  background: #0f172a;
-  color: #e2e8f0;
-  font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  line-height: 1.35;
-  letter-spacing: 0;
-  text-align: center;
-  white-space: normal;
-  box-shadow: 0 10px 30px rgb(15 23 42 / 0.25);
-  /* DISPLAY: NONE at rest, so a bubble beside a word near the right edge cannot
-     widen the document while nobody is looking at it. The accessible copy of this
-     text is the sr-only sibling in Term.tsx — see the note there for why it takes
-     two elements.
-     Capped against the viewport as well as in rem, so the bubble itself stays
-     inside the screen on the narrow widths where it is shown. */
-  max-width: min(15rem, 60vw);
-  pointer-events: none;
-  display: none;
-}
-.term:hover .term-note,
-.term:focus-visible .term-note {
-  display: block;
-  /* An animation rather than a transition: `display` is not interpolatable, so a
-     transition from none to block never plays. An animation starts fresh each
-     time the element becomes displayed, which is exactly the trigger wanted. */
-  animation: term-in 150ms ease-out both;
-}
-@keyframes term-in {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-/* ---- Hall card tilt and its tooltip --------------------------------------
-   The tilt is on the card's inner frame rather than the <article>, so the caption
-   underneath stays flat and legible — text rendered on a rotated plane is exactly
-   where subpixel antialiasing falls apart.
-
-   motion-safe only, via the media query rather than Tailwind's variant, because
-   the tooltip below has to keep working when the tilt does not. */
-@media (prefers-reduced-motion: no-preference) {
-  .tilt {
-    transition: transform 300ms cubic-bezier(0, 0, 0.5, 1);
-  }
-  .group:hover .tilt {
-    transform: perspective(1000px) rotateX(4deg) rotateY(-4deg) scale(1.02);
-  }
-}
-
-.card-tip {
-  position: absolute;
-  inset-inline: 0.5rem;
-  bottom: 0.5rem;
-  z-index: 20;
-  padding: 0.5rem 0.7rem;
-  border-radius: 10px;
-  background: #0f172a;
-  color: #e2e8f0;
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.8125rem;
-  line-height: 1.4;
-  opacity: 0;
-  transform: translateY(6px);
-  pointer-events: none;
-  transition: opacity 200ms ease-in-out, transform 200ms ease-in-out;
-}
-.group:hover .card-tip,
-.group:focus-within .card-tip {
-  opacity: 1;
-  transform: translateY(0);
+.btn-pop:active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 0 rgb(var(--ink));
 }
 
 /* The step number, as a filled blue block. Theirs sets 01/02/03/04 in a solid
@@ -2062,10 +385,9 @@ body::before {
      and 3.45:1 on the other. --bg already inverts in exactly the right direction
      and lands at 6.98 light / 5.63 dark, which is why .btn-primary uses it too. */
   color: rgb(var(--bg));
-  font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 1.0625rem;
+  letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
@@ -2083,116 +405,68 @@ body::before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  /* 44px survives from the Apple pass and is unchanged here: theirs is 44px too,
-     and it is the touch-target floor either way. 10px of radius rather than 8 —
-     enough to read as friendly, short of the pill that would make it look like a
-     system control. */
+  /* 44px survives every pass and is not a style choice — it is the touch-target
+     floor, and the nav bar is sized so a 44px control fits inside it.
+
+     BACK TO PILLS. The previous pass moved to 8px rectangles on the argument that
+     "a pill reads as software, a hard-cornered block reads as a poster". The Figma
+     is unambiguous: every button in all fourteen frames is fully rounded — the JOIN
+     action, the LGHT toggle, SEE WHO GOT IN, BACK/NEXT. Type came down from 17px to
+     12px mono to match, which is also why the horizontal padding tightens: 21px
+     around 12px type looks like a mistake. */
   min-height: 44px;
-  padding: 11px 21px;
-  border-radius: 10px;
-  font-family: var(--font-label), system-ui, sans-serif;
-  /* 17px/700, up from 15px/700 with the +2px pass. WATCH THE HERO PAIR AT 390px.
-     This step was 17px once before, under Staatliches, and moving to Plus Jakarta
-     Sans — which runs about a third wider at the same size — is what forced it down
-     to 15. The weight is unchanged and the labels are short, so the two hero buttons
-     should still hold one line, but this is the one control on the page where the
-     bump lands closest to a known wrap point rather than in open space. */
-  font-size: 1.0625rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+  padding: 11px 18px;
+  border-radius: 9999px;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  /* 20px leading is what makes 11px padding land on exactly 44px, and it deliberately
-     does NOT move with the +2px pass. It is a geometry constant, not a typographic
-     one: 11 + 20 + 11 + 2px of border is the 44px touch target, so raising it to keep
-     the old 1.33 ratio would make every button on the page 46px and quietly break the
-     number the whole control system is built on. 20px on a 17px cap-height line is
-     comfortable — capitals have no descenders to collide. */
+  font-weight: 400;
+  /* Apple's pill measures 20px leading, which is what makes 11px padding land on
+     exactly 44px. Inheriting the body's ~1.5 ratio gave 25.5px and a 48px button
+     — close enough to look right and wrong enough not to be the same system. */
   line-height: 20px;
-  transition:
-    background-color 180ms ease-in-out,
-    border-color 180ms ease-in-out,
-    color 180ms ease-in-out,
-    transform 180ms ease-in-out,
-    box-shadow 180ms ease-in-out;
+  letter-spacing: -0.022em;
+  transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 300ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* Electric-blue fill, white text, same black keyline and hard shadow. Kept as a distinct
-   step from .btn-pop rather than merged into it: the yellow is the page's single
-   loudest action, and if every primary control wears it the hierarchy the yellow
-   exists to create disappears. White on #0038FF is 6.98:1.
-
-   `color: #fff` rather than `rgb(var(--bg))` — the page ground is now #FAFAFC and
-   the dark theme's accent is a light periwinkle, so the old token pairing would
-   have put near-white on near-white in dark mode. This fill is fixed, so its
-   foreground is too. */
 .btn-primary {
-  background: #0038ff;
-  color: #ffffff;
+  background: rgb(var(--accent));
+  color: rgb(var(--bg));
 }
-
-/* The outlined variant. White ground, black keyline, black text — the quieter
-   half of a pair whose loud half is yellow.
-
-   THE PADDING IS UNIFORM NOW. It used to be 2px tighter on each side to
-   compensate for this being the only button with a 2px border while the others
-   had 1px; every button in the system carries the same 2px keyline today, so
-   compensating would make this one 4px SHORTER than its neighbour instead. The
-   old comment described a geometry that no longer exists — worth deleting rather
-   than preserving, because a stale explanation is more expensive than none. */
+.btn-primary:hover {
+  opacity: 0.85;
+}
+/* Apple's outlined pill is accent-on-accent, not grey-on-ink. Read off the live
+   page in Chrome: color rgb(0,102,204) with border 1px rgb(0,102,204) over a
+   transparent fill. Ours had a --seam border with --ink text, which is wrong on
+   both counts and is why the two CTAs read as unrelated controls rather than a
+   pair — one filled accent, one outlined accent, same family. */
 .btn-secondary {
-  background: rgb(var(--raise));
-  color: rgb(var(--ink));
+  border: 1px solid rgb(var(--accent));
+  color: rgb(var(--accent));
 }
 .btn-secondary:hover {
-  background: rgb(var(--pop) / 0.22);
+  background: rgb(var(--accent) / 0.08);
 }
 
-/* The nav's Join button, and nothing else. A `.btn` narrowed to fit inside the plate.
-
-   THE HEIGHT STAYS AT 44px. It was briefly 40 — the plate was 3rem then, and 44
-   inside 48 leaves 2px of air either side, which reads as a button wedged into a bar
-   rather than one sitting in it. 40px clears the 40 that scripts/qa.mjs enforces and
-   the 24 that WCAG 2.5.8 asks at AA, so it passed everything except the number that
-   actually matters here: 2.5.5 and Apple's HIG both want 44, smoke.mjs asserts 44,
-   and this is the single most-tapped control on the site.
-
-   So the PLATE grew instead, to 3.5rem. That is the more expensive fix — the nav's
-   bottom edge, `scroll-padding-top` and `.page-top` are all derived from its height
-   and all three had to move with it — and it is the right one. Shrinking a touch
-   target to fit the furniture is how accessibility floors get quietly lowered one
-   component at a time.
-
-   Only the horizontal padding and the label size are reduced. 15px rather than the
-   base 17px because the label has to clear six nav links at 390px, and the strip is
-   already the thing that scrolls when it does not. */
+/* The nav's compact action. The default .btn is 17px type at 11px/21px padding,
+   which is right for a button in a section and far too heavy for a 56px bar.
+   min-height stays at 44px — that is the touch-target floor, not a style choice,
+   and the bar is 56px tall precisely so a 44px control fits inside it. Only the
+   type and the horizontal padding come down. */
 .btn-compact {
   min-height: 44px;
   padding: 0 16px;
   font-size: 0.9375rem;
 }
 
-/* The electric-blue indicator on the secondary CTA. A right-aligned bolt in a
-   electric-blue square, per the brief — it gives the quiet button one point of colour so
-   it reads as a peer of the yellow one rather than as a disabled control.
-   Non-text, so its job is the 3:1 UI floor rather than 4.5: electric blue on
-   white is 6.98:1, comfortably clear. */
-.btn-tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 0.55rem;
-  height: 1.25rem;
-  width: 1.25rem;
-  border-radius: 5px;
-  background: rgb(var(--accent));
-  color: rgb(var(--bg));
-  font-size: 0.875rem;
-  line-height: 1;
-}
-
-/* The sticky CTA reserves its own height rather than covering the last section.
-   A fixed bar that permanently occludes the footer is a bug dressed as a feature. */
-:root[data-cta="1"] body {
-  padding-bottom: 4.5rem;
+/* Every page starts under a fixed 56px nav. Stated once here rather than as a
+   pt-* utility repeated on six pages, because the number has to match the bar's
+   height and a copy of it on each page is six chances to drift. */
+.page-top {
+  padding-top: 3.5rem;
 }
 
 /* Scroll reveals, at apple.com's measured values: their sections carry
@@ -2221,167 +495,14 @@ body::before {
   transform: none;
 }
 
-/* THE STAGGERED VARIANT, for containers marked `data-reveal-group`. Where the
-   settle above moves a whole section as one object, this holds the container
-   still and brings its direct children up in sequence — the section header's
-   eyebrow, then its headline, then the rule under it, then the standfirst.
-
-   20px and 0.5s, against the settle's 12px and 0.32s, and the difference is the
-   point rather than an inconsistency. A settle is a single object finding its
-   place, so it wants to be almost subliminal; a stagger is a sequence, and a
-   sequence has to be slow enough and travel far enough that the ORDER is
-   legible. At 12px/0.32s a four-step cascade is over before the eye resolves it
-   was a cascade, which spends the mechanism and buys nothing.
-
-   The delay is the whole stagger, and it is arithmetic on a variable that
-   Reveal.tsx writes onto each child: 0.1s per step. Doing it in the stylesheet
-   rather than with per-element inline delays means one number governs the rhythm
-   of every group on the page.
-
-   `> [data-reveal-item]` is a child combinator on purpose. A descendant selector
-   would reach into nested groups and reveal their cards on the outer group's
-   timing, before the grid holding them has been scrolled to.
-
-   THE TRAVEL IS `translate`, NOT `transform`, and that is the whole reason this
-   rule is safe to point at arbitrary elements. Every reveal item on this page
-   already owns its `transform`:
-
-     * `.card` and `.bento` hover to `translateY(-4px)`, and the bento cells and
-       the two "what we look for" panels ARE direct children of their groups. A
-       `transform` here outranks `.card:hover` — one class against three — so the
-       lift would have died on every card the reveals touch, silently and only
-       on hover, which is exactly the kind of thing that ships.
-
-     * `.chip` sits at `rotate(-1.5deg)` and the untethered ones run the `float`
-       keyframes on top. An animated declaration beats any static one whatever
-       the specificity, so there the fight goes the other way and the section
-       eyebrows simply would not have travelled at all.
-
-   `translate` is a separate animatable property that COMPOSES with `transform`
-   rather than replacing it, so both of those keep working untouched and the
-   eyebrow now floats and slides at once.
-
-   The transition list carries the three properties `.card` and `.bento`
-   transition, at their own 200ms, for the same class of reason: `transition` is
-   one property, so stating it here replaces theirs outright, and a hover lift
-   that snaps instead of easing is a regression nobody would trace back to a
-   scroll reveal. Inert on every item that has no hover state.
-
-   The stagger delay therefore has to be written PER ENTRY rather than as a
-   `transition-delay` line of its own, which would apply to all five — a card
-   eight steps down its grid would then wait 0.8s before starting to lift under
-   the pointer, and a hover that ignores you for most of a second reads as a
-   dead card. --reveal-delay exists so the number is still written once. */
-:root.reveal-on [data-reveal-item] {
-  --reveal-delay: calc(var(--reveal-i, 0) * 0.1s);
-  opacity: 0;
-  translate: 0 20px;
-  transition:
-    opacity 0.5s ease var(--reveal-delay),
-    translate 0.5s ease var(--reveal-delay),
-    box-shadow 200ms ease-in-out,
-    transform 200ms ease-in-out,
-    border-color 200ms ease-in-out;
-}
-:root.reveal-on [data-reveal-group].is-in > [data-reveal-item] {
-  opacity: 1;
-  translate: none;
-}
-
-/* THE DRAWN RULE. The underline under every section heading (see Duo) plots
-   itself as the section arrives, rather than being there already.
-
-   `stroke-dasharray: 1` reads as nonsense until you know the path carries
-   `pathLength="1"` — see the note in Doodle.tsx. With that declared, 1 is "the
-   whole path" whatever the path actually measures, so one rule draws a 34-unit
-   squiggle and a 120-unit underline identically and no length has to be
-   discovered at runtime.
-
-   0.7s, longer than the 0.5s travel it happens alongside, and stepped 0.15s
-   behind it: a rule drawn UNDER a heading has to arrive after the heading, or
-   it is underlining something that is not there yet. */
-:root.reveal-on [data-reveal-group] [data-draw] path {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  /* --reveal-delay is declared on the <svg> — it is a direct child of the group
-     and therefore an item in its own right — and reaches the <path> by ordinary
-     inheritance. The fallback covers a doodle that is not inside an item at all,
-     which would otherwise make this whole declaration invalid. */
-  transition: stroke-dashoffset 0.7s ease
-    calc(var(--reveal-delay, 0s) + 0.15s);
-}
-:root.reveal-on [data-reveal-group].is-in [data-draw] path {
-  stroke-dashoffset: 0;
-}
-
-/* THE MARKER WIPE. The yellow badge fills left to right as its section arrives,
-   which is the one animation on this page that imitates a physical action — a
-   highlighter being dragged across a word.
-
-   SCOPED UNDER :root.reveal-on, so `.mark` itself is untouched. That is not
-   tidiness. The base rule is a flat `background-color`, which scripts/qa.mjs can
-   read straight off the computed style and score at 14.9:1; a wipe needs a
-   background-IMAGE, and the sweep's contrast walk cannot see one, so it defers
-   those to the slower pixel-sampling pass. Keeping the gradient inside the
-   JS-gated scope means the no-JS rendering — and the resting appearance in every
-   other respect — is still the flat, directly measurable pair.
-
-   THE TEXT COLOUR TRANSITIONS WITH THE FILL, and it has to. `.mark` sets black
-   text because it is guaranteed a yellow ground; take the yellow away for half a
-   second and on the dark theme that is black on near-black, i.e. the phrase
-   disappears and then fades back in. So the text starts at the ambient ink
-   colour and darkens as the fill passes under it — readable at both ends and
-   every frame in between.
-
-   0.2s behind its own paragraph. The phrase has to have arrived before anything
-   highlights it. */
-:root.reveal-on [data-reveal-group] .mark {
-  background-color: transparent;
-  background-image: linear-gradient(rgb(var(--pop)), rgb(var(--pop)));
-  background-repeat: no-repeat;
-  background-size: 0% 100%;
-  color: rgb(var(--ink));
-  /* Inherited from the paragraph that holds it — the mark is INSIDE an item
-     rather than being one — so the highlight tracks whichever line it lands in. */
-  transition:
-    background-size 0.5s ease calc(var(--reveal-delay, 0s) + 0.2s),
-    color 0.5s ease calc(var(--reveal-delay, 0s) + 0.2s);
-}
-:root.reveal-on [data-reveal-group].is-in .mark {
-  background-size: 100% 100%;
-  color: #000000;
-}
-
 /* The global reduced-motion block below zeroes durations, which would make the
    reveal instantaneous but still start from opacity:0 — so state it explicitly:
-   nothing hides, nothing moves. Same for the three above: a zero-length
-   transition still leaves a child at opacity 0, an undrawn rule at full dash
-   offset and a marker at 0% width, none of which the duration touches. */
+   nothing hides, nothing moves. */
 @media (prefers-reduced-motion: reduce) {
   :root.reveal-on [data-reveal],
   :root.reveal-on [data-reveal].is-in {
     opacity: 1;
     transform: none;
-    transition: none;
-  }
-
-  :root.reveal-on [data-reveal-item],
-  :root.reveal-on [data-reveal-group].is-in > [data-reveal-item] {
-    opacity: 1;
-    translate: none;
-    transition: none;
-  }
-
-  :root.reveal-on [data-reveal-group] [data-draw] path {
-    stroke-dasharray: none;
-    stroke-dashoffset: 0;
-    transition: none;
-  }
-
-  :root.reveal-on [data-reveal-group] .mark {
-    background-color: rgb(var(--pop));
-    background-image: none;
-    color: #000000;
     transition: none;
   }
 }
@@ -2391,7 +512,19 @@ body::before {
    the panel is 13.5rem plus its right offset, so 15rem clears it with margin.
    Only at lg+, which is the only place the panel can appear at all. */
 @media (min-width: 1024px) {
-  :root[data-outline="1"] main {
+  /* The padding is on BODY, not on `main`, and that changed for a real bug. With it
+     on `main`, the footer sat outside the padded box — but the compensation rule
+     below applies to every `.band::before` on the page, and the footer IS a band.
+     So the footer's band had its right edge pushed 7.5rem outward with no 15rem of
+     padding to pay for it, which put it 120px past the viewport edge and gave the
+     document a horizontal scroll on all six pages with the panel open. Measured as
+     scrollWidth 1560 against a 1440 viewport, on every route, in both themes.
+
+     Padding the body instead means every band — in `main` or in the footer — sits
+     inside the same reserved box, so one compensation rule is correct for all of
+     them. The fixed nav is positioned against the viewport rather than the body, so
+     it correctly keeps spanning the full width. */
+  :root[data-outline="1"] body {
     padding-right: 15rem;
   }
 
@@ -2416,7 +549,7 @@ body::before {
    makes the rhythm read as structure rather than as a very wide card.
 
    Painted with a pseudo-element rather than a background on the element itself,
-   because these sections ARE the measure container (`.section` caps at 88rem and
+   because these sections ARE the measure container (`.section` caps at 76rem and
    centres). A background on them would stop at that cap and read as a card. The
    alternative was wrapping fourteen sections in an extra div, which is a lot of
    structural churn for a colour.
@@ -2440,144 +573,78 @@ body::before {
   z-index: -1;
 }
 
-/* ---- THE AMBIENT GLOW -----------------------------------------------------
-   A blurred electric-blue orb behind the hero and the hall. It is the only thing on
-   this page that is purely atmospheric — no border, no edge, no information —
-   and its whole job is to stop two very large type-led sections reading as flat
-   white paper.
+/* ---------------------------------------------------------------------------
+   THE INVERTED SURFACE
 
-   A LEAF SPAN, never a wrapper, and that is a hard constraint rather than a
-   preference. scripts/qa.mjs resolves the ground behind every text node by
-   climbing ancestors and checking background-IMAGE first: find one, and the pair
-   is declared unmeasurable and deferred to a per-element screenshot. The dot
-   grid is a fixed pseudo-element for exactly this reason (see body::before), and
-   a radial gradient wrapped around the hero would do far worse — it would defer
-   every headline, paragraph and stat on the page's two most important sections.
-   An absolutely-positioned sibling is not an ancestor of anything, so the climb
-   still terminates at body's opaque colour.
+   The Figma runs several full-bleed sections in the opposite theme to the page —
+   the footer on every route, and the "what we are worse at" band on the home page.
+   Sampled down an empty column: on the light frames those regions are #0b0b0c, and
+   on the dark frames the SAME regions are #fbfaf7. They invert with the theme
+   rather than being permanently dark.
 
-   THE COLOUR IS A TOKEN, not the literal rgba(27, 75, 255, 0.15) it resolves to
-   in light. --sky IS 27 75 255 there, so light gets exactly the specified value;
-   dark gets the periwinkle that token re-picks for a near-black ground. An
-   electric-blue glow on #0B0D14 is a dark smudge — and the recolour to #1B4BFF
-   made that worse rather than better, since the punch of this blue comes from how
-   dark it is. The one colour on the page that has to invert most is the one whose
-   entire purpose is to be light.
+   Implemented by REDEFINING THE TOKENS on the subtree instead of setting colours.
+   Custom properties inherit, so every descendant — cards, hairlines, labels, links,
+   the accent — flips correctly with no per-element overrides and no `dark:` variants.
+   A component dropped inside `.inverse` needs no knowledge that it is there, which
+   is the same property that keeps the two themes from drifting.
 
-   z-index -1 puts it above the page background and below all content, which is
-   the same slot .band::before occupies. Both hosts (the hero header and the hall
-   section) are `position: relative` with `z-index: auto`, so they do not open a
-   stacking context and the orb lands in the root one — behind the section's own
-   text rather than in front of it.
-
-   No motion, deliberately. A drifting orb behind a wall of body copy is the kind
-   of movement that makes a page hard to read without anyone being able to say
-   why, and the brief asks for lighting rather than animation. */
-.glow-orb {
-  position: absolute;
-  z-index: -1;
-  pointer-events: none;
-  border-radius: 9999px;
-  background: radial-gradient(
-    circle,
-    rgb(var(--sky) / 0.15) 0%,
-    transparent 70%
-  );
-  filter: blur(60px);
-}
-
-/* ---- THE TICKER -----------------------------------------------------------
-   A marquee of the programmes and ecosystems members contribute into, running
-   between the hall and the section that answers it.
-
-   TWO IDENTICAL COPIES OF THE LIST IN ONE TRACK, translated by -50% — i.e. by
-   exactly one copy's width. At the end of the cycle copy two sits precisely
-   where copy one began, so the reset is invisible and there is no seam to time.
-   The alternative (one copy plus a JS measurement of its width) is a resize
-   listener and a layout read for something CSS can do exactly.
-
-   The 50% only holds if the two copies tile with NO gap between them and no
-   trailing space on either — which is why the separator lives inside each item
-   rather than being a gap on the row. Every item is text + glyph + fixed
-   padding, so the row is a uniform strip that butts against its own copy.
-
-   STOPPING IT. WCAG 2.2.2 asks for a mechanism to pause content that moves
-   automatically for more than five seconds, and this moves forever. The
-   mechanism is the button in Ticker.tsx, which flips `data-paused` on the frame;
-   the `:hover` rule below is a convenience on top of that, not the answer to it.
-   An earlier version had only the hover rule, which serves a pointer and nobody
-   else — there is nothing focusable inside the strip for a keyboard to land on.
-
-   Under prefers-reduced-motion the global block at the foot of this file cuts
-   the duration to 0.01ms and pins the iteration count to 1. There is no
-   fill-mode here, so the track reverts to translateX(0) when that single
-   instant cycle ends — the strip parks at copy one, fully legible, which is the
-   static design rather than a frozen mid-scroll pose. */
-.ticker {
-  overflow: hidden;
-  /* The strip fades into its own edges instead of items being guillotined by the
-     border. Both properties, because Safari still wants the prefixed one. */
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    transparent,
-    #000 6rem,
-    #000 calc(100% - 6rem),
-    transparent
-  );
-  mask-image: linear-gradient(
-    90deg,
-    transparent,
-    #000 6rem,
-    #000 calc(100% - 6rem),
-    transparent
-  );
-}
-.ticker-track {
-  display: flex;
-  /* Or the flex track shrinks to the container and the two copies compress into
-     it instead of overflowing, which stops the -50% meaning one copy. */
-  width: max-content;
-  animation: scroll 20s linear infinite;
-}
-.ticker:hover .ticker-track,
-[data-paused="true"] .ticker-track {
-  animation-play-state: paused;
-}
-@keyframes scroll {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.ticker-row {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-}
-.ticker-item {
-  display: flex;
-  align-items: center;
-  gap: 1.75rem;
-  padding-right: 1.75rem;
-  font-family: var(--font-label), system-ui, sans-serif;
-  /* Was exempt from the x-height bump the sans steps took, being capitals — see the
-     note in tailwind.config.ts for why that exemption does not carry over to the
-     +2px pass. Still clear of the 11px floor the QA sweep enforces. */
-  font-size: 1rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  line-height: 1;
-  white-space: nowrap;
+   The accent flips too, and that is the load-bearing part: #1b1bff is 7.60:1 on the
+   light ground but 2.48:1 on the dark one, so an inverted section that kept the
+   page's accent would put unreadable links inside it. Each block therefore takes the
+   OTHER theme's accent step, not just the other theme's neutrals.
+   --------------------------------------------------------------------------- */
+.inverse {
+  --bg: 11 11 12;
+  --band: 20 20 20;
+  --raise: 24 24 25;
+  --sunk: 15 15 16;
+  --seam: 42 42 44;
+  --ink: 251 250 247;
+  /* Same contrast-floor treatment as the light set above; --dust bottoms out at
+     4.74:1 on --raise, which is the worst ground on this side. */
+  --haze: 155 154 153;
+  --dust: 132 132 131;
+  --accent: 107 123 255;
+  --accent-soft: 26 28 56;
+  background: rgb(var(--bg));
   color: rgb(var(--ink));
 }
-.ticker-sep {
-  /* --sky rather than --accent: this is a decorative glyph at display weight, not
-     a 13px link, so it takes the brighter step. */
-  color: rgb(var(--sky));
-  font-size: 0.875rem;
+
+/* On a dark page the inverted surface is the LIGHT one. Both the OS-preference and
+   the explicit-choice cases, in the same order and for the same reason as the tokens
+   at the top of this file. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .inverse {
+    --bg: 251 250 247;
+    --band: 255 252 239;
+    --raise: 255 255 255;
+    --sunk: 245 244 239;
+    --seam: 224 222 214;
+    --ink: 11 11 12;
+    --haze: 92 92 95;
+    --dust: 110 110 113;
+    --accent: 27 27 255;
+    --accent-soft: 232 232 255;
+  }
+}
+:root[data-theme="dark"] .inverse {
+  --bg: 251 250 247;
+  --band: 255 252 239;
+  --raise: 255 255 255;
+  --sunk: 245 244 239;
+  --seam: 224 222 214;
+  --ink: 11 11 12;
+  --haze: 92 92 95;
+  --dust: 110 110 113;
+  --accent: 27 27 255;
+  --accent-soft: 232 232 255;
+}
+
+/* Full-bleed, for an inverted section that must reach both edges. Same mechanic as
+   `.band::before` and it inherits that rule's fix for the outline panel, because it
+   IS a `.band` — this class only overrides the colour the pseudo-element paints. */
+.band-inverse::before {
+  background: rgb(var(--bg));
 }
 
 /* Scrolls, but without a bar drawn through the nav's bottom hairline. */
@@ -2610,821 +677,6 @@ body::before {
 *::-webkit-scrollbar-thumb {
   background: rgb(var(--seam));
   border-radius: 9999px;
-}
-
-/* ---------------------------------------------------------------------------
-   THE MOTION PASS
-
-   Everything above this point was already animated: scroll reveals in two modes,
-   floating stickers, the accent pulse on cards, the pill wipe, the drawn heading
-   rule, the sticker wobble, the ticker. What was NOT animated was everything that
-   answers a pointer inside a block of content — the two data tables, the source
-   links, the icons — plus the page's resting state, which was completely still.
-
-   This section adds those two layers and nothing else. It deliberately does not
-   add a third entrance animation to anything that already has one: the reveal
-   system owns arrival, and a second opinion about when an element appears is how
-   two correct animations become one flicker.
-
-   ONE RULE THROUGHOUT: no new background-IMAGE on any element that is an ANCESTOR
-   of text. scripts/qa.mjs resolves a text node's ground by climbing ancestors and
-   checking background-image first — find one, and the pair is deferred from a
-   cheap cascade read to a per-element screenshot. That is why the underline below
-   is a pseudo-element rather than the usual background-size trick, and why the
-   band's sheen goes on .band::before (not an ancestor of anything) rather than on
-   .band itself. The dot grid and the glow orb were already built to this rule.
-   --------------------------------------------------------------------------- */
-
-/* ---- Data rows answer the pointer ----------------------------------------
-   The calendar and the comparison table are the two widest things on the page and
-   both are read ACROSS — five columns of a timeline, three clubs against one
-   question. A row tint is the cheapest possible defence against losing your line
-   halfway across, and on a table this wide that is a real failure rather than a
-   hypothetical one.
-
-   OPAQUE --sunk, not a translucent black. Same reason spelled out over .flag-bad:
-   a wash written as rgb(0 0 0 / 0.03) is read by the QA sweep as SOLID BLACK and
-   scores every cell in the row at about 1.1:1 against a surface that exists
-   nowhere. --sunk is one step off the page in both themes and is already the
-   token for a recessed fill.
-
-   The comparison table's OSC column keeps its green: a `td` background paints over
-   its row's, so .flag-good is unaffected and the highlight runs up to it and
-   stops. That reads as intentional — the answer column stays the answer column. */
-.row-live {
-  transition: background-color 180ms ease-in-out;
-}
-.row-live:hover {
-  background-color: rgb(var(--sunk));
-}
-
-/* ---- The underline that draws itself --------------------------------------
-   For the source citations and the inline links in copy. These are the one class
-   of control on the page with no hover affordance at all beyond a brightness
-   nudge, which on a 13px mono link against body copy is very close to nothing.
-
-   A PSEUDO-ELEMENT, not the `background-size: 0% 1px` trick that would be the
-   obvious way to do this. That version puts a background-image on the anchor, and
-   an anchor is an ancestor of its own text — so every citation on the page would
-   defer to the QA sweep's screenshot path. There are 40-odd of them. A ::after is
-   not an ancestor of anything, so the link stays a plain measurable pair.
-
-   scaleX from a left origin rather than an animated width: transform is composited
-   and width is not, so this cannot cause a layout pass on hover inside a table
-   that is already 52rem wide and horizontally scrolling.
-
-   :focus-visible gets it too. A hover affordance that a keyboard cannot trigger is
-   half an affordance, and these links sit in a long tab sequence. */
-.link-u {
-  position: relative;
-}
-.link-u::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 1px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.link-u:hover::after,
-.link-u:focus-visible::after {
-  transform: scaleX(1);
-}
-
-/* .tap grows a standalone link's touch target with 14px of block padding and pulls
-   it back with a matching negative margin, so the element BOX is 28px taller than
-   the words in it. An underline pinned to that box's bottom edge floats 14px clear
-   of the text and reads as a rule under the paragraph rather than as an underline.
-   13px puts it back on the word, 1px below the descenders.
-   Five of the seven links this class lands on carry .tap, so this is the common
-   case rather than the exception. */
-.tap.link-u::after {
-  bottom: 13px;
-}
-
-/* The arrow that leans toward where it is going. Scoped to a hovered link or
-   button rather than put on the icon's own :hover, because the pointer is on the
-   control — an arrow that only reacts when you touch the glyph itself is a target
-   6px wide and reads as broken. */
-.icon-slide {
-  transition: transform 200ms cubic-bezier(0, 0, 0.5, 1);
-}
-a:hover .icon-slide,
-button:hover .icon-slide,
-a:focus-visible .icon-slide,
-button:focus-visible .icon-slide {
-  transform: translateX(3px);
-}
-
-/* The gesture for a stat that cannot be counted to — "∞", the answer to "how many
-   can win". CountUp.tsx adds this on the same intersection that starts its numeric
-   neighbours, so the whole row of figures reacts at one moment instead of three
-   counting and one sitting there.
-
-   A short overshoot rather than a fade: the numbers beside it are arriving by
-   MOVING, and a symbol that merely appears next to three that animate reads as the
-   one that failed to load. Suppressed by the global reduced-motion block at the
-   foot of this file — with the duration zeroed and the iteration count pinned to
-   1, it parks at the 100% keyframe, which is its natural size. */
-@keyframes stat-pop {
-  0% {
-    opacity: 0;
-    transform: scale(0.72);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.08);
-  }
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-.is-pop {
-  display: inline-block;
-  animation: stat-pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-/* ---- The FAQ accordion ----------------------------------------------------
-   GRID-TEMPLATE-ROWS 0fr → 1fr, which is the one way to animate to CONTENT HEIGHT
-   without measuring it in JavaScript. `height: auto` is not interpolable, so the
-   usual alternatives are a hard-coded max-height (which either clips a long answer
-   or eases against a ceiling it never reaches, making short answers look sluggish)
-   or a ResizeObserver writing pixel heights. The fr unit resolves against the
-   content, so every answer takes exactly as long as its own height.
-
-   The inner div's `overflow: hidden` is what makes it work at all — without it the
-   row collapses to zero and the text simply overflows, fully visible, animating
-   nothing.
-
-   The marker is a plus that becomes a cross by rotating 45deg, so open/closed is a
-   shape change rather than a colour change and survives greyscale and CVD. */
-.faq-q {
-  display: flex;
-  width: 100%;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1.5rem;
-  text-align: left;
-  cursor: pointer;
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
-  /* THE ROW PADDING LIVES HERE, NOT ON A `py-7` UTILITY AT THE CALL SITE, and this
-     is the fifth time this stylesheet has paid for the same lesson — see the notes
-     over .lozenge, .chip-mint and .card. This file is emitted AFTER Tailwind's
-     utilities layer, so a bare `padding` here beats `py-7` at equal specificity.
-     The first version of this rule reset `padding: 0` to strip the button default
-     and silently ate the utility with it: every question collapsed to a 34px row
-     with no vertical rhythm, and the QA sweep caught it as a sub-40px tap target on
-     the three questions short enough to hold one line. The taller ones wrapped to
-     two lines, cleared 40px on their own, and reported nothing — which is why this
-     shipped looking merely a bit tight rather than obviously broken.
-     Stating the real value keeps it in one place and unbeatable.
-     1.1rem, down from 1.75rem with the spacing pass. The floor is not taste: this
-     button has to stay over 40px for scripts/qa.mjs, and it clears that on the line
-     box alone (a text-body-lg question sets ~39px), so the padding is free to be
-     tight. Seven rows at 28px top and bottom was 392px of nothing. */
-  padding: 1.1rem 0;
-}
-.faq-mark {
-  flex: none;
-  position: relative;
-  width: 1rem;
-  height: 1rem;
-  margin-top: 0.35rem;
-  color: rgb(var(--dust));
-  transition:
-    transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
-    color 180ms ease-in-out;
-}
-.faq-mark::before,
-.faq-mark::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  margin: auto;
-  background: currentColor;
-}
-.faq-mark::before {
-  width: 100%;
-  height: 2px;
-}
-.faq-mark::after {
-  width: 2px;
-  height: 100%;
-}
-.faq-q:hover .faq-mark {
-  color: rgb(var(--accent));
-}
-.faq-q[aria-expanded="true"] .faq-mark {
-  transform: rotate(135deg);
-  color: rgb(var(--accent));
-}
-.faq-panel {
-  display: grid;
-  grid-template-rows: 0fr;
-  transition: grid-template-rows 320ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.faq-panel > div {
-  overflow: hidden;
-}
-.faq-panel[data-open="true"] {
-  grid-template-rows: 1fr;
-}
-
-/* ---- THE AMBIENT LAYER ----------------------------------------------------
-   The page's resting state. Everything below runs with nobody touching anything,
-   which is the part that separates a page that has been animated from one that is
-   alive, and it is also the part that most easily makes copy hard to read.
-
-   So the budget here is deliberately tiny: the orb moves about 4% of its own
-   width over 26 seconds, and the grid drifts four tiles across the entire
-   document. Nothing in this block is fast enough to catch the eye directly — it
-   is meant to be noticed only if you look for it, and never while reading.
-
-   THIS OVERRIDES THE "no motion, deliberately" NOTE ON .glow-orb ABOVE, which
-   argued that a drifting orb behind body copy is movement a reader cannot name
-   and cannot ignore. That argument is still right about a FAST orb. It is
-   answered here by the speed rather than dismissed: at 26s and 4% the per-frame
-   displacement is under a hundredth of a pixel, which is below the threshold at
-   which peripheral vision registers motion at all. If this ever reads as drifting
-   while you are reading, the fix is a longer duration, not a smaller orb. */
-/* THE LIGHT MOVES, THE BOX DOES NOT — and that is a correctness constraint, not a
-   stylistic one. The first version of this animated `transform: translate(2%,-3%)
-   scale(1.04)`, which is the obvious way to drift an orb and is wrong here for a
-   reason that only shows up in a measurement: both orbs are pinned to `right-0`,
-   so translating right or scaling up pushes their box past the viewport's right
-   edge and GROWS THE DOCUMENT. It measured 3px of horizontal overflow at 1440 and
-   1600. `body { overflow-x: hidden }` hides the scrollbar, which is exactly why
-   this class of bug survives: the page looks fine and the document is quietly
-   wider than the screen. A scale alone would do it too — a centred 4% scale on a
-   608px orb puts 12px past its own right edge.
-   Animating BACKGROUND-POSITION instead moves the light inside a box that never
-   changes size or position, so the drift cannot affect layout in any direction, at
-   any viewport, for an orb pinned to any edge. It also stays on the compositor
-   without promoting a blurred 608px element on every frame. */
-@keyframes orb-drift {
-  0%,
-  100% {
-    background-position: 50% 50%;
-  }
-  50% {
-    background-position: 62% 38%;
-  }
-}
-.glow-orb {
-  /* 150% gives the gradient room to travel inside the box. At the default 100% the
-     background is exactly the element and background-position has nothing to move
-     through — the glow would sit still and the animation would be a no-op. */
-  background-size: 150% 150%;
-  background-position: 50% 50%;
-  animation: orb-drift 26s ease-in-out infinite;
-}
-
-/* The dot grid, drifting against the scroll. 96px is four tiles of the 24px
-   pitch, spread across the whole document, so the grid and the page move at
-   almost the same speed and the parallax reads as depth rather than as a
-   background sliding under the content.
-
-   background-POSITION, not a transform: body::before is `position: fixed` and
-   covers the viewport, and transforming a fixed element promotes it and repaints
-   the full viewport every frame. Shifting the tile origin repaints the same layer
-   the browser is already caching. */
-@keyframes grid-drift {
-  to {
-    background-position: 0 96px;
-  }
-}
-
-/* The band's sheen — a very faint light gradient that travels as the section
-   passes through the viewport. This is the "parallax on the bands" without moving
-   the band itself, and the distinction is load-bearing: .band::before is inset to
-   the section's exact top and bottom, so translating it by any amount exposes a
-   strip of page background at one edge and overhangs the neighbouring section at
-   the other. Extending the box to hide that would make the band visibly taller
-   than the section it belongs to, and the crisp band edge IS the section boundary
-   on this page. Moving light across a stationary surface buys the same depth and
-   breaks no edges.
-
-   3% of --sky, which is under the 5% where this stops reading as lighting and
-   starts reading as a blue band. It sits on the pseudo-element, so no text node
-   gains a background-image ancestor. */
-@keyframes band-sheen {
-  from {
-    background-position: 50% 140%;
-  }
-  to {
-    background-position: 50% -40%;
-  }
-}
-
-/* SCROLL-DRIVEN, AND CHROME-ONLY FOR NOW. `animation-timeline` ships in Chromium
-   and is still behind the door in Firefox and Safari, so both are gated on
-   @supports and both degrade to the exact page that existed before this block —
-   a static grid and a plain band, which is what everybody has been looking at
-   anyway. No JavaScript, no scroll listener, no layout read per frame.
-
-   The reduced-motion gate is a `no-preference` MEDIA QUERY rather than a rule in
-   the global block at the foot of this file, and that is not interchangeable
-   here: that block works by zeroing animation-DURATION, and a scroll-driven
-   animation has no duration to zero — its progress comes from the scroll position.
-   Zeroing it would leave both of these running at full strength. They have to be
-   prevented from applying at all. */
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    body::before {
-      animation: grid-drift linear both;
-      animation-timeline: scroll(root block);
-    }
-  }
-}
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .band::before {
-      background-image: linear-gradient(
-        to bottom,
-        transparent 0%,
-        rgb(var(--sky) / 0.03) 45%,
-        transparent 90%
-      );
-      background-repeat: no-repeat;
-      background-size: 100% 220%;
-      animation: band-sheen linear both;
-      animation-timeline: view();
-      animation-range: cover 0% cover 100%;
-    }
-  }
-}
-
-/* ---- THE STORY RAIL -------------------------------------------------------
-   The horizontally scrolling testimonials under "In their words". The drift, the
-   wrap and the arrows are in MemberStory.tsx; what is here is the geometry.
-
-   FULL-BLEED THE SAME WAY .band IS, and for the same reason the note there gives:
-   symmetric negative inline margins rather than 100vw, because 100vw includes the
-   scrollbar gutter and would push the page sideways. Applied as margins on the
-   rail's own wrapper, since this escapes a `.section` that has already capped and
-   centred itself — 50% therefore resolves against that capped width, which is
-   exactly the inset being cancelled.
-
-   The reserved outline panel breaks the symmetry the offsets assume, so the
-   correction is the one .band::before carries: with padding-right P on main, each
-   side shifts by P/2 = 7.5rem. */
-.stories {
-  /* THE BLUE DOES NOT INVERT, and that is the one decision in this block worth
-     arguing about. --accent is #0038FF in light and #81A5FF in dark, because it
-     is a TEXT and UI colour that has to stay legible on whichever ground it lands
-     on. Painting a slide with it would flip this panel to pale periwinkle in dark
-     mode and drop white type on it to about 1.9:1 — unreadable.
-
-     So the fill is the literal light-mode --accent, fixed, and the type on it is
-     white in both themes at 6.98:1. Portrait's tints make the same call for the
-     same reason: this is a graphic object, like a photograph, not a surface the
-     theme owns. Keep the two in step — a slide painted from a token is a dark-mode
-     contrast failure that nothing in the QA sweep would call a colour bug. */
-  --story-blue: #0038ff;
-  position: relative;
-  margin-inline: calc(50% - 50vw);
-}
-@media (min-width: 1024px) {
-  :root[data-outline="1"] .stories {
-    margin-left: calc(50% - 50vw + 7.5rem);
-    margin-right: calc(50% - 50vw - 7.5rem);
-  }
-}
-
-/* No padding and no gap on the rail: a slide is exactly one rail-width, so the
-   inset that lines its content up with the rest of the page has to live INSIDE
-   the slide, where it is `.section` doing its normal job rather than a second
-   copy of the 88rem measure maintained by hand.
-
-   No scrollbar either. This scroller drives itself and has arrows, and a
-   permanent horizontal bar under a full-width panel reads as a rendering
-   accident. It is still a real scroll container, so a trackpad, a touch drag and
-   the keyboard all work — the bar is the only thing hidden. */
-.stories-rail {
-  display: flex;
-  align-items: stretch;
-  overflow-x: auto;
-  /* Or a flick at the end of the rail scrolls the page behind it. */
-  overscroll-behavior-x: contain;
-  /* ONE TESTIMONIAL IS ONE STOP. The rail advances a whole slide at a time under
-     its own timer, and snap is what makes a human drag obey the same rule — a
-     flick lands on a person rather than halfway between two of them.
-     `scroll-snap-stop: always` on the slides is the other half: without it a hard
-     swipe skips three people at once, which is the failure this section cannot
-     afford, since each slide is somebody's account and not a frame of a video. */
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.stories-rail::-webkit-scrollbar {
-  display: none;
-}
-
-.stories-slide {
-  background: var(--story-blue);
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
-}
-
-/* A SOLID WHITE DISC WITH A BLUE GLYPH, not a translucent one. Over a slide the
-   pointer can also drag, the arrows have to stay findable while the content
-   behind them moves, and a tinted disc dissolves into whatever paragraph is
-   passing under it. The glyph takes the same fixed blue as the panel for the same
-   reason the panel is fixed — `text-accent` on white would be pale periwinkle at
-   2.4:1 in dark mode. */
-.stories-arrow {
-  background: #ffffff;
-  color: var(--story-blue);
-  box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
-  transition:
-    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 160ms ease-out;
-}
-.stories-arrow:hover {
-  transform: scale(1.08);
-  box-shadow: 0 10px 28px rgb(0 0 0 / 0.26);
-}
-.stories-arrow:active {
-  transform: scale(0.96);
-}
-
-/* ---------------------------------------------------------------------------
-   MOTION PASS II — THE SURFACES THE FIRST PASS LEFT STILL
-
-   The pass above animated arrival (two reveal modes), the ambient layer (orb,
-   grid, band sheen) and the controls that were obviously controls (buttons,
-   citations, table rows, the accordion). What it explicitly declined to touch was
-   the CONTENT: three quarters of this site is hairline-ruled prose blocks, plain
-   tiles, list rows, figures and diagrams, and every one of them was a rectangle
-   that did nothing under a pointer and drew itself in a single frame.
-
-   This block covers those, and it is written as a small vocabulary of named
-   gestures rather than as a rule per call site:
-
-     .lift       a tile rises 3px and gains a shadow           (tiles, cards)
-     .rise       a hairline-ruled block rises 2px, rule lights (prose blocks)
-     .list-row   a row in a seam-gap stack tints               (stacked lists)
-     .stat-tile  a figure grows inside a tinting tile          (numbers strip)
-     .zoom       a photograph scales inside a fixed frame      (framed images)
-     .nav-rule   the nav's current-page rule, drawn on hover   (nav)
-     .graph-node / .rail-draw  a diagram draws itself          (figures)
-
-   THE FOUR RULES EVERY ONE OF THEM FOLLOWS, all inherited from the first pass
-   rather than invented here:
-
-     1. No new background-IMAGE on an ancestor of text — scripts/qa.mjs resolves a
-        text node's ground by climbing ancestors and checking background-image
-        first, and finding one defers the pair from a cheap cascade read to a
-        per-element screenshot. Every tint below is a background-COLOR from a
-        token, and the two gradients are on pseudo-elements.
-
-     2. Nothing new owns arrival. Where an entrance IS added (the two diagrams) it
-        is gated under `:root.reveal-on` so the reveal system is still the only
-        thing that decides when something appears — and, for free, so the whole
-        gesture is absent under prefers-reduced-motion, since Reveal.tsx does not
-        add that class when the preference is set.
-
-     3. Hover travel is `transform`, never `translate`. The stagger owns
-        `translate` on every reveal item (see the long note over
-        [data-reveal-item]), and the two compose only as long as each keeps to its
-        own property.
-
-     4. Resting appearance is unchanged. Every rule here is a :hover, a
-        scroll-driven pseudo-element, or scoped under .reveal-on — so the page a
-        screenshot sweep measures, and the page somebody with JavaScript off
-        reads, is the page that was already signed off.
-   --------------------------------------------------------------------------- */
-
-/* THE TILE LIFT, for the surfaces that are visibly cards and were not getting
-   .card. That class was the obvious answer and is the wrong one for these: it
-   also sets `border: 1px solid rgb(var(--edge))`, which — this file being emitted
-   after Tailwind's utilities layer — silently beats the `border-seam` they carry,
-   and several of them already own a border-colour hover of their own that
-   .card:hover's accent edge would have fought. This is the lift alone, so it
-   composes with whatever the tile already does about its own edge.
-
-   3px rather than .card's 4px, and no accent pulse: these are tiles a reader
-   reads rather than controls a reader presses, and the pulse is the site's way of
-   saying "this whole rectangle is one target". */
-/* THE TRANSITION LIST CARRIES THE TWO COLOUR PROPERTIES IT DOES NOT ANIMATE, for
-   the same reason the reveal items' list carries three of .card's — `transition`
-   is one property, so stating it here REPLACES whatever the call site had. Several
-   of these tiles already carry Tailwind's `transition-colors` for their own
-   border-colour hover, and this class is emitted after the utilities layer, so a
-   list of transform and box-shadow alone would have quietly turned every one of
-   those hovers into a jump. Inert on the tiles that have no colour hover. */
-.lift {
-  transition:
-    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 240ms ease-in-out,
-    border-color 300ms cubic-bezier(0.16, 1, 0.3, 1),
-    background-color 300ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.lift:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
-}
-
-/* THE HAIRLINE BLOCK, which is the single most repeated shape on this site — a
-   1px rule, a heading, a paragraph — and appeared about seventy times without a
-   hover state anywhere.
-
-   THE RULE ITSELF IS THE AFFORDANCE, not a shadow. These blocks have no fill and
-   no border on three sides, so there is no card to lift and a drop shadow under a
-   bottomless block reads as a rendering fault. The one piece of furniture they do
-   own is the hairline, so that is the part that answers: it goes from --seam to
-   the accent and the block rises 2px with it.
-
-   border-top-color and not `border-color`: the block's other three edges do not
-   exist, but `.rise:hover { border-color }` would still beat the `border-t`
-   utility's shorthand and light up any block that later gains a second edge. */
-.rise {
-  transition:
-    transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-top-color 200ms ease-in-out;
-}
-.rise:hover {
-  transform: translateY(-2px);
-  border-top-color: rgb(var(--sky));
-}
-
-/* A ROW IN A SEAM-GAP STACK — the programme rows, the mentor rows, the build-day
-   list. These are `space-y-px` over a --seam ground, so every row is a --raise
-   sheet with a hairline of the container showing between them.
-
-   A TINT AND NOTHING ELSE. Both of the gestures above are wrong here for a
-   structural reason rather than a stylistic one: the rows are 1px apart, so a
-   lift on one opens a 3px gap that exposes the grey container behind it and reads
-   as the stack coming apart. Same reasoning as .row-live on the tables, and the
-   same token — --sunk, opaque, because the QA sweep reads a translucent wash as
-   its own un-composited colour and would score the row's text against a surface
-   that exists nowhere. */
-.list-row {
-  transition: background-color 180ms ease-in-out;
-}
-.list-row:hover {
-  background-color: rgb(var(--sunk));
-}
-
-/* THE NUMBERS STRIP. Same 1px-gap construction as .list-row, so the tile can only
-   tint — but the figure inside it is display-size and can afford to grow, which
-   is the one hover on this site where the thing that reacts is the content rather
-   than the container.
-
-   transform-origin is the figure's own left baseline. Centred, a 4% scale on a
-   54px numeral pushes it up and left into its own tile padding; anchored bottom
-   left it grows into the empty space above the label, which is where the tile has
-   room. */
-.stat-tile {
-  transition: background-color 200ms ease-in-out;
-}
-.stat-tile:hover {
-  background-color: rgb(var(--sunk));
-}
-.stat-tile .stat-figure {
-  display: inline-block;
-  transform-origin: left bottom;
-  transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.stat-tile:hover .stat-figure {
-  transform: scale(1.04);
-}
-
-/* A PHOTOGRAPH INSIDE A FIXED FRAME. The frame is the thing with the keyline and
-   the hard shadow, so the frame must not move — only the image inside it scales,
-   which is why the overflow-hidden that makes this work already exists on every
-   call site and is not set here.
-
-   600ms, which is two to three times anything else in this file. A photograph is
-   the largest object on screen when it is on screen, and the same 240ms that
-   reads as responsive on a 300px tile reads as a flinch on a 700px image. */
-.zoom img {
-  transition: transform 600ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.zoom:hover img {
-  transform: scale(1.04);
-}
-
-/* THE NAV'S UNDERLINE. The rule under the current page was already there and
-   already correct — it is the non-colour half of "you are here", for the reader
-   who cannot use the accent to tell (see the comment at that span in Nav.tsx).
-   What it was not doing was answering a pointer, so a nav of six links had
-   nothing but a colour change across the whole strip.
-
-   ONE ELEMENT, TWO STATES, and the current page's is not an animation: it sits at
-   scaleX(1) from the first frame, so nothing about where you are depends on a
-   transition completing. The hover draws the same rule left to right on every
-   other link, which makes the current page's rule read as a link that is already
-   drawn rather than as a different device.
-
-   The colour is set here for both, so the markup no longer needs bg-transparent
-   for the un-hovered case — a transparent rule cannot animate to a visible one
-   without also animating colour, and scaling a coloured line is one composited
-   property instead of two. */
-.nav-rule {
-  background: rgb(var(--accent));
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.nav-link:hover .nav-rule,
-.nav-link:focus-visible .nav-rule,
-.nav-link[aria-current="page"] .nav-rule {
-  transform: scaleX(1);
-}
-
-/* THE READING PROGRESS LINE, along the bottom edge of the nav plate.
-   The one thing added here that is not a hover: a 2px accent rule that tracks how
-   far down the document you are. On a site whose shortest route is 6,000px and
-   whose longest is over 20,000, "how much of this is left" is a real question and
-   nothing on the page answered it.
-
-   SCROLL-DRIVEN AND THEREFORE CHROME-ONLY, on the same terms as the dot grid's
-   drift above: no scroll listener, no layout read per frame, and browsers without
-   `animation-timeline` get the nav exactly as it was. The reduced-motion gate is
-   again a no-preference media query rather than the global block at the foot of
-   this file, because that block works by zeroing animation-duration and a
-   scroll-driven animation has no duration to zero.
-
-   Inset 0.75rem either side so the line sits inside the plate's 1rem corner
-   radius instead of poking out of the curve — cheaper and more robust than
-   putting overflow:hidden on a bar that contains a focus ring and a fixed panel.
-
-   scaleX from the left rather than an animated width, so it stays on the
-   compositor and cannot lay the nav out again on every frame. */
-@keyframes read-progress {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .nav-plate {
-      position: relative;
-    }
-    .nav-plate::after {
-      content: "";
-      position: absolute;
-      left: 0.75rem;
-      right: 0.75rem;
-      bottom: 0;
-      height: 2px;
-      border-radius: 9999px;
-      background: rgb(var(--accent));
-      transform: scaleX(0);
-      transform-origin: left center;
-      animation: read-progress linear both;
-      animation-timeline: scroll(root block);
-    }
-  }
-}
-
-/* ---- THE TWO DIAGRAMS DRAW THEMSELVES -------------------------------------
-   The commit graph and the pull-request timeline are the site's two explanatory
-   figures, and both were fully drawn in the first frame — which is the one place
-   on this site where motion carries meaning rather than polish. Both diagrams are
-   about a SEQUENCE (fork, commit, commit, merge; open, CI, review, changes,
-   merge), and a sequence that assembles in order says what the labels say.
-
-   Everything below is scoped under `:root.reveal-on` and keyed on the group's
-   `.is-in`, which buys three things at once: the trigger is the existing
-   intersection observer rather than a second one, a bundle failure leaves both
-   diagrams fully drawn, and the whole effect is absent under
-   prefers-reduced-motion because Reveal.tsx never adds that class. Nothing here
-   needs an entry in the reduced-motion block at the foot of this file. */
-
-/* THE COMMIT GRAPH'S TWO LANES, plotting themselves left to right.
-
-   NOT the [data-draw] rule the heading underlines use, and the reason is measured
-   rather than stylistic. That rule leans on `pathLength="1"` to make one dash
-   value serve paths of any length; this SVG also carries
-   `vector-effect: non-scaling-stroke`, which keeps its rails 2px at every width
-   and, as a side effect, makes dash lengths resolve in SCREEN PIXELS. The two
-   together produce a dash of "the whole path" = 304 user units read as 304px
-   against a lane rendered 1199px long, i.e. four dashes and three gaps in what is
-   supposed to be one continuous line. It rendered as a broken diagram.
-
-   So each lane declares its own length in container-width units instead — 95cqw
-   for the 304-unit rail, 57cqw for the 181-unit branch, both authored at the path
-   in CommitGraph.tsx. Those track the rendered width of a `w-full` svg exactly, so
-   one dash covers one lane at every viewport, and the fallback keeps a
-   never-visible lane from becoming a permanently invisible one if a future call
-   site forgets the variable.
-
-   Same 0.7s and same 0.15s step behind the block as the heading rules, so the two
-   drawn things on the page share one rhythm. */
-:root.reveal-on [data-reveal-group] .graph-lane {
-  stroke-dasharray: var(--lane, 100vw);
-  stroke-dashoffset: var(--lane, 100vw);
-  transition: stroke-dashoffset 0.7s ease calc(var(--reveal-delay, 0s) + 0.15s);
-}
-:root.reveal-on [data-reveal-group].is-in .graph-lane {
-  stroke-dashoffset: 0;
-}
-
-/* The nodes on the commit graph, popping in along the lane the path has just
-   drawn. --node-i is authored in the JSX, since the order is the diagram's
-   meaning rather than document order: the four project commits, then the two on
-   your branch, then the merge.
-
-   transform-box: fill-box is what makes `transform-origin: center` mean the
-   circle's own centre rather than the SVG viewport's — without it every node
-   scales in from the top-left corner of the graph. */
-@keyframes node-pop {
-  from {
-    opacity: 0;
-    transform: scale(0.3);
-  }
-  60% {
-    opacity: 1;
-    transform: scale(1.15);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-:root.reveal-on [data-reveal-group] .graph-node {
-  opacity: 0;
-  transform-box: fill-box;
-  transform-origin: center;
-}
-:root.reveal-on [data-reveal-group].is-in .graph-node {
-  /* 0.45s of lead, which is the 0.7s the lane takes to draw minus enough of it
-     that the node is not still waiting on a line that has visibly arrived. */
-  animation: node-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1)
-    calc(var(--node-i, 0) * 110ms + 0.45s) both;
-}
-
-/* The timeline's rail, drawn downward between one dot and the next. Delay comes
-   from --reveal-delay, which the stagger already declares on each <li> and which
-   reaches this span by ordinary inheritance — so the rail belonging to step three
-   draws when step three arrives and not before, with one number governing both.
-
-   scaleY from the top, because the span is `h-full` of a grid cell whose height
-   is the step's own copy: a height animation would read the layout every frame
-   and the cell is inside a five-row grid. */
-:root.reveal-on [data-reveal-group] .rail-draw {
-  transform: scaleY(0);
-  transform-origin: top center;
-  transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1)
-    calc(var(--reveal-delay, 0s) + 0.12s);
-}
-:root.reveal-on [data-reveal-group].is-in .rail-draw {
-  transform: scaleY(1);
-}
-
-/* The timeline's dots, on the same inherited delay. A DIV rather than an SVG
-   node, so this one needs no transform-box — it is a 10px rounded box that scales
-   about its own centre by default. It carries `ring-4 ring-bg` at the call site,
-   which is what lets it sit on the rail it interrupts; the ring scales with it. */
-:root.reveal-on [data-reveal-group] .step-dot {
-  opacity: 0;
-}
-:root.reveal-on [data-reveal-group].is-in .step-dot {
-  animation: node-pop 340ms cubic-bezier(0.34, 1.56, 0.64, 1)
-    var(--reveal-delay, 0s) both;
-}
-
-/* THE GREEN WALL, filling in column by column — a year of contributions
-   accumulating left to right, which is what the graphic is a picture of.
-
-   THE DELAY IS PER COLUMN, NOT PER CELL, and that is the whole reason this is
-   affordable. The wall is 7 × 52 = 364 squares; at even 12ms each the last one
-   would arrive four and a half seconds after the first, and the reader would watch
-   a decorative texture assemble for longer than they will spend on the section.
-   Keyed on the column index — written by the component, which already computes it
-   — all seven cells in a week come up together and the whole wall resolves in
-   about 0.6s.
-
-   OPACITY ONLY. No transform, no scale: 364 simultaneously animating elements is
-   the one place on this site where the cost of a gesture is a real number rather
-   than a rounding error, and opacity is the property a compositor can do without
-   touching layout or paint. */
-@keyframes wall-fill {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-:root.reveal-on [data-reveal-group] .wall-cell {
-  opacity: 0;
-}
-:root.reveal-on [data-reveal-group].is-in .wall-cell {
-  animation: wall-fill 380ms ease-out calc(var(--wall-col, 0) * 12ms) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

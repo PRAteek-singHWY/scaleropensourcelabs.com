@@ -1,327 +1,78 @@
 // The hero, as a thesis rather than a spectacle.
 //
-// It was a scroll-scrubbed WebGL rocket on a launchpad across 220vh, with a
-// CSS fallback, capability detection and a stage machine. That is gone at the
-// client's instruction, and what replaces it is the register both reference sites
-// actually use: apple.com and Scaler's School of Business are type-led, with the
-// claim doing the work and hard numbers immediately under it.
+// It was a scroll-scrubbed WebGL rocket on a launchpad across 220vh, with a CSS
+// fallback, capability detection and a stage machine. That is gone at the client's
+// instruction, and what replaces it is the register the reference sites actually
+// use: type-led, with the claim doing the work and hard evidence immediately under
+// it.
 //
-// Reading the SSB page closely, the pattern is consistent — a positioning
-// sentence, two calls to action, and no imagery to speak of. So this states the
-// claim and then gets out of the way: the selection count that used to sit under
-// the buttons is now made once, at the head of the hall, where the names that
-// back it are on the same screen. Saying it twice on one scroll made the reader
-// re-read rather than recognise it.
-//
-// This is a server component: no canvas, no capability detection, no scroll
-// listener, no state. The previous hero needed all four and could only be checked
-// by rendering it. This one cannot fail in a way HTML cannot express.
+// A server component. No canvas, no capability detection, no scroll listener, no
+// state — the previous hero needed all four and could only be checked by rendering
+// it. This one cannot fail in a way HTML cannot express.
 //
 // One height rule: it deliberately does NOT force h-screen. A viewport-locked hero
-// pushes the section under it off the fold on a laptop, which is exactly where the
-// argument continues.
+// pushes the evidence below the fold on a laptop, which is exactly where the
+// argument dies.
+//
+// The two buttons are the one place on the site where a second action is allowed
+// alongside Join, and the reason is that they are not competing: a first-year who
+// has just landed here does not yet know what open source is, so "start at the
+// beginning" is a more honest primary than "apply". Join is one tap away in the nav
+// regardless, which is what makes the softer hero affordable.
 
 import Link from "next/link";
-import { PROJECTS, selectionStats } from "@/content/club";
-import Terminal from "@/components/hero/Terminal";
-import Icon from "@/components/Icon";
-import Term from "@/components/fx/Term";
-import Doodle from "@/components/Doodle";
-import CelebrateLink from "@/components/fx/CelebrateLink";
-import Glow from "@/components/fx/Glow";
-
-/* The floating chips anchored to the terminal's corners.
- *
- * Positions and colours are the brief's exactly: purple top-right, mint
- * bottom-left, each led by its coloured circle emoji.
- *
- * The FIGURES are not. The brief asks for "🟣 140+ PRs Merged" and
- * "🟢 $12,000+ Earned"; the repo's verified merge count is 46, and there is no
- * earnings figure anywhere in the content — not in PROJECTS, not in SELECTIONS,
- * not in the copy. Inventing one on a recruitment page aimed at sixteen-year-olds
- * is the single most consequential number that could be wrong here, because
- * "students earn money doing this" is the claim most likely to change what
- * somebody does next.
- *
- * So the chips carry what the club can actually show: the API-verified merge
- * count, and the size of the published cohort. Both grow on their own as entries
- * are added. A chip with nothing true to say does not render, which is why each
- * is guarded separately rather than the pair being one block.
- *
- * lg only. They are absolutely positioned over a column that does not exist below
- * lg, and a decorative element that can push a phone into a horizontal scroll is
- * a defect rather than a flourish.
- */
-function FloatingBadges() {
-  const merged = PROJECTS.find((p) => p.published && p.tag)?.tag;
-  const total = selectionStats().total;
-
-  return (
-    <>
-      {/* Both badges STRADDLE AN EDGE of the terminal rather than sitting over
-          its face, and the offsets are picked so they do: a chip is about 25px
-          tall, so -20px puts roughly 5px of it inside the card and the rest
-          outside. That is what reads as a sticker stuck to the corner.
-
-          The first attempt put this second badge at `top-24 -left-10`, which
-          floated it across the middle of the card — directly over the
-          contributor rank and the merged count. A decorative badge covering the
-          real evidence is the worst possible arrangement of these two elements,
-          and it is only obvious once rendered.
-
-          Diagonally opposed rather than side by side on the top edge: two chips
-          on one line read as a toolbar. */}
-      {/* WRAPPER CARRIES POSITION AND VISIBILITY; the chip inside carries only
-          its appearance. That split is not tidiness — putting `hidden
-          lg:inline-block` on the chip itself DID NOT WORK, and failed silently.
-
-          `.chip` declares `display: inline-block`, and globals.css is emitted
-          after Tailwind's utilities layer, so at equal specificity the class
-          beats `hidden`. Both badges therefore rendered at every width,
-          absolutely positioned against a column that only exists at lg — on a
-          390px phone the violet one sat at negative x, half off the left edge of
-          the screen.
-
-          Nothing reported it. `body` sets `overflow-x: hidden`, so the escaping
-          element was clipped rather than made scrollable, and the QA sweep's
-          overflow check looks for a document wider than the viewport — which it
-          never was. It took looking at a phone screenshot. The wrapper is a
-          plain span with no competing display rule, so `hidden` applies. */}
-      {merged && (
-        <span
-          aria-hidden
-          className="absolute -top-5 right-4 z-10 hidden animate-float lg:block"
-        >
-          <span className="chip chip-violet chip-true shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
-            🟣 {merged.label}
-          </span>
-        </span>
-      )}
-      {total > 0 && (
-        <span
-          aria-hidden
-          // 1.5s of delay on a 3s cycle puts this chip exactly out of phase with
-          // the one above. In phase they rise and fall together and read as one
-          // rigid sheet sliding about; opposed, each looks independently buoyant.
-          className="absolute -bottom-5 left-6 z-10 hidden animate-float lg:block"
-          style={{ animationDelay: "1.5s" }}
-        >
-          {/* A status pill rather than a chip, so it wears the same black keyline
-              and hard shadow as the buttons.
-
-              The brief's example label is "⚡ Project Deployed!". This says what
-              the club can actually show instead — the count comes from
-              selectionStats(), so it cannot drift from the list below it, and
-              "deployed" would be claiming a thing no entry in the content file
-              records. Same shape, same lightning bolt, true. */}
-          <span className="status-pill">⚡ {total} selected</span>
-        </span>
-      )}
-    </>
-  );
-}
+import { JOIN_HREF } from "@/content/site";
 
 export default function Hero() {
   return (
     <header
-      // Vertical rhythm in three steps rather than two. The nav floats now, so
-      // the top pad also has to clear a plate that no longer sits flush against
-      // the edge; pt-14 leaves a clear 1.5rem between the glass and the badge on
-      // a phone, and the sm/lg steps open that up as the headline grows.
-      className="section relative pb-10 pt-14 sm:pb-14 sm:pt-16 lg:pb-32 lg:pt-40"
+      className="section page-top relative pb-20 pt-20 sm:pb-28 sm:pt-28"
       aria-label="Scaler Open Source Club"
     >
-      {/* The ambient lighting. Two orbs rather than one, placed off the diagonal
-          of the split below: a large one at the top-left behind the headline, a
-          smaller one low on the right behind the terminal. One centred orb reads
-          as a vignette; two off-axis read as light falling across the section.
+      <p className="chip">Scaler School of Technology</p>
 
-          THE INSETS FOLLOW THE SAME RULE AS THE STICKERS — see the note over
-          Sticker 1 in app/page.tsx. A negative inset only means "hang into the
-          margin" where a margin exists, and `.section` caps at 88rem, so below
-          about 1600px there is no gutter and a negative offset hangs off the
-          screen instead. On the RIGHT that widens the document, which is exactly
-          the defect that pass fixed; `body { overflow-x: hidden }` clips the
-          strip so it never shows up as a scrollbar and nothing reports it.
+      {/* Heavy condensed caps with the second word in the accent. Two tones
+          mid-headline is what stops display type at this size reading as a wall of
+          letters. */}
+      <h1 className="mt-7 font-display text-[clamp(3rem,9.5vw,7.5rem)] uppercase leading-[0.86] tracking-[-0.01em]">
+        Open <span className="tone">Source</span>
+      </h1>
 
-          Only the right-hand orb needs gating on the INSET. In LTR the scrollable
-          overflow region does not extend leftwards — content at negative x is
-          clipped and unreachable, never scrolled to — so `-left-32` costs
-          nothing at any width and the headline keeps its off-page light source
-          everywhere.
+      <p className="mt-8 max-w-3xl text-display-lg font-semibold tracking-tight text-balance">
+        Software the whole world runs on, written in public — and{" "}
+        {/* The marker carries the emphasis while the text itself stays ink, so the
+            yellow never has to be legible for the sentence to be. */}
+        <span className="mark">you can edit it</span>.
+      </p>
 
-          Losing the right-hand bleed below 1600px costs almost nothing anyway: a
-          radial gradient that is fully transparent by 70% of its radius has no
-          boundary to hide, so flush against the container it still pools inward
-          as light rather than reading as a shape.
+      <p className="measure mt-7 text-body-lg text-haze">
+        Not eventually. This week. We are a student club that helps you get your first
+        change merged into a real project, and then helps you get paid to do it by
+        Google, the Linux Foundation and others.
+      </p>
 
-          THE SIZES ARE RESPONSIVE, and that is a bug fix rather than a
-          refinement. A negative LEFT inset is safe, but the orb's own WIDTH is
-          not: at 34rem the box is 544px, so pulled 128px left it still reached
-          x=416 on a 390px viewport and dragged the document to 417. The QA sweep
-          caught it as one page overflow plus four elements, and the nav was among
-          them — a `position: fixed` header sizes to the layout viewport, which on
-          mobile widens to the overflow, so an invisible decoration in the hero was
-          stretching the plate at the top of the screen. Nothing visible would
-          have shown it; `body { overflow-x: hidden }` clips the strip.
-
-          Smaller on a phone is the better design anyway. A 544px blur on a 390px
-          screen is not lighting, it is a flat tint over the whole section.
-
-          These sit behind the header's own content at z-index -1 and cannot be
-          hit — see `.glow-orb`. */}
-      <Glow className="-left-32 -top-16 h-[20rem] w-[20rem] sm:h-[34rem] sm:w-[34rem]" />
-      {/* 1664px, up from 1600px, for the same reason as the gutter gate in Note.tsx:
-          `.section` went from 80rem to 88rem, so the gutter is now (viewport - 1408)/2
-          and a 96px `-right-24` needs 1408 + 2*104 = 1616 before it fits. The
-          left-hand Glow above needs no gate at any width — negative LEFT offsets are
-          clipped without extending scrollWidth, so only the right edge can widen the
-          document. */}
-      <Glow className="right-0 top-64 h-[16rem] w-[16rem] sm:h-[26rem] sm:w-[26rem] min-[1664px]:-right-24" />
-
-      {/* THE SPLIT. 3fr/2fr is the brief's 60/40, and it only exists at lg —
-          below that the terminal stacks under the argument, which is the right
-          order on a phone: the claim first, the evidence under it.
-
-          `items-center` rather than `items-start`: the left column is taller
-          than the terminal at every width where both are side by side, and
-          top-aligning them left the terminal hanging off the top with a well of
-          empty space beneath it — the exact fault this pass is fixing, moved
-          from the right margin into the right column. */}
-      <div className="grid items-center gap-14 lg:grid-cols-[3fr_2fr] lg:gap-8">
-        <div>
-          {/* The crown sits above the top badge, tucked left so it reads as
-              placed on the badge rather than centred over it. */}
-          <span className="relative inline-block">
-            <Doodle
-              kind="crown"
-              className="absolute -top-4 left-3 h-4 w-6 text-accent"
-            />
-            <span className="chip">Scaler School of Technology</span>
-          </span>
-
-          {/* Two tones mid-headline is what stops display type at this size
-              reading as a wall of letters.
-
-              The vw coefficient dropped from 8.5 to 6.5 and the ceiling from
-              6.5rem to 5.5rem, because the headline no longer has the full
-              measure to fill — it has 60% of it. At the old numbers OPEN SOURCE
-              set at 104px in a 720px column and wrapped to two lines with
-              SOURCE alone on the second, which reads as a break the designer
-              did not choose. It now holds one line from about 1150px up. */}
-          {/* The pull-request mark sits on its own line above the headline rather
-              than inline beside it. Inline was the first attempt and it fights the
-              type at every width: at 88px the icon is either lost against the caps
-              or big enough to be a second headline, and it forces a wrap point
-              into "OPEN SOURCE" on a narrow column. Above it, at the accent
-              colour, it reads as a mark on the page — and it is what tells a
-              developer what kind of site this is before they read a word.
-
-              1.4x the stroke Lucide ships: at 2px on a 40px glyph the whole
-              drawing goes spindly next to an 800-weight headline. */}
-          <Icon
-            name="git-pull-request"
-            size="2.5rem"
-            strokeWidth={2.4}
-            className="mt-4 text-accent sm:mt-7"
-          />
-
-          {/* 1.02 rather than the 0.95 this carried. Sub-1.0 leading is affordable
-              only where the type never wraps — and this wraps to two lines below
-              about 1150px, which is most phones. At 0.95 "OPEN" and "SOURCE" stacked
-              with the O's very nearly touching. */}
-          <h1 className="mt-4 font-display text-[clamp(2.875rem,calc(6.5vw_+_0.125rem),5.625rem)] font-bold uppercase leading-[1.02] tracking-[-0.03em] text-ink">
-            Open <span className="tone-grad">Source</span>
-          </h1>
-
-          {/* Kept a shade tighter than Duo's 1.22: this paragraph carries a lozenge,
-              and `.lozenge` pins its own line-height at 1.15 precisely so a padded
-              pill does not prise one line of a paragraph open wider than its
-              neighbours. Too much leading here and the pill stops looking set into
-              the sentence. */}
-          <p className="mt-4 text-display-lg font-bold leading-[1.18] tracking-tight text-ink text-balance">
-            We put student names in the{" "}
-            {/* A tinted pill rather than the yellow marker stroke. The phrase is
-                the claim, so it gets lifted out of the sentence entirely — and
-                unlike a gradient highlighter, a flat fill is a contrast pair
-                anything can measure. See .lozenge in globals.css. */}
-            {/* The flex row, the gap and the nowrap all live in `.lozenge` — see
-                the note there for why they cannot be utilities here. */}
-            <span className="lozenge lozenge-warm">
-              <Icon name="git-merge" size="0.8em" strokeWidth={2.5} />
-              commit log
-            </span>
-            .
-          </p>
-
-          {/* No `.measure` here any more. Inside a 60% column the paragraph is
-              already held to a readable line by the grid itself, and stacking a
-              44em cap on top of that would have re-created the narrow column
-              this pass exists to remove. */}
-          <p className="mt-4 text-body-lg text-haze">
-            Members contribute to the projects the world already runs on, and{" "}
-            <span className="lozenge lozenge-mint">
-              <Icon name="dollar-sign" size="0.85em" strokeWidth={2.5} />
-              get paid
-            </span>{" "}
-            by <Term note="Yes, that Google. The one in the address bar.">Google</Term>
-            , the{" "}
-            <Term note="Penguin approved 🐧 — the thing your phone, your router and most of the internet boots.">
-              Linux
-            </Term>{" "}
-            Foundation and others to do it. Every claim on this page is a link you
-            can open.
-          </p>
-
-          {/* gap-3 on a phone, gap-4 above it: at 390px these two wrap to one
-              line each, and a 16px gutter between stacked buttons is a gap
-              rather than a pair. */}
-          <div className="relative mt-5 flex flex-wrap items-center gap-3 sm:mt-10 sm:gap-4">
-            {/* The drawn arrow replaces the "→" character this carried. Same
-                shape, three differences that matter: it takes the button's
-                weight instead of the font's, it cannot fall back to a missing
-                glyph, and it can move on hover independently of the label —
-                which is what `group-hover:translate-x-1` below is doing. */}
-            <Link href="/hall-of-fame" className="btn btn-pop group gap-2">
-              See who got in
-              <Icon
-                name="arrow-right"
-                size="1.05em"
-                strokeWidth={2.75}
-                className="transition-transform duration-200 ease-in-out group-hover:translate-x-1"
-              />
-            </Link>
-            <CelebrateLink href="/join" className="btn btn-secondary">
-              Join the club
-              <span aria-hidden className="btn-tag">
-                ⚡
-              </span>
-            </CelebrateLink>
-
-            {/* The curved arrow, pointing back at the buttons.
-                A FLEX SIBLING, not an absolute one. Absolutely positioning it
-                against the CTA row pinned it to the row's right EDGE — and that
-                row spans the whole 60% column, so the arrow ended up marooned
-                about 200px clear of the buttons, gesturing at blank page. In the
-                flow it sits one gap after the last button at every width, which
-                is the only position that means anything.
-                lg-only: below that the buttons stack and there is no room beside
-                them for it to point from. */}
-            <Doodle
-              kind="curve-arrow"
-              className="hidden h-9 w-14 shrink-0 -scale-x-100 text-accent lg:block"
-            />
-          </div>
-        </div>
-
-        {/* The right 40%. `relative` so the floating badges anchor to this
-            column rather than to the whole hero — anchored to the header they
-            would drift as the left column's height changed. */}
-        <div className="relative">
-          <FloatingBadges />
-          <Terminal />
-        </div>
+      <div className="mt-10 flex flex-wrap items-center gap-4">
+        <a href="#what-it-is" className="btn btn-pop">
+          Start at the beginning →
+        </a>
+        <Link href={JOIN_HREF} className="btn btn-secondary">
+          Join the club
+        </Link>
       </div>
+
+      <p className="mt-9 font-mono text-xs leading-relaxed text-dust">
+        Every claim on this site links to something you can open and check. If one
+        does not, that is a bug —{" "}
+        <a
+          href="https://github.com/PRAteek-singHWY/scaleropensourcelabs.com/issues"
+          target="_blank"
+          rel="noreferrer"
+          className="text-haze underline decoration-seam underline-offset-4 transition-colors hover:text-accent"
+        >
+          tell us
+        </a>
+        .
+      </p>
     </header>
   );
 }

@@ -173,14 +173,14 @@ await assertOurSite(pg);
 await pg.waitForTimeout(700);
 ok(
   "join form preselects ?path=program-track",
-  (await pg.evaluate(() => document.querySelector("#af-path")?.value)) === "program-track",
+  (await pg.evaluate(() => document.querySelector("#jf-path")?.value)) === "program-track",
 );
 
 await pg.goto(`${BASE}/join?path=not-a-real-path`, { waitUntil: "networkidle" });
 await pg.waitForTimeout(700);
 ok(
   "join form ignores a bogus ?path",
-  (await pg.evaluate(() => document.querySelector("#af-path")?.value)) === "",
+  (await pg.evaluate(() => document.querySelector("#jf-path")?.value)) === "",
 );
 
 await b.close();

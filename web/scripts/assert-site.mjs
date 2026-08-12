@@ -16,9 +16,8 @@ export const SITE = process.env.SITE_URL ?? "http://localhost:3000";
 export const ROUTES = [
   { path: "/", name: "essence", inNav: true },
   { path: "/projects", name: "projects", inNav: true },
-  { path: "/programmes", name: "programmes", inNav: true },
+  { path: "/programs", name: "programs", inNav: true },
   { path: "/hall-of-fame", name: "hall-of-fame", inNav: true },
-  { path: "/team", name: "team", inNav: true },
   { path: "/how-to-join", name: "how-to-join", inNav: true },
   // `inNav: false` is load-bearing, not a detail. /join is the destination of the
   // nav's Join BUTTON, which is an action rather than a page, and it is deliberately
