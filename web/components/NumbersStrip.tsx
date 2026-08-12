@@ -15,6 +15,7 @@
 // band does whenever the data thins out — if half the club graduates and the numbers
 // drop, this degrades gracefully instead of shipping a lie.
 
+import CountUp from "@/components/CountUp";
 import { projectTotals, publishedUpstream } from "@/content/projects";
 import { achieverStats, memberCount } from "@/content/people";
 
@@ -79,13 +80,33 @@ export default function NumbersStrip() {
       }`}
     >
       {metrics.map((m) => (
-        <div key={m.label} className="bg-raise p-7">
-          {/* tabular-nums deliberately NOT used. These figures do not align in a
-              column — they sit in separate tiles — and equal-width digits at display
-              size make a number look loose. The roster table uses them because that
-              is where digits genuinely stack. */}
-          <dd className="text-[clamp(2.25rem,4.5vw,3.25rem)] font-semibold leading-none tracking-tightest text-accent">
-            {m.value}
+        // .stat-tile tints under the pointer and grows the figure inside it. The
+        // tile cannot lift: the seam between tiles is a 1px gap over the
+        // container's bg-seam, so anything that moves one tile opens a grey slot
+        // beside it. See the block in globals.css.
+        <div key={m.label} className="stat-tile bg-raise p-7">
+          {/* COUNTED, like the four stats in the comparison table, and for the same
+              reason spelled out at the head of CountUp: a figure that behaves
+              exactly like the sentence under it gives a reader scanning the strip
+              no reason to stop at it. These six are the whole argument of this
+              band, and they were the last display-size numbers on the site still
+              arriving as static text.
+
+              The count is on the same terms as everywhere else: the server renders
+              the real number and script only ever takes it away to count it back,
+              so a bundle failure leaves the figures present rather than asserting
+              zero.
+
+              tabular-nums arrives WITH CountUp rather than being declined here.
+              The note this replaces argued against it — these figures sit in
+              separate tiles and do not align in a column, and equal-width digits
+              at display size make a number look loose — and that was right for a
+              static figure. It stops being right for a counting one: proportional
+              digits change width as they cycle, so an uncounted 3 growing to 24
+              visibly breathes and nudges its own label. CountUp sets it for
+              exactly this reason. */}
+          <dd className="text-[clamp(2.375rem,calc(4.5vw_+_0.125rem),3.375rem)] font-semibold leading-none tracking-tightest text-accent">
+            <CountUp className="stat-figure" value={String(m.value)} />
           </dd>
           <dt className="mt-4 text-body font-medium text-ink">{m.label}</dt>
           <p className="mt-1.5 text-[13px] leading-relaxed text-dust">{m.note}</p>

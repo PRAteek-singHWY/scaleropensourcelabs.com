@@ -44,7 +44,7 @@ export const EVERYDAY: Everyday[] = [
   },
   {
     name: "Python",
-    what: "Probably the first language you were taught.",
+    what: "Probably the first language you came across.",
     fact:
       "The interpreter that runs your code is called CPython, and its source, its bug tracker and the arguments about its design are all public.",
     repo: "https://github.com/python/cpython",
@@ -312,27 +312,27 @@ export const POSITIONING: Claim[] = [
   },
 ];
 
-/**
- * What we are worse at.
- *
- * On the page on purpose. A comparison listing only our advantages reads as
- * marketing and gets discounted wholesale; naming the real cost is what makes the
- * section above believable. The DSA point goes first because it is the single
- * strongest honest argument for joining the competitive programming club instead,
- * and burying it would be the tell.
- */
-export const TRADE_OFFS: string[] = [
-  "We will not prepare you for the DSA round. That is the filter on most campus placements, and the competitive programming club is straightforwardly better at it. Do both.",
-  "Feedback is slow and depends on strangers. A pull request can sit for three weeks; a judge answers in thirty seconds. If a tight loop is what keeps you going, this is the harder room.",
-  "There is no single number for your resume. Nothing sorts. A recruiter has to actually open your GitHub, and some will not.",
-  "Getting started takes longer. Building the project, finding a tractable issue and reading enough code to be useful can take weeks. Your first submission on a judge takes ten minutes.",
-];
+// TRADE_OFFS — "what we are worse at" — LIVES IN club.ts, not here.
+//
+// Both branches of this site carried a copy, and they had drifted: club.ts's has a
+// fifth entry about quant and high-frequency trading, where this file's stopped at
+// four. A duplicated array is a duplicated array whichever copy is longer, so the
+// superset stays and this one is gone rather than being kept "in sync" by hand.
+//
+// It is still rendered, on the same section it always was — see /positioning on the
+// home page, which imports it from club.ts alongside POSITIONING above.
 
 // ---------------------------------------------------------------------------
-// 4. ONE MEMBER STORY, FIRST PERSON.
+// 4. MEMBER STORIES, FIRST PERSON.
 //
-// First person and unedited, which is the only reason it is worth having. A story
-// rewritten in the site's voice is just the site talking about itself.
+// First person and unedited, which is the only reason they are worth having. A
+// story rewritten in the site's voice is just the site talking about itself.
+//
+// These render as a rail of testimonial cards rather than a single account — see
+// the note at the top of components/MemberStory.tsx for what that costs and what
+// keeps the credibility. The one thing it costs HERE: a set of quotes is read as a
+// set, so a single vague entry drags the others down with it. Prefer five specific
+// stories to six where one says "it was a great learning experience".
 //
 // `consented` is not optional and not a formality: this publishes a named student's
 // face and their own words to an international audience. Set it only after they have
@@ -355,21 +355,72 @@ export type Story = {
 export const STORIES: Story[] = [];
 
 /**
- * Development scaffold. The story block is a two-column layout with a portrait and
- * pull-quote typography — it cannot be designed or reviewed against an empty array.
+ * Development scaffold. The story block is a looping rail of cards — it cannot be
+ * designed, measured or reviewed against an empty array, and a rail in particular
+ * needs enough entries to wrap (three; see MIN_TO_LOOP in MemberStory.tsx). Six,
+ * because six is the number the rail is designed around.
  *
- * Deliberately NOT plausible: the name is obviously a placeholder and the words
- * describe what should be written rather than pretending to be a real account. And
+ * Deliberately NOT plausible: the names are obviously placeholders and the words
+ * describe what should be written rather than pretending to be real accounts. And
  * it is gated on NODE_ENV, so a production build cannot ship it by accident.
+ *
+ * Each entry names a different SHAPE of story, because six cards that are all
+ * "my first pull request" is a rail of one story told six times. The set wants
+ * range: the first merge, the long wait, the review that stung, the unglamorous
+ * work, the paid summer, the one who is now on the other side of the review.
  */
 const SCAFFOLD: Story[] = [
   {
-    name: "Placeholder Member",
+    name: "Placeholder A",
     situation: "Replace with their year and branch at the time of writing.",
     quote: [
-      "Replace this with what the member actually wrote, in their own words and first person. Two or three short paragraphs is the right length.",
-      "The useful shape is: what I believed before, the specific thing that went wrong or surprised me, and what is different now. Concrete beats inspiring — the name of the repo, how long the review took, what the maintainer said.",
-      "Do not tidy their voice into the site's voice. The unedited version is the entire reason this section exists.",
+      "Replace this with what the member actually wrote, first person and in their own words. Two or three short paragraphs is the right length for a card.",
+      "The useful shape is: what I believed before, the specific thing that went wrong or surprised me, and what is different now. Concrete beats inspiring — name the repo, say how long the review took, quote what the maintainer said.",
+    ],
+    consented: true,
+  },
+  {
+    name: "Placeholder B",
+    situation: "Replace with their year and branch at the time of writing.",
+    quote: [
+      "This slot is for the first merged pull request. The detail that makes it land is usually how small the change was, so let them say that rather than rounding it up.",
+      "Attach the pull request itself in `proof`. A card that links to the thing it describes is a different kind of claim from one that does not.",
+    ],
+    consented: true,
+  },
+  {
+    name: "Placeholder C",
+    situation: "Replace with their year and branch at the time of writing.",
+    quote: [
+      "This slot is for the wait. Someone whose patch sat for three weeks before anybody looked at it, and what they thought was happening during those three weeks.",
+      "It is the most useful story on the page and the one nobody volunteers, because it does not sound like a success. Ask for it directly.",
+    ],
+    consented: true,
+  },
+  {
+    name: "Placeholder D",
+    situation: "Replace with their year and branch at the time of writing.",
+    quote: [
+      "This slot is for the unglamorous work — triage, a docs fix, a flaky test — and for whoever discovered that maintainers were glad of it.",
+      "Keep whatever they say about the boring parts being boring. Editing that out is how this section turns into a brochure.",
+    ],
+    consented: true,
+  },
+  {
+    name: "Placeholder E",
+    situation: "Replace with their year and branch at the time of writing.",
+    quote: [
+      "This slot is for a programme: GSoC, LFX, Outreachy. What the application actually involved, not the announcement.",
+      "If they were rejected first and got in the following year, that is the version worth publishing. Most readers of this page will be the person who did not get in.",
+    ],
+    consented: true,
+  },
+  {
+    name: "Placeholder F",
+    situation: "Replace with their year and branch at the time of writing.",
+    quote: [
+      "This slot is for someone now on the other side of it — reviewing pull requests, or maintaining something of their own.",
+      "Ending the rail here is deliberate: it is the only card that shows where the first one leads.",
     ],
     consented: true,
   },

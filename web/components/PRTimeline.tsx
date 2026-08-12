@@ -63,24 +63,32 @@ const DOT: Record<string, string> = {
 export default function PRTimeline({ className = "" }: { className?: string }) {
   return (
     <figure className={className}>
-      <ol className="relative">
+      {/* A STAGGER GROUP, so the five steps arrive as a sequence rather than as a
+          block — which is the one thing this diagram is about. The dot and the rail
+          animations in globals.css key off the `.is-in` this earns and take their
+          delay from the --reveal-delay the stagger already sets on each <li>, so
+          step three's rail draws when step three arrives and one number governs
+          both. Nothing here decides when: the reveal observer does. */}
+      <ol className="relative" data-reveal-group>
         {STEPS.map((s, i) => {
           const last = i === STEPS.length - 1;
           return (
             <li key={s.label} className="relative grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-4">
               {/* The rail. Drawn on this cell rather than as one absolutely
                   positioned line down the list, so it stops exactly at the last
-                  dot instead of overshooting past it into the caption. */}
+                  dot instead of overshooting past it into the caption.
+                  .rail-draw plots it downward from its own dot, which is the
+                  direction a reader is travelling. */}
               <div className="relative flex justify-center">
                 {!last && (
                   <span
                     aria-hidden
-                    className="absolute top-2 h-full w-px bg-seam"
+                    className="rail-draw absolute top-2 h-full w-px bg-seam"
                   />
                 )}
                 <span
                   aria-hidden
-                  className={`relative mt-1 h-2.5 w-2.5 shrink-0 rounded-full ring-4 ring-bg ${
+                  className={`step-dot relative mt-1 h-2.5 w-2.5 shrink-0 rounded-full ring-4 ring-bg ${
                     DOT[s.tone ?? "neutral"]
                   }`}
                 />
