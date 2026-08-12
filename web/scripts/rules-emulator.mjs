@@ -60,15 +60,17 @@ connectFirestoreEmulator(db, HOST, PORT);
 
 const APPS = collection(db, "applications");
 
-/** Exactly what components/JoinForm.tsx sends. If you change the form, change this. */
+/** Exactly what components/ApplyForm.tsx sends. If you change the form, change this. */
 const valid = () => ({
   name: "Asha Verma",
   email: "asha@example.com",
   year_branch: "2nd year, CSE",
+  hostel: "uniworld-1",
   level: "none",
   path: "build-day",
   why: "I want to see how real projects get reviewed.",
   interests: ["web", "ml"],
+  programs: ["gsoc", "outreachy"],
   github: "asha",
   heard_from: "senior",
   updates: false,
@@ -113,6 +115,12 @@ await expect("omitting interests entirely", true, async () => {
   delete d.interests;
   return addDoc(APPS, d);
 });
+await expect("'other' alongside the programme it names", true, async () =>
+  addDoc(APPS, {
+    ...valid(),
+    programs: ["gsoc", "other"],
+    programs_other: "Google Season of Docs",
+  }));
 
 // --- the boundary. Each of these leaking is a different incident. -----------
 await expect("reading the collection", false, () => getDocs(APPS));
@@ -127,9 +135,34 @@ await expect("writing to any other collection", false, () =>
 const withPatch = (patch) => async () => addDoc(APPS, { ...valid(), ...patch });
 await expect("a level outside the closed set", false, withPatch({ level: "some" }));
 await expect("a path outside the closed set", false, withPatch({ path: "hackathon" }));
+// The hostel is required and closed: no opt-out, no invented third building.
+await expect("a hostel outside the closed set", false, withPatch({ hostel: "uniworld-3" }));
+await expect("an empty hostel string", false, withPatch({ hostel: "" }));
+await expect("omitting the hostel", false, async () => {
+  const d = valid();
+  delete d.hostel;
+  return addDoc(APPS, d);
+});
 await expect("an interest outside the known set", false, withPatch({ interests: ["crypto"] }));
 await expect("more interests than the form can send", false,
   withPatch({ interests: ["web", "ml", "systems", "design", "docs", "web"] }));
+// Programmes are required, non-empty, and 'other' is paired with its explanation. The
+// browser enforces the first two with a setCustomValidity message on the checkbox
+// group; these are the same rules for anyone who skips the browser.
+await expect("a programme outside the known set", false, withPatch({ programs: ["nasa"] }));
+await expect("an empty programmes list", false, withPatch({ programs: [] }));
+await expect("no programmes field at all", false, async () => {
+  const d = valid();
+  delete d.programs;
+  return addDoc(APPS, d);
+});
+await expect("'other' with nothing naming it", false, withPatch({ programs: ["other"] }));
+await expect("'other' named with an empty string", false,
+  withPatch({ programs: ["other"], programs_other: "" }));
+await expect("free text without 'other' ticked", false,
+  withPatch({ programs: ["gsoc"], programs_other: "GSoC again" }));
+await expect("an oversized programme name", false,
+  withPatch({ programs: ["other"], programs_other: "x".repeat(121) }));
 await expect("an extra field the form never sends", false, withPatch({ isAdmin: true }));
 await expect("a malformed email", false, withPatch({ email: "not-an-email" }));
 await expect("a why over the 400-character limit", false, withPatch({ why: "x".repeat(401) }));

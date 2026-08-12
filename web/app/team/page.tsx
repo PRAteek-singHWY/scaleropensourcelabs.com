@@ -62,8 +62,8 @@ export default function TeamPage() {
             aria-label, despite the section having a visible eyebrow: Outline names
             a section from its aria-label first, then a `.label` eyebrow, then its
             heading — and this eyebrow is a `.chip`. Without this the outline entry
-            would be the Duo headline cut at 33 characters ("8 people run this club.
-            2 are sha…"). It is also the landmark's accessible name, and matches the
+            would be the Duo headline cut at 33 characters ("11 people run this club.
+            2 are sh…"). It is also the landmark's accessible name, and matches the
             nav link that points here. */}
         <section
           id="team"
@@ -71,26 +71,42 @@ export default function TeamPage() {
           aria-label="Team"
           data-reveal-group
         >
-          {/* The section's own paragraph says this page exists to answer one
-              question; the note says which one, in the margin, for anybody who
-              scrolled past the paragraph to look at the faces.
+          {/* WHY THIS IS NOT "Who to ask." ANY MORE, since that string has now
+              been here twice and a future pass will be tempted to restore it a
+              third time.
 
-              THIS IS THE ORIGINAL COPY, RESTORED. It was briefly "Not the
-              President. A patch review is the Repo Maintainer." — which cleared
-              the bar in Note.tsx that a note must say something the section does
-              not, but spent the margin explaining the org chart rather than
-              pointing at the one question the chart exists to answer. The
-              overlap with the standfirst below is the known cost of this
-              version; keep the two in step if either is ever reworded.
+              It read "Who to ask. / That is the only question this section
+              exists to answer." — a near-verbatim echo of the standfirst three
+              lines below it ("This page exists to answer one question: who to
+              ask"). An earlier comment here logged that overlap as the known
+              cost of the version and asked that the two be kept in step, which
+              is the wrong trade: Note.tsx's whole bar is that a note must say
+              something its section does not, and a note whose job is to repeat
+              the paragraph beside it is spending the margin on nothing. The
+              standfirst keeps who-to-ask; it says it once and says it better.
+
+              So the margin now answers the question the chart CANNOT: not who
+              holds which office, but why eleven students bother. It is the one
+              warm sentence beside a deliberately formal org chart, which is the
+              contrast the note format is for — and it is second-person, where
+              everything else in this section is third.
+
+              The count is interpolated rather than written, for the same reason
+              the headline's is: teamSize() includes the content desk, so a
+              hand-typed number here goes stale the first time somebody joins
+              it.
 
               anchor 49: the headline's second clause ends at 737px, so 784 sits
-              47px off it. */}
+              47px off it. Unchanged, and it stays valid only because the Duo
+              above was left exactly as it was — this number is derived from that
+              headline's line break, so re-word the heading and this needs
+              re-measuring, not adjusting by eye. */}
           <Note
             place="flow"
             tone="orange"
             fold
-            title="Who to ask."
-            body="That is the only question this section exists to answer."
+            title={`${teamSize()} brains, one group chat.`}
+            body="All of them trying to make your four years more fun."
             tilt={3.5}
             anchor={49}
             className="top-12"

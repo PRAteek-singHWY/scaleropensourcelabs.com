@@ -2001,6 +2001,290 @@ body::before {
   }
 }
 
+/* ---- Portrait remit bubble (the org chart) --------------------------------
+   The team chart's hover detail. Same floating-object treatment as .term-note
+   above — fixed dark fill, one contrast pair for both themes — and deliberately
+   NOT .card-tip: that one is inset into a 4:5 photo tile, and these portraits are
+   96–112px circles with `overflow: hidden` on the frame. A tip inside the circle
+   would be clipped to it and would have about four words of room.
+   So it floats clear of the portrait instead. ABOVE by default, because that is
+   the one direction that costs nothing inside the chart: below a portrait sits its
+   own designation and name, and either side sits the next person along, whereas
+   above it is the connector rows — whitespace and hairlines.
+   That holds for the leads and the shadows. It does NOT hold for the top tier,
+   which has no chart above it, only the section's headline and standfirst — a
+   bubble there lands squarely on the sentence that introduces the chart and reads
+   as a rendering bug. Hence [data-tip="below"], which Team.tsx sets on the officers
+   only. See the note there for what it trades away.
+   The trigger is the frame wrapper, which is sized to the portrait exactly — so
+   the bubble answers the photo the pointer is on, not the whole card.
+
+   WHAT IT HOLDS, in order: the batch, the office's remit, and then that person's
+   own highlights. That is more than a tooltip's worth of content — the longest card
+   here runs to four highlights — so this is sized and set as a small card rather
+   than a bubble: left-aligned, because a bulleted list centred is unreadable, and
+   wide enough that a "role @ place — what it involved" line does not wrap three
+   times. */
+.person-tip {
+  position: absolute;
+  bottom: calc(100% + 0.6rem);
+  z-index: 30;
+  /* 24rem is set by the longest highlight line rather than chosen: narrower than
+     this and every "role @ place — what it involved" wraps to a third line, which
+     on a four-highlight card is four extra lines of height for nothing.
+     The vw term is a CONTAINMENT RULE — see the alignment block below for the half
+     of that rule this cannot express on its own. */
+  width: min(24rem, 34vw);
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  /* The captions above are uppercase and tracked out; this is prose, so it resets
+     both — otherwise it inherits the chart's caption feel and reads as another
+     label rather than as something to be read. */
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.45;
+  text-align: left;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.25);
+  pointer-events: none;
+  /* display:none rather than opacity:0, for the reason .term-note gives: a card
+     hanging off a portrait in the last column would widen the document while
+     nobody is looking at it. */
+  display: none;
+}
+
+/* ---- The resting signal that the card exists -------------------------------
+   A HOVER REVEAL WITH NO RESTING STATE IS A REVEAL NOBODY OPENS. Without this
+   block the portraits are indistinguishable from static photographs, so the only
+   reader who finds the remit card is the one who happens to park a pointer on a
+   face — and the card is the answer to the question the whole page is built
+   around ("who do I ask"). So every node advertises itself before the pointer
+   arrives: an outer ring at rest, brightening and opening outwards on hover.
+
+   DOTTED, NOT DASHED, and this is the one detail worth being careful about. A
+   dashed stroke is already spoken for on this chart — the key at the foot of the
+   section defines it as "shadow" — so a dashed ring would be the same mark
+   meaning two things. A dotted ring differs on BOTH axes from that stroke: the
+   pattern is dots rather than dashes, and the colour is accent rather than dust.
+
+   The stronger defence is that it is applied to EVERY node, uniformly, including
+   the shadows. A mark that appears on all fourteen faces cannot be read as
+   labelling a subset of them — a reader learns "ringed face = there is more
+   here" from the first two portraits, and no reading in which it means "shadow"
+   survives seeing it on the President.
+
+   Drawn as ::after on the trigger rather than a second ring on the frame, because
+   the frame has `overflow: hidden` to clip the photo and an outset ring there
+   would be clipped away. Inset is NEGATIVE so it sits clear of the frame's own
+   `ring-seam` hairline instead of doubling it up. pointer-events:none so the ring
+   never becomes the hover target and flickers the card at its own edge. */
+.person::after {
+  content: "";
+  position: absolute;
+  /* CLEAR OF THE FRAME'S OWN RING, not on top of it. `ring-1 ring-seam` is a
+     box-shadow spread 1px outside the frame, so a ring drawn at inset 0 would be
+     a dotted stroke laid over a solid one — the solid circle shows through the
+     gaps and the dots stop reading as dots. 0.25rem out leaves a visible 3px of
+     air, which is what makes it a second edge rather than a tinted first one.
+
+     THE SIZE NEVER CHANGES, and that is a constraint the chart imposes rather
+     than a preference. The officers' rail is drawn inset by exactly one portrait
+     radius, so it terminates on the circle's tangent point, and the leads' drops
+     land on the top of the portrait box — every connector on this chart ends at a
+     portrait's edge. A ring that grew on hover would slide across those
+     line-ends, so the join between a node and its connector would visibly shift
+     every time a pointer crossed it. At a fixed 0.25rem the last 4px of each
+     connector simply reads as meeting the ring, which is what an org chart's
+     lines should look like anyway. */
+  inset: -0.25rem;
+  /* accent/0.6, the same value .term-word uses, and it is a floor rather than a
+     taste: this ring is a state indicator whose only job is to be noticed, so it
+     owes WCAG 1.4.11's 3:1 against the ground it sits on. Blended over the two
+     grounds it measures 3.17:1 light and 3.57:1 dark — clears it in both, which
+     is why this is 0.6 and not lower. `npm run palette` checks the tokens at full
+     strength; this pair is alpha-blended and is not in that script's set. */
+  border: 1.5px dotted rgb(var(--accent) / 0.6);
+  border-radius: 9999px;
+  /* So the ring never becomes the hover target itself and flickers the card on
+     and off at its own edge. */
+  pointer-events: none;
+  transition: border-color 150ms ease-out;
+}
+/* THE HOVER STATE. Colour and weight only — see the note above for why nothing may
+   move: every connector on this chart terminates on a portrait's edge, so a ring
+   that grew would drag those line-ends around under the pointer.
+   Three changes at once, because one of them alone was too quiet to notice on a
+   chart of eleven faces: the stroke goes solid rather than dotted, to full accent,
+   and thickens. The thickening is free of the constraint — `box-sizing: border-box`
+   comes from the preflight, so a wider border grows INWARD and the outer edge stays
+   exactly where the connectors expect it.
+   The glow is deliberately blurred and has no hard edge, which is the only reason it
+   is allowed to extend past that outer edge: there is no boundary for a line-end to
+   visibly meet or miss. Nothing here needs a reduced-motion branch, because at no
+   point does anything travel. */
+.person:hover::after {
+  border-style: solid;
+  border-width: 2.5px;
+  border-color: rgb(var(--accent));
+  /* Blur only, no spread. A spread would be a hard ring 1px further out than the
+     one the connectors were drawn to meet, appearing and vanishing with the
+     pointer — the same defect as a growing ring, arrived at from the other side. */
+  box-shadow: 0 6px 22px rgb(var(--accent) / 0.3);
+}
+/* Lifts the face itself out of the page by a hair, so the circle under the pointer
+   reads as the active one rather than merely the ringed one. On the frame rather
+   than the <img> inside it, so a monogram brightens too — five of the eleven have
+   no photograph, and a hover state that only worked for the six with one would look
+   broken on the rest. Filters, not a transform: the geometry is spoken for. */
+.person:hover .person-frame {
+  filter: brightness(1.04) saturate(1.06);
+}
+/* DEFAULT, not `help`. This matched .term's `cursor: help` on the reasoning that
+   nothing in the chart navigates and a hand would promise a click target that does
+   not exist — but a question-mark pointer makes its own promise, of a definition or
+   an explanation of the interface, and what is actually here is a person's record.
+   `pointer` would still be wrong for the original reason. So: no cursor change at
+   all, and the ring above is what says the face is interactive. */
+.person {
+  cursor: default;
+}
+
+/* ---- Which way the card opens sideways ------------------------------------
+   A CENTRED CARD CANNOT BE CONTAINED BY WIDTH ALONE, which is what this block
+   exists to fix and what the previous version got wrong. Centre a 24rem card on a
+   portrait that sits at 12.5% of the grid and half of it is off the page —
+   narrowing it until it fits means sizing every card on the chart for its worst
+   position. So the card is anchored to the near edge of its portrait instead, and
+   Team.tsx picks the edge from the position it already computes for the connector:
+   the outer columns open inwards, everything between them stays centred.
+   `translate` rather than `transform` for the centring, deliberately: the entry
+   animation below owns `transform`, and using it for both would mean either a
+   keyframe per alignment or a card that jumps a half-width when the animation
+   ends. The two properties compose, so each can own one job.
+
+   Centred is the BASE rather than a third variant, so a card that somehow reaches
+   the page without an alignment still lands over its portrait instead of at the
+   wrapper's top-left corner. */
+.person-tip {
+  left: 50%;
+  translate: -50% 0;
+}
+.person-tip[data-align="start"] {
+  left: 0;
+  translate: 0 0;
+}
+.person-tip[data-align="end"] {
+  left: auto;
+  right: 0;
+  translate: 0 0;
+}
+
+/* The top tier's card, flipped. `bottom: auto` is required, not tidiness — the
+   base rule sets it, and an element with both offsets and a fixed height would
+   otherwise resolve to the base position and appear not to flip at all. */
+.person-tip[data-tip="below"] {
+  top: calc(100% + 0.6rem);
+  bottom: auto;
+}
+.person:hover .person-tip {
+  display: block;
+  /* Animation, not transition: `display` does not interpolate, so a transition
+     out of `none` never plays. See .term-note. */
+  animation: person-tip-in 150ms ease-out both;
+}
+/* Opacity and a lift only. No X translate, so this keyframe is the same for all
+   three alignments — see the note above. */
+@keyframes person-tip-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The batch, as a quiet label above everything else. Dimmer than the body it
+   introduces, and set in the label face like every other eyebrow on the site.
+   Fixed greys, not tokens, for the same reason the fill is fixed: this card looks
+   the same on both themes, so it has one contrast pair to prove rather than two.
+   #94a3b8 on #0f172a is 6.9:1. */
+.person-tip-batch {
+  margin-bottom: 0.35rem;
+  font-family: var(--font-label), system-ui, sans-serif;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #94a3b8;
+}
+
+/* The remit, and then a rule before the highlights. The rule is doing real work:
+   above it is what the OFFICE covers and below it is what the PERSON has done, and
+   those are different kinds of claim — the first survives a handover and the second
+   leaves with them. Without the break the card reads as one undifferentiated list
+   of good things about somebody. */
+.person-tip-remit {
+  color: #cbd5e1;
+}
+.person-tip-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  /* No marker: every highlight that wants one already opens with an emoji, which
+     is this list's bullet. A disc as well would double it up. */
+  list-style: none;
+}
+.person-tip-remit + .person-tip-list {
+  margin-top: 0.6rem;
+  border-top: 1px solid rgb(226 232 240 / 0.14);
+  padding-top: 0.6rem;
+}
+/* Emphasis on the label half of a line, and ONLY when there is a second half for
+   it to be set apart from. A headline with no detail is the whole line — Arnav's
+   hackathon counts, Srishti's four sentences — and bolding those would put a card
+   of solid semibold prose on the page. Emphasis is a separator here, so where
+   there is nothing to separate it does not appear. */
+.person-tip-list b {
+  font-weight: 700;
+  color: #f8fafc;
+}
+.person-tip-list span {
+  color: #cbd5e1;
+}
+
+/* ---- The same list, as page copy ------------------------------------------
+   Below lg the highlights are not a hover state, so they are not on a dark fill
+   either — same markup, TOKENS instead of the card's fixed greys, because here they
+   sit on the page and have to follow the reader's theme like everything else around
+   them. That difference is the entire reason there are two classes rather than one:
+   the structure is shared, the surface is not.
+   No left indent of its own — the caller places it, since how far in it belongs
+   depends on which tier's portrait it is sitting under. */
+.person-list {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: rgb(var(--haze));
+}
+.person-list b {
+  font-weight: 600;
+  color: rgb(var(--ink));
+}
+.person-list span {
+  color: rgb(var(--haze));
+}
+
 /* ---- Hall card tilt and its tooltip --------------------------------------
    The tilt is on the card's inner frame rather than the <article>, so the caption
    underneath stays flat and legible — text rendered on a rotated plane is exactly

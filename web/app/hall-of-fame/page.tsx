@@ -6,20 +6,8 @@ import Ticker from "@/components/Ticker";
 import NextAction from "@/components/NextAction";
 import Glow from "@/components/fx/Glow";
 import Sticker from "@/components/fx/Sticker";
-import OrgWall from "@/components/OrgWall";
 import Note from "@/components/fx/Note";
 import { CALENDAR } from "@/content/club";
-import { publishedAlumni } from "@/content/people";
-
-/** Shared honest-empty state. Repeated markup in three places was the alternative. */
-function EmptyPanel({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="mt-12 rounded-tile border border-dashed border-seam px-8 py-14 text-center">
-      <p className="text-display-md font-semibold">{title}</p>
-      <p className="measure mx-auto mt-4 text-body text-haze">{body}</p>
-    </div>
-  );
-}
 
 // THE HALL OF FAME. Students selected into international programmes.
 //
@@ -44,8 +32,6 @@ export const metadata: Metadata = {
 };
 
 export default function HallOfFame() {
-  const alumni = publishedAlumni();
-
   return (
     <main id="main">
       {/* No separate title block on this route. The section below already opens
@@ -221,120 +207,29 @@ export default function HallOfFame() {
         <Ticker />
 
 
-      {/* ---- 2. Alumni ------------------------------------------------------- */}
-      <section
-        id="alumni"
-        className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
-        aria-label="Alumni and past core members"
-        data-reveal-group
-      >
-        <div className="border-b border-seam pb-5">
-          <p className="label">Before us</p>
-          <Duo
-            className="mt-4 max-w-3xl text-display-lg"
-            lead="Alumni, and where they went."
-            trail="The column that answers 'does this lead anywhere'."
-          />
-        </div>
+      {/* The alumni table used to sit here — "Alumni, and where they went",
+          with a row per past core member and a "Now at" column. Removed rather
+          than left in its empty state: every row of it was unpublished, so the
+          only thing it ever rendered was a panel explaining why it was blank,
+          and a section whose sole content is an apology for having no content is
+          worse than not having the section. publishedAlumni() and the Alumnus
+          type in people.ts are untouched and still feed the member count in
+          NumbersStrip, so this can come back whenever there are rows to show. */}
 
-        {alumni.length === 0 ? (
-          <EmptyPanel
-            title="Not published yet."
-            body="Where somebody works is their information to share, so each row waits on that person. It is also the row most tempting to inflate, which is the other reason it waits."
-          />
-        ) : (
-          <div className="mt-12 overflow-x-auto">
-            <table className="w-full min-w-[40rem] border-collapse text-sm">
-              <caption className="sr-only">
-                Past core team members, the batch they graduated in, the role they
-                held, and where they are now.
-              </caption>
-              <thead>
-                <tr className="border-b border-seam">
-                  {["Name", "Batch", "Role held", "Now at", ""].map((h, i) => (
-                    <th
-                      key={h || i}
-                      scope="col"
-                      className="px-3 py-3 text-left font-mono text-[13px] font-medium uppercase tracking-[0.14em] text-dust"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[...alumni]
-                  .sort((a, b) => b.batch.localeCompare(a.batch) || a.name.localeCompare(b.name))
-                  .map((a) => (
-                    <tr
-                      key={`${a.name}-${a.batch}`}
-                      className="border-b border-seam/60 align-top transition-colors last:border-0 hover:bg-raise/60"
-                    >
-                      <th scope="row" className="px-3 py-4 text-left font-medium text-ink">
-                        {a.name}
-                        {a.note && (
-                          <span className="mt-1 block font-normal text-[13px] text-haze">
-                            {a.note}
-                          </span>
-                        )}
-                      </th>
-                      <td className="px-3 py-4 font-mono text-xs tabular-nums text-haze">
-                        {a.batch}
-                      </td>
-                      <td className="px-3 py-4 text-haze">{a.roleHeld}</td>
-                      <td className="px-3 py-4 text-ink">{a.nowAt}</td>
-                      <td className="px-3 py-4 text-right">
-                        {a.linkedin ? (
-                          <a
-                            href={a.linkedin}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="font-mono text-xs text-accent transition hover:brightness-125"
-                          >
-                            LinkedIn ↗
-                          </a>
-                        ) : (
-                          <span className="font-mono text-xs text-dust">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      {/* The "Reach" section used to sit here — the eyebrow, "Where our code ended
+          up", the paragraph about names-as-type rather than logos, and the OrgWall
+          it introduced. Removed on request.
 
+          OrgWall.tsx is unmounted, not deleted, on the same terms as Roster.tsx
+          above: it is the only thing that rendered the organisation wall, so
+          dropping the file would take the component with the section. Nothing else
+          imports it, and nothing links to #representation, so this is a
+          self-contained removal.
 
-      {/* ---- 4. Global representation ---------------------------------------- */}
-      <section
-        id="representation"
-        className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
-        aria-label="Organisations our members have reached"
-        data-reveal-group
-      >
-        <div className="border-b border-seam pb-5">
-          <p className="label">Reach</p>
-          <Duo
-            className="mt-4 max-w-3xl text-display-lg"
-            lead="Where our code ended up."
-            trail="Grouped by what the claim actually is."
-          />
-        </div>
-
-        <p className="measure mt-7 text-body-lg text-haze">
-          Organisation names as type rather than logos — those are their trademarks and
-          using them would imply an endorsement nobody granted. There is no world map
-          here either, on purpose:{" "}
-          <span className="mark">
-            a handful of dots on a globe understates real work
-          </span>
-          , and scaling them until it looks impressive would be drawing data we do not
-          have.
-        </p>
-
-        <OrgWall />
-      </section>
+          Incidentally better for the band rhythm: this section was a `.band` and so
+          is NextAction below it, which put two tinted blocks against each other.
+          The Ticker above is a plain `.section`, so the alternation now runs
+          plain → tinted the way it does everywhere else. */}
 
       <NextAction
         eyebrow="How they got there"

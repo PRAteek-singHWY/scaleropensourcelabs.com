@@ -93,7 +93,9 @@ console.log("\nfirestore.rules vs content/join.ts\n");
 for (const [field, fromContent] of [
   ["level", contentValues("LEVELS")],
   ["path", contentIds("PATHS")],
+  ["hostel", contentValues("HOSTELS")],
   ["interests", contentValues("INTERESTS")],
+  ["programs", contentValues("PROGRAMS")],
 ]) {
   const fromRules = rulesSet(field);
   ok(
@@ -122,6 +124,32 @@ ok("update and delete are denied", /allow update, delete:\s*if false/.test(rules
 ok("create is validated, not open", /allow create:\s*if isWellFormedApplication/.test(rules));
 ok("no test-mode wildcard write", !/allow read, write:\s*if true/.test(rules));
 ok("server timestamp is enforced", /submitted_at\s*==\s*request\.time/.test(rules));
+
+// `programs` is the one list field the form requires, so "at least one" has to survive
+// in the rules and not only in the component. A checkbox group cannot use `required`,
+// which means the browser-side half of this is a setCustomValidity call that a future
+// refactor could drop without anything looking broken.
+ok(
+  "at least one programme is required",
+  /d\.programs\.size\(\)\s*>\s*0/.test(rules),
+);
+// The pairing, in both directions. A bare 'other' is an application nobody can act on.
+ok(
+  "'other' requires the free-text field",
+  /!d\.programs\.hasAny\(\['other'\]\)[\s\S]{0,200}?'programs_other' in d/.test(rules),
+);
+ok(
+  "the free-text field requires 'other'",
+  /!\('programs_other' in d\)[\s\S]{0,200}?d\.programs\.hasAny\(\['other'\]\)/.test(rules),
+);
+// PROGRAM_OTHER is what the form branches on when deciding to render that input. If it
+// stops being 'other', the two assertions above are checking a value nothing sends.
+const otherValue = content.match(/PROGRAM_OTHER\s*=\s*"([^"]+)"/)?.[1] ?? null;
+ok(
+  "PROGRAM_OTHER matches the value in the rules",
+  otherValue === "other",
+  `content=${otherValue}`,
+);
 
 console.log(
   failed === 0

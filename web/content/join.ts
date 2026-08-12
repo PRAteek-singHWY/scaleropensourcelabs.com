@@ -159,6 +159,53 @@ export const INTERESTS = [
   { value: "docs", label: "Docs / writing" },
 ] as const;
 
+// The hostels. Two, because there are two.
+//
+// REQUIRED, and the list is exhaustive: everyone the club takes applications from lives
+// in one of these two buildings, so there is no third answer to offer and an opt-out
+// would only produce applications nobody can schedule around. It is asked because build
+// days and evening sessions get planned by which building people have to walk back to.
+// If that ever stops being true — an off-campus intake, a third block — this list and
+// the `hasAll` line in firestore.rules both have to change, not just this one.
+export const HOSTELS = [
+  { value: "uniworld-1", label: "Uniworld 1" },
+  { value: "uniworld-2", label: "Uniworld 2" },
+] as const;
+
+// The named programmes, and the one field on this form that is a closed set of
+// PROPER NOUNS rather than of the club's own vocabulary. Two consequences:
+//
+//   1. The labels are spelled the way the programmes spell themselves, including the
+//      parenthesised acronyms people actually search for. "Season of KDE", not
+//      "Season of KDE (SoK)" — the abbreviation is not what the programme calls
+//      itself on its own front page.
+//   2. `other` is here because this list will be out of date. New programmes appear
+//      every year and a fixed list of nine would quietly tell the applicant aiming at
+//      the tenth that the club has never heard of it. Selecting it reveals a required
+//      free-text field, so "other" never arrives without saying which — an
+//      unqualified "other" is the one answer that would change nobody's first
+//      conversation, which is the test every field on this form has to pass.
+//
+// Order is roughly by how competitive and how paid they are, which is also the order
+// somebody scanning the list is looking for the familiar name in.
+export const PROGRAMS = [
+  { value: "gsoc", label: "Google Summer of Code (GSoC)" },
+  { value: "lfx", label: "Linux Foundation LFX Mentorship" },
+  { value: "outreachy", label: "Outreachy" },
+  { value: "sok", label: "Season of KDE" },
+  { value: "hacktoberfest", label: "Hacktoberfest" },
+  { value: "sob", label: "Summer of Bitcoin" },
+  { value: "gssoc", label: "GSSoC" },
+  { value: "ssoc", label: "SSoC" },
+  { value: "esoc", label: "ESoC" },
+  { value: "other", label: "Other" },
+] as const;
+
+/** The one PROGRAMS value that requires the free-text field beside it. Named rather
+ *  than compared against the string inline, so the form and the rules check are
+ *  talking about the same thing. */
+export const PROGRAM_OTHER = "other";
+
 export const HEARD_FROM = [
   { value: "senior", label: "A senior or friend" },
   { value: "session", label: "A club session or build day" },

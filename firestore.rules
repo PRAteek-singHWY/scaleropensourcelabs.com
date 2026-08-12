@@ -38,11 +38,13 @@ service cloud.firestore {
         // Exactly the expected fields. `hasOnly` is the important half: `hasAll` alone
         // would let a submitter append a hundred keys of their own.
         d.keys().hasOnly([
-          'name', 'email', 'year_branch', 'github', 'level', 'path',
-          'interests', 'why', 'heard_from', 'updates', 'submitted_at'
+          'name', 'email', 'year_branch', 'hostel', 'github', 'level', 'path',
+          'interests', 'programs', 'programs_other', 'why', 'heard_from',
+          'updates', 'submitted_at'
         ])
         && d.keys().hasAll([
-          'name', 'email', 'year_branch', 'level', 'path', 'why', 'submitted_at'
+          'name', 'email', 'year_branch', 'hostel', 'level', 'path', 'programs',
+          'why', 'submitted_at'
         ])
 
         // Required strings, bounded. The form's maxlength is a courtesy to the reader;
@@ -60,6 +62,10 @@ service cloud.firestore {
         && (!('heard_from' in d) || (d.heard_from is string && d.heard_from.size() <= 60))
 
         // Closed sets — see the drift warning in the header.
+        // `hostel` is required, and the two values are the whole list: the form offers
+        // no opt-out, so an absent or empty hostel is a hand-rolled write, not an
+        // applicant who declined to answer.
+        && d.hostel in ['uniworld-1', 'uniworld-2']
         && d.level in ['none', 'some-git', 'merged']
         && d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track']
         && (!('interests' in d) || (
@@ -67,6 +73,31 @@ service cloud.firestore {
              && d.interests.size() <= 5
              && d.interests.hasOnly(['web', 'ml', 'systems', 'design', 'docs'])
            ))
+
+        // Programmes. Unlike `interests` this one is REQUIRED and must be non-empty,
+        // which is the form's rule too — the browser will not submit without a tick.
+        // Enforced here as well because a direct SDK call never sees the form, and an
+        // application with an empty programmes list would look like a UI bug to
+        // whoever reads it rather than like the forgery it is.
+        && d.programs is list
+        && d.programs.size() > 0
+        && d.programs.size() <= 10
+        && d.programs.hasOnly([
+             'gsoc', 'lfx', 'outreachy', 'sok', 'hacktoberfest', 'sob',
+             'gssoc', 'ssoc', 'esoc', 'other'
+           ])
+        // 'other' and its free text are a pair, checked in BOTH directions: no bare
+        // 'other' with nothing to explain it, and no stray text without the tick that
+        // is supposed to have produced it.
+        && (!d.programs.hasAny(['other'])
+            || ('programs_other' in d
+                && d.programs_other is string
+                && d.programs_other.size() > 0))
+        && (!('programs_other' in d)
+            || (d.programs_other is string
+                && d.programs_other.size() <= 120
+                && d.programs.hasAny(['other'])))
+
         && (!('updates' in d) || d.updates is bool)
 
         // The server's clock, not the submitter's. `request.time` cannot be forged, so

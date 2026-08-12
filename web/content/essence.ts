@@ -335,24 +335,60 @@ export const POSITIONING: Claim[] = [
 // stories to six where one says "it was a great learning experience".
 //
 // `consented` is not optional and not a formality: this publishes a named student's
-// face and their own words to an international audience. Set it only after they have
-// read the exact text that will ship.
+// own words to an international audience. Set it only after they have read the exact
+// text that will ship.
+//
+// There is no photo field. The slides are text — see the note at the top of
+// MemberStory.tsx — so a story needs nothing from /public/people.
 
 export type Story = {
   name: string;
-  /** "Second year, CSE" — situation at the time of writing, no adjectives. */
+  /**
+   * The line under the name: batch, then the programme it led to — "Batch ’27 ·
+   * GSoC 2026". Situation at the time of writing, no adjectives.
+   */
   situation: string;
-  /** Path under /public/people. Falls back to a monogram when absent. */
-  photo?: string;
   github?: string;
-  /** Their own words. Paragraphs, first person. Do not tidy their voice. */
+  /**
+   * Their own words. Paragraphs, first person. Do not tidy their voice.
+   *
+   * Written WITHOUT quotation marks: the component opens them on the first
+   * paragraph and closes them on the last, so a pair typed here would double up.
+   */
   quote: string[];
   /** The verifiable thing the story is about. */
   proof?: { label: string; url: string };
   consented: boolean;
 };
 
-export const STORIES: Story[] = [];
+// Three, which is exactly MIN_TO_LOOP in MemberStory.tsx — the rail loops, but
+// only just. A fourth story is the safest thing you can add to this page.
+export const STORIES: Story[] = [
+  {
+    name: "Kartik Deshpande",
+    situation: "Batch ’27 · GSoC 2026",
+    quote: [
+      "Though I started GSoC prep later than usual, I did not make quick, surface-level PRs. I decided to go deep — truly understanding codebases, maintainer needs, and underlying architecture. That single mindset shift is what got me into GSoC. Open source isn't a race to start first; it's a marathon of building real engineering depth.",
+    ],
+    consented: true,
+  },
+  {
+    name: "Ojas Maheshwari",
+    situation: "Batch ’28 · GSoC 2026",
+    quote: [
+      "For me, open source is about building real engineering depth, not generating surface-level code. That's why I enforce a strict zero-AI rule across my contributions. When you rely on AI tools to write your PRs, you skip the most critical part of the process — reading documentation, debugging edge cases, and truly understanding the architecture. Open source exists to make us better engineers, not better prompt operators.",
+    ],
+    consented: true,
+  },
+  {
+    name: "Shubham Kapoor",
+    situation: "Batch ’28 · GSoC 2026",
+    quote: [
+      "My open-source journey was anything but a straight line. Between navigating intense FOMO, handling rejected PRs, and feeling lost in massive codebases, there were countless moments I felt stuck. But instead of walking away, I kept reading docs, fixing broken builds, and submitting code — even when progress felt invisible. Making it to GSoC wasn't luck; it was the result of showing up every day and staying relentless through every single setback.",
+    ],
+    consented: true,
+  },
+];
 
 /**
  * Development scaffold. The story block is a looping rail of cards — it cannot be
@@ -372,7 +408,7 @@ export const STORIES: Story[] = [];
 const SCAFFOLD: Story[] = [
   {
     name: "Placeholder A",
-    situation: "Replace with their year and branch at the time of writing.",
+    situation: "Replace with their batch and programme — Batch ’29 · GSoC 2027.",
     quote: [
       "Replace this with what the member actually wrote, first person and in their own words. Two or three short paragraphs is the right length for a card.",
       "The useful shape is: what I believed before, the specific thing that went wrong or surprised me, and what is different now. Concrete beats inspiring — name the repo, say how long the review took, quote what the maintainer said.",
@@ -381,7 +417,7 @@ const SCAFFOLD: Story[] = [
   },
   {
     name: "Placeholder B",
-    situation: "Replace with their year and branch at the time of writing.",
+    situation: "Replace with their batch and programme — Batch ’29 · GSoC 2027.",
     quote: [
       "This slot is for the first merged pull request. The detail that makes it land is usually how small the change was, so let them say that rather than rounding it up.",
       "Attach the pull request itself in `proof`. A card that links to the thing it describes is a different kind of claim from one that does not.",
@@ -390,7 +426,7 @@ const SCAFFOLD: Story[] = [
   },
   {
     name: "Placeholder C",
-    situation: "Replace with their year and branch at the time of writing.",
+    situation: "Replace with their batch and programme — Batch ’29 · GSoC 2027.",
     quote: [
       "This slot is for the wait. Someone whose patch sat for three weeks before anybody looked at it, and what they thought was happening during those three weeks.",
       "It is the most useful story on the page and the one nobody volunteers, because it does not sound like a success. Ask for it directly.",
@@ -399,7 +435,7 @@ const SCAFFOLD: Story[] = [
   },
   {
     name: "Placeholder D",
-    situation: "Replace with their year and branch at the time of writing.",
+    situation: "Replace with their batch and programme — Batch ’29 · GSoC 2027.",
     quote: [
       "This slot is for the unglamorous work — triage, a docs fix, a flaky test — and for whoever discovered that maintainers were glad of it.",
       "Keep whatever they say about the boring parts being boring. Editing that out is how this section turns into a brochure.",
@@ -408,7 +444,7 @@ const SCAFFOLD: Story[] = [
   },
   {
     name: "Placeholder E",
-    situation: "Replace with their year and branch at the time of writing.",
+    situation: "Replace with their batch and programme — Batch ’29 · GSoC 2027.",
     quote: [
       "This slot is for a programme: GSoC, LFX, Outreachy. What the application actually involved, not the announcement.",
       "If they were rejected first and got in the following year, that is the version worth publishing. Most readers of this page will be the person who did not get in.",
@@ -417,7 +453,7 @@ const SCAFFOLD: Story[] = [
   },
   {
     name: "Placeholder F",
-    situation: "Replace with their year and branch at the time of writing.",
+    situation: "Replace with their batch and programme — Batch ’29 · GSoC 2027.",
     quote: [
       "This slot is for someone now on the other side of it — reviewing pull requests, or maintaining something of their own.",
       "Ending the rail here is deliberate: it is the only card that shows where the first one leads.",

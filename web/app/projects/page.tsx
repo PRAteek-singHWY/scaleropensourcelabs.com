@@ -127,57 +127,66 @@ export default function Projects() {
                   )}
                 </div>
 
-                <p className="mt-4 text-body text-ink">{p.problem}</p>
+                {p.problem && (
+                  <p className="mt-4 text-body text-ink">{p.problem}</p>
+                )}
 
-                <ul className="mt-5 flex flex-wrap gap-2">
-                  {p.stack.map((s) => (
-                    <li
-                      key={s}
-                      className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-[13px] text-haze"
-                    >
-                      {s}
-                    </li>
-                  ))}
-                </ul>
+                {/* Each optional row is gated on its own data. A holding card with
+                    no maintainer and no stack should be a title and nothing else —
+                    an empty label under a rule reads as a rendering bug. */}
+                {p.stack.length > 0 && (
+                  <ul className="mt-5 flex flex-wrap gap-2">
+                    {p.stack.map((s) => (
+                      <li
+                        key={s}
+                        className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-[13px] text-haze"
+                      >
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-                <dl className="mt-auto grid gap-4 border-t border-seam pt-5 sm:grid-cols-2">
-                  <div>
-                    <dt className="label">Maintainer</dt>
-                    <dd className="mt-1.5 text-sm text-ink">
-                      {p.maintainerGithub ? (
-                        <a
-                          href={`https://github.com/${p.maintainerGithub}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="tap transition-colors hover:text-accent"
-                        >
-                          {p.maintainer} ↗
-                        </a>
-                      ) : (
-                        p.maintainer
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="label">Start here</dt>
-                    <dd className="mt-1.5 text-sm">
-                      {p.goodFirstIssue ? (
-                        <a
-                          href={p.goodFirstIssue}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="tap font-mono text-xs text-accent transition hover:brightness-125"
-                        >
-                          Good first issue ↗
-                        </a>
-                      ) : (
-                        <span className="font-mono text-xs text-dust">
-                          Ask on the day
-                        </span>
-                      )}
-                    </dd>
-                  </div>
-                </dl>
+                {p.maintainer && (
+                  <dl className="mt-auto grid gap-4 border-t border-seam pt-5 sm:grid-cols-2">
+                    <div>
+                      <dt className="label">Maintainer</dt>
+                      <dd className="mt-1.5 text-sm text-ink">
+                        {p.maintainerGithub ? (
+                          <a
+                            href={`https://github.com/${p.maintainerGithub}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="tap transition-colors hover:text-accent"
+                          >
+                            {p.maintainer} ↗
+                          </a>
+                        ) : (
+                          p.maintainer
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="label">Start here</dt>
+                      <dd className="mt-1.5 text-sm">
+                        {p.goodFirstIssue ? (
+                          <a
+                            href={p.goodFirstIssue}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="tap font-mono text-xs text-accent transition hover:brightness-125"
+                          >
+                            Good first issue ↗
+                          </a>
+                        ) : (
+                          <span className="font-mono text-xs text-dust">
+                            Ask on the day
+                          </span>
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
               </li>
             ))}
           </ul>

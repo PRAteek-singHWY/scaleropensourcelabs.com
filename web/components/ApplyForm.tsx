@@ -2,7 +2,7 @@
 
 // The join form.
 //
-// Nine fields, which is a lot, and every one of them is here because it changes what
+// Eleven fields, which is a lot, and every one of them is here because it changes what
 // somebody does with the application rather than because it would be nice to know.
 // The test applied to each: if two people answer differently, do they get a different
 // first conversation? Where the answer was no, the field is not here.
@@ -37,9 +37,18 @@
 // is a default, not a lock — the whole point of showing four paths is that people
 // reclassify themselves while reading, and the field stays editable.
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { HEARD_FROM, INTERESTS, LEVELS, LEVEL_LABEL, PATHS } from "@/content/join";
+import {
+  HEARD_FROM,
+  HOSTELS,
+  INTERESTS,
+  LEVELS,
+  LEVEL_LABEL,
+  PATHS,
+  PROGRAMS,
+  PROGRAM_OTHER,
+} from "@/content/join";
 import { LINKS } from "@/content/club";
 import { APPLICATIONS, getDb, isConfigured } from "@/lib/firebase";
 import { celebrate } from "@/components/fx/celebrate";
@@ -88,6 +97,27 @@ function Fields() {
   const requested = params.get("path");
   const preselected = PATHS.some((p) => p.id === requested) ? requested! : "";
 
+  // The programmes group is the only control here that React has to hold state for,
+  // and it holds it for two reasons rather than one: to reveal the "which one" field
+  // when Other is ticked, and to enforce "at least one" — see the comment on the
+  // fieldset for why that cannot be `required`.
+  const [programs, setPrograms] = useState<string[]>([]);
+  const firstProgram = useRef<HTMLInputElement>(null);
+
+  // setCustomValidity, not an error banner of our own. The browser then refuses the
+  // submit and shows the message in its own bubble, anchored on the first checkbox,
+  // which is the same behaviour every other required field on this form already has
+  // — including the scroll-into-view and the focus that we would otherwise have to
+  // reimplement badly. Cleared the moment something is ticked, or the form stays
+  // permanently unsubmittable.
+  useEffect(() => {
+    firstProgram.current?.setCustomValidity(
+      programs.length === 0
+        ? "Pick at least one programme — or Other, and tell us which."
+        : "",
+    );
+  }, [programs]);
+
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -113,6 +143,12 @@ function Fields() {
         </div>
       </div>
 
+      {/* Year, branch and hostel sit together because they are the same kind of
+          question — where on campus you are — and both belong near the top, where
+          somebody is still answering things they know off the top of their head.
+          GitHub moved to its own row below: it is the one field here that makes people
+          hesitate, and it reads better with its reassurance beside it than squeezed
+          next to a dropdown. */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="af-year" className="label mb-2 block">
@@ -127,22 +163,42 @@ function Fields() {
           />
         </div>
         <div>
-          <label htmlFor="af-github" className="label mb-2 block">
-            GitHub{" "}
-            <span className="normal-case tracking-normal text-dust">(optional)</span>
+          <label htmlFor="af-hostel" className="label mb-2 block">
+            Hostel
           </label>
-          <input
-            id="af-github"
-            name="github"
-            className={field}
-            placeholder="octocat"
-            autoComplete="off"
-            spellCheck={false}
-          />
-          <p className="mt-2 text-[15px] leading-relaxed text-dust">
-            Leave it blank if you have never used it. That is genuinely fine.
-          </p>
+          {/* Required, and the empty first option is what makes `required` bite: a
+              select whose default is already a real hostel can never be "unanswered",
+              so the browser would let a wrong-by-default answer through. Disabled so
+              it cannot be chosen back once left. See the note in content/join.ts. */}
+          <select id="af-hostel" name="hostel" required className={field} defaultValue="">
+            <option value="" disabled>
+              Select your hostel
+            </option>
+            {HOSTELS.map((h) => (
+              <option key={h.value} value={h.value}>
+                {h.label}
+              </option>
+            ))}
+          </select>
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="af-github" className="label mb-2 block">
+          GitHub{" "}
+          <span className="normal-case tracking-normal text-dust">(optional)</span>
+        </label>
+        <input
+          id="af-github"
+          name="github"
+          className={field}
+          placeholder="octocat"
+          autoComplete="off"
+          spellCheck={false}
+        />
+        <p className="mt-2 text-[15px] leading-relaxed text-dust">
+          Leave it blank if you have never used it. That is genuinely fine.
+        </p>
       </div>
 
       {/* Level. A radio group rather than a select, because the three options are the
@@ -234,6 +290,67 @@ function Fields() {
         </div>
       </fieldset>
 
+      {/* Programmes. REQUIRED, at least one, and the only group on this form where
+          the browser has no native check for that: `required` on a checkbox means
+          that one box must be ticked, unlike a radio group where it means one of the
+          set. So rather than invent a validation banner — point 5 of the header —
+          the first box carries a setCustomValidity message and the browser blocks the
+          submit itself. See the effect above.
+
+          Ticking Other reveals a required free-text field rather than accepting a
+          bare "other", because "other" on its own is the one answer here that tells
+          an organiser nothing. */}
+      <fieldset>
+        <legend className="label mb-3">
+          Open source programs you are interested in{" "}
+          <span className="normal-case tracking-normal text-dust">
+            (pick at least one)
+          </span>
+        </legend>
+        <div className="flex flex-wrap gap-2">
+          {PROGRAMS.map((p, i) => (
+            <label
+              key={p.value}
+              className="flex cursor-pointer items-center gap-2.5 rounded-md border border-seam bg-sunk px-3.5 py-2.5 transition hover:border-accent/50"
+            >
+              <input
+                // Only the first box needs the ref: the message belongs to the group,
+                // and the browser reports it on whichever element carries it.
+                ref={i === 0 ? firstProgram : undefined}
+                type="checkbox"
+                name="programs"
+                value={p.value}
+                checked={programs.includes(p.value)}
+                onChange={(e) =>
+                  setPrograms((current) =>
+                    e.target.checked
+                      ? [...current, p.value]
+                      : current.filter((v) => v !== p.value),
+                  )
+                }
+                className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
+              />
+              <span className="text-sm text-ink">{p.label}</span>
+            </label>
+          ))}
+        </div>
+        {programs.includes(PROGRAM_OTHER) && (
+          <div className="mt-3">
+            <label htmlFor="af-programs-other" className="label mb-2 block">
+              Which programme
+            </label>
+            <input
+              id="af-programs-other"
+              name="programs_other"
+              required
+              maxLength={120}
+              className={field}
+              placeholder="The name of it, or a link"
+            />
+          </div>
+        )}
+      </fieldset>
+
       <div>
         <label htmlFor="af-why" className="label mb-2 block">
           One line on why open source interests you
@@ -308,10 +425,14 @@ export default function JoinForm() {
         name: str("name"),
         email: str("email"),
         year_branch: str("year_branch"),
+        hostel: str("hostel"),
         level: str("level"),
         path: str("path"),
         why: str("why"),
         interests: data.getAll("interests").map(String),
+        // Required and never empty — the browser refused the submit otherwise, and
+        // the rules refuse an empty list on the way in as well.
+        programs: data.getAll("programs").map(String),
         updates: data.get("updates") !== null,
         // The SERVER's clock. The rules require `submitted_at == request.time`, so a
         // client-supplied Date would be rejected — which is the point: submission
@@ -324,6 +445,11 @@ export default function JoinForm() {
       if (github) doc.github = github;
       const heard = str("heard_from");
       if (heard) doc.heard_from = heard;
+      // Only present when Other is ticked, because that is the only state in which
+      // the input exists to be read. The rules enforce the pairing in both
+      // directions, so a hand-rolled SDK call cannot send one without the other.
+      const programsOther = str("programs_other");
+      if (programsOther) doc.programs_other = programsOther;
 
       // RACED AGAINST A TIMEOUT, because addDoc does not reject when the backend is
       // unreachable — it queues the write and retries the channel indefinitely. Found
@@ -394,7 +520,7 @@ export default function JoinForm() {
             statically rendered — Next throws at build time rather than at runtime,
             which is the good version of this error. The fallback is a plain height
             reservation so the card does not jump on hydration. */}
-        <Suspense fallback={<div className="h-[42rem]" aria-hidden />}>
+        <Suspense fallback={<div className="h-[52rem]" aria-hidden />}>
           <Fields />
         </Suspense>
 

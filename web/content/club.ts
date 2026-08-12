@@ -356,28 +356,29 @@ export type Selection = {
    which is a different axis from the programme year in `year` — both appear on the
    card and conflating them would put "3rd year" in the chip next to GSoC.
 
-   THE THIRD SLOT IS THE MENTORING ORG, and it is the one thing still to fill in.
-   It is left empty here rather than guessed: every one of these students was picked
-   BY somebody, and which organisation that was is the fact a reader wants next after
-   the name — but a plausible-looking foundation typed in from memory is precisely the
-   claim `org`'s doc comment above exists to keep out. The hall card holds the slot
-   open and prints "org to be announced" while it is empty, so the gap is visible on
-   the page instead of silently absent, and closing it is one string per line here. */
+   THE THIRD SLOT IS THE MENTORING ORG, supplied by the club per student and filled
+   in below. It was deliberately left empty until then: every one of these students
+   was picked BY somebody, and which organisation that was is the fact a reader wants
+   next after the name — but a plausible-looking foundation typed in from memory is
+   precisely the claim `org`'s doc comment above exists to keep out. Names are written
+   as the organisation itself writes them (Sugar Labs, Checkstyle, STE||AR Group), not
+   as they get abbreviated in conversation. What is still open is the proof `url` per
+   entry, which the roster prints as an em dash until it arrives. */
 const GSOC_2026: [name: string, studyYear: string, org?: string][] = [
-  ["Prateek Singh", "3rd year"],
-  ["Ojas Maheshwari", "3rd year"],
-  ["Parth Dagia", "3rd year"],
-  ["Raj Prakash", "3rd year"],
-  ["Shubham Kumar", "3rd year"],
-  ["Shiva Gupta", "3rd year"],
-  ["Kartik Jangid", "3rd year"],
-  ["Vivek Singh Solanki", "3rd year"],
-  ["Ujjawal Prabhat", "3rd year"],
-  ["Piyush Goenka", "3rd year"],
-  ["Kartik Deshpande", "3rd year"],
-  ["Amrinder Singh", "3rd year"],
-  ["Vansh Dobhal", "3rd year"],
-  ["Kumar Amityush", "2nd year"],
+  ["Prateek Singh", "3rd year", "OWASP"],
+  ["Ojas Maheshwari", "3rd year", "KDE"],
+  ["Parth Dagia", "3rd year", "Sugar Labs"],
+  ["Raj Prakash", "3rd year", "OpenMRS"],
+  ["Shubham Kumar", "3rd year", "Mifos Initiative"],
+  ["Shiva Gupta", "3rd year", "CDLI"],
+  ["Kartik Jangid", "3rd year", "JdeRobot"],
+  ["Vivek Singh Solanki", "3rd year", "Checkstyle"],
+  ["Ujjawal Prabhat", "3rd year", "OpenMRS"],
+  ["Piyush Goenka", "3rd year", "Ruby"],
+  ["Kartik Deshpande", "4th year", "NRNB"],
+  ["Amrinder Singh", "3rd year", "Libreswan"],
+  ["Vansh Dobhal", "3rd year", "STE||AR Group (HPX)"],
+  ["Kumar Amityush", "2nd year", "OpenAstronomy"],
 ];
 
 const GSOC_2025: [name: string, studyYear: string, org?: string][] = [
@@ -454,7 +455,10 @@ export function selectionStats() {
     programmes: [...byProgramme.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(([programme, count]) => ({ programme, count })),
-    orgs: new Set(live.map((s) => s.org)).size,
+    // Entries with no org yet are not an organisation. Counting the empty slot the
+    // way `new Set` counts `undefined` would add a phantom org to the total the
+    // moment one student's org is still being chased down.
+    orgs: new Set(live.map((s) => s.org).filter(Boolean)).size,
   };
 }
 
@@ -1044,18 +1048,30 @@ export const INSTITUTIONAL: { title: string; body: string }[] = [
 // ---------------------------------------------------------------------------
 // THE TEAM — who actually runs the club.
 //
-// Distinct from MENTORS, and the distinction is load-bearing. A mentor's entry is
-// justified by a public artifact: a merged patch, an official selection record. A
-// team entry is justified by nothing except holding the office, so it claims
-// nothing except the office. No "passionate about", no "shipped X" — that belongs
-// in MENTORS, where there is a link to prove it. This list is org structure, and
-// org structure is the one thing a club can legitimately assert about itself.
+// This list used to be org structure and NOTHING else — a team entry claimed only
+// the office, on the grounds that a mentor's entry is backed by a public artifact
+// and an officer's is backed by holding the office. That rule has been relaxed
+// deliberately, so the reasoning that replaced it is worth writing down:
 //
-// Three tiers, because the club genuinely has three: the two officers, the four
+//   A `remit` says what the office covers, and stays true across a handover.
+//   A `highlights` list says what the PERSON has done, and does not.
+//
+// Both now render, and the second one is the one to be careful with. These are
+// claims about named students, so the file's own rule still binds them: if you
+// cannot open a URL that proves it, it does not go in, and nothing goes in without
+// that person's say-so. A batch year and an internship are checkable; a superlative
+// is not. When somebody hands over, their highlights leave with them — only the
+// remit is inherited by whoever takes the office.
+//
+// Three tiers, because the club genuinely has three: the two officers, the three
 // functional leads, and the shadows. A shadow is an understudy attached to one
 // specific role who is being trained to take it over at handover — which is the
 // only reason a student club survives its founders graduating, and therefore worth
 // showing on the chart rather than hiding in a handbook.
+//
+// Plus the desks (TEAM_CONTENT, at the bottom of this section): several people
+// doing one job together under a lead, which is a different shape from both a tier
+// and a shadow and gets its own type rather than being flattened into either.
 //
 // `shadowOf` holds the DESIGNATION, not the person. Roles outlast the people in
 // them: when Rushab hands over, the shadow relationship should not need re-pointing
@@ -1063,10 +1079,66 @@ export const INSTITUTIONAL: { title: string; body: string }[] = [
 // card in that role's column, so a typo here surfaces as a missing connector
 // rather than a silently wrong one.
 
+/**
+ * One line of a person's own record, as it appears in the hover card.
+ *
+ * SPLIT INTO TWO FIELDS RATHER THAN PARSED OUT OF ONE, and that is a bug fix
+ * rather than a preference. These lines arrive written as "🚀 Role @ Place - what
+ * it involved", so splitting on " - " to find the emphasis is the obvious move and
+ * it is wrong: one of the lines below is a sentence that legitimately contains a
+ * spaced hyphen ("I don't just want to learn things - I want to understand…"), and
+ * a parser would have set half of it in bold. Structure that the renderer needs is
+ * stated here instead of guessed there.
+ *
+ * The leading emoji is part of `headline` on purpose — it is this list's bullet, so
+ * the rendered list carries no marker of its own.
+ */
+export type Highlight = {
+  /** The claim. Carries the emoji, and is the emphasised half of the line. */
+  headline: string;
+  /** What it involved, if the line has a second half. */
+  detail?: string;
+};
+
 export type TeamMember = {
   name: string;
   /** The office, not a description of the person. Rendered above the name. */
   designation: string;
+  /**
+   * Graduating batch, written as it is said out loud: "'28".
+   *
+   * Optional, and left off rather than guessed. It is the one fact on the card a
+   * reader uses to place everybody else — "a second-year runs the repo" is the
+   * whole point of the page — so an approximate one is worse than none.
+   */
+  batch?: string;
+  /**
+   * This person's own record. Rendered under the remit in the hover card, and as a
+   * list in the stacked one.
+   *
+   * OPTIONAL, AND ASYMMETRY HERE IS FINE. Six of the eleven people on this chart
+   * have no highlights and are not diminished by it: the remit above still answers
+   * the question the page exists to answer. Filling these in for the sake of
+   * evenness is how the list stops being checkable.
+   */
+  highlights?: Highlight[];
+  /**
+   * WHAT THE OFFICE COVERS, AND THEREFORE WHAT TO BRING THIS PERSON. Shown on
+   * hover over the portrait on the chart, and as plain text in the stacked list.
+   *
+   * REQUIRED, and a remit rather than a bio, which is the whole reason this field
+   * can exist in a file whose rule is that a team entry claims nothing except the
+   * office. "Owns the review queue" is checkable by anyone who opens a PR;
+   * "passionate about open source" is not, and it is the sentence this field would
+   * turn into the moment it became optional and somebody filled one in for
+   * flavour. Write it as an answer to "should I ask them?" — the question the
+   * whole team section exists to answer.
+   *
+   * No pronouns: these get reworded at handover, not rewritten, and a role
+   * description that has to be re-gendered when the office changes hands is a
+   * description of a person wearing a role's name.
+   */
+  remit: string;
   /** Square crop — the frame is a circle. See public/people/README.md. */
   photo?: string;
   github?: string;
@@ -1076,24 +1148,240 @@ export type TeamMember = {
 
 /** Tier 1. The two officers. */
 export const TEAM_OFFICERS: TeamMember[] = [
-  { name: "Abhinav Jha", designation: "President" },
-  { name: "Rushab Mistry", designation: "Vice President" },
+  {
+    name: "Abhinav Jha",
+    designation: "President",
+    remit:
+      "Sets the term's direction and owns whatever nobody else does. Bring partnerships, college-level approvals, and anything that needs one decision made and then stuck to.",
+  },
+  {
+    name: "Rushab Mistry",
+    designation: "Vice President",
+    batch: "'27",
+    /* 218px square, not the 448 the README asks for, and that is the source's
+       ceiling rather than an oversight: the original is a wide shot of a corridor
+       in which the face occupies about 200px of a 1024x1280 frame. Upscaling to 448
+       would add bytes and no detail. It clears the 112px circle it renders in, but
+       a closer photograph would render visibly sharper on a 2x screen. */
+    photo: "/people/rushab-mistry.jpg",
+    remit:
+      "Keeps the term moving week to week — who is doing what, by when. Bring a plan that has stalled, or anything where you cannot tell whose call it is.",
+    highlights: [
+      {
+        headline: "🌐 Protocol Labs Dev Guild",
+        detail:
+          "Selected for a competitive Web3 open-source program, building decentralized infrastructure with a ₹1L+/month stipend",
+      },
+      {
+        headline: "⚡ Juspay Bounty Winner",
+        detail:
+          "Cleared a competitive open-source bounty during freshman year, shipping high-impact code",
+      },
+      {
+        headline: "🛠️ Web3 & Full-Stack Engineer",
+        detail:
+          "Multi-disciplinary experience across blockchain development, open-source software, and freelance client systems",
+      },
+    ],
+  },
 ];
 
 /** Tier 2. Functional leads. Order is left-to-right on the chart, not a ranking. */
 export const TEAM_LEADS: TeamMember[] = [
-  { name: "Mehul Agarwal", designation: "Training Head" },
-  { name: "Prateek Singh", designation: "Mentorship Lead" },
-  { name: "Bhumi N Deshpande", designation: "Repo Maintainer" },
-  { name: "Kunal Saini", designation: "Events Lead" },
+  {
+    name: "Prateek Singh",
+    designation: "Mentorship Lead",
+    batch: "'28",
+    photo: "/people/prateek-singh.jpg",
+    remit:
+      "Pairs newcomers with somebody a term ahead of them. Bring a first issue you cannot find, a programme you want to aim at, or a stack you want a mentor in.",
+    highlights: [
+      {
+        headline: "🚀 SDE Intern @ Scaler AI Labs",
+        detail: "Building and shipping engineering solutions",
+      },
+      {
+        // The one claim on this chart that PROJECTS already carries a figure for —
+        // the OWASP/OpenCRE entry at the top of this file, read from the GitHub API
+        // rather than estimated. Keep the two in step if either is reworded.
+        headline: "💻 GSoC '26 Contributor @ OWASP",
+        detail: "Ranked #2 contributor out of 40 in project repo",
+      },
+      {
+        headline: "💡 Core Member & Lead Mentor @ Open Source Club",
+        detail: "Mentoring builders & helping developers raise their first PR",
+      },
+    ],
+  },
+  {
+    name: "Bhumi N Deshpande",
+    designation: "Repo Maintainer",
+    batch: "'29",
+    photo: "/people/bhumi-n-deshpande.jpg",
+    remit:
+      "Owns the club's repositories and the review queue. Bring a pull request that needs eyes on it, a branch that will not build, or a question about where a project's code lives.",
+    highlights: [
+      {
+        headline: "🚀 MTS Intern @ Scaler AI Labs",
+        detail:
+          "Cracked a technical internship at Scaler AI Labs during my first year, gaining hands-on experience in a professional engineering environment.",
+      },
+      {
+        headline: "💻 Open Source Contributor",
+        detail:
+          "Contributor @ Sugar Labs (Music Blocks), explored programmes like Outreachy, GSoC and DMP.",
+      },
+      {
+        headline: "🌐 Top 1000 Global Rank",
+        detail: "GSSoC '26 Contributor & #1 ranked contributor from SST",
+      },
+      {
+        headline: "💡 Open Source Community Leader",
+        detail:
+          "Core Member, mentoring student developers and driving campus projects",
+      },
+    ],
+  },
+  {
+    name: "Kunal Kumar",
+    designation: "Events Lead",
+    batch: "'28",
+    photo: "/people/kunal-kumar.jpg",
+    remit:
+      "Runs the sessions, sprints and hack nights. Bring a workshop you want to run, a talk you want to give, or an event that needs a room and a date.",
+    highlights: [
+      {
+        headline: "⚡ Startup Experience @ Emergent",
+        detail:
+          "Built real-world products using React, TypeScript, Python, and AI systems",
+      },
+      {
+        headline: "🛠️ Creator of Recall",
+        detail: "Designed and shipped AI-driven software projects from scratch",
+      },
+      {
+        headline: "💡 Core Member @ Open Source Club (SST)",
+        detail:
+          "Driving technical initiatives, community growth, and student mentorship",
+      },
+    ],
+  },
 ];
 
 /** Tier 3. Each one attaches to exactly one role in a tier above. */
 export const TEAM_SHADOWS: TeamMember[] = [
-  { name: "Arnav Singh", designation: "Shadow", shadowOf: "Training Head" },
-  { name: "Yash Virulkar", designation: "Shadow", shadowOf: "Vice President" },
+  {
+    name: "Arnav Singh",
+    designation: "Shadow",
+    shadowOf: "Events Lead",
+    batch: "'29",
+    photo: "/people/arnav-singh.jpg",
+    remit:
+      "Learning the events desk from inside it, and taking it over at handover. Safe to bring anything you would bring the Events Lead.",
+    // Headline-only, every one of them. These are counts and titles rather than
+    // "role, and what it involved", so there is no second half to set — and adding
+    // one would mean writing it rather than recording it.
+    highlights: [
+      { headline: "🏆 10+ Hackathon Participations" },
+      { headline: "🥇 4+ Hackathon Wins" },
+      { headline: "🎮 2× National Game Dev Champion" },
+      {
+        headline: "☁️ Microsoft for Startups",
+        detail: "Received mentorship & support",
+      },
+      { headline: "🎤 Hackathon Organizer & Community Lead" },
+      { headline: "🌍 Country Lead — DevRel at Devnovate" },
+    ],
+  },
+  {
+    name: "Yash Virulkar",
+    designation: "Shadow",
+    shadowOf: "Vice President",
+    remit:
+      "Learning the vice president's half of running a term, and taking it over at handover. Safe to bring anything you would bring the Vice President.",
+  },
 ];
 
+/* Tier 3, the other kind. A DESK, not an understudy — and that difference is why
+   this is a group with one remit rather than four TeamMembers with four.
+   A shadow is attached to a role and is training to hold it; a desk is several
+   people doing the same work together, and nobody on it holds an office. Giving
+   each member a `designation` would invent four titles the club does not award,
+   and giving each its own `remit` would repeat one sentence four times. So the
+   remit sits on the desk, where it is true.
+
+   Its members may still carry a batch and their own highlights, because those
+   belong to the person rather than to the desk — the remit answers "what does this
+   desk do", and a highlight answers "who is this". A desk member with neither is
+   just a name, which is a complete entry here.
+
+   `of` is a DESIGNATION for the same reason `shadowOf` is: the desk reports to the
+   Repo Maintainer's office, not to whoever currently holds it. Team.tsx resolves
+   it against the leads and drops the connector from that column. */
+/** A person on a desk. No office, so no designation; everything else is optional. */
+export type GroupMember = {
+  name: string;
+  photo?: string;
+  github?: string;
+  batch?: string;
+  highlights?: Highlight[];
+};
+
+export type TeamGroup = {
+  /** Rendered as the label the connector from the lead reaches. */
+  label: string;
+  /** Designation of the role this desk reports to. */
+  of: string;
+  /** What the desk covers, and therefore what to bring it. One remit, one desk. */
+  remit: string;
+  members: GroupMember[];
+};
+
+export const TEAM_CONTENT: TeamGroup = {
+  label: "Content Team",
+  of: "Repo Maintainer",
+  remit:
+    "Writes and keeps the words — docs, READMEs, event write-ups and everything on this site. Bring a README nobody can follow, a project that needs explaining to a first-year, or a session that needs writing up.",
+  members: [
+    { name: "Divyanshi Saini" },
+    { name: "Sarvika Sharma" },
+    { name: "Aarsheya Jasrotia" },
+    {
+      name: "Srishti Kumari",
+      batch: "'29",
+      photo: "/people/srishti-kumari.jpg",
+      /* Four sentences rather than four credentials, and left exactly as written:
+         this is somebody's own voice, and the punctuation is part of it. Note the
+         third line — a spaced hyphen mid-sentence — which is the line that makes
+         `headline` / `detail` two fields instead of one string and a split(" - ").
+         Headline-only, so the renderer sets them as prose rather than as labels. */
+      highlights: [
+        {
+          headline:
+            "A curious mind with 47 tabs open - and somehow, all of them are important. 🧠",
+        },
+        {
+          headline:
+            "Coding today, chasing SOB tomorrow, and turning every random curiosity into a new mission. 💻",
+        },
+        {
+          headline:
+            "I don't just want to learn things - I want to understand how everything works.",
+        },
+        {
+          headline:
+            "Ambitious, relentlessly curious, slightly chaotic… but definitely not built for an ordinary life. 🚀",
+        },
+      ],
+    },
+  ],
+};
+
 export function teamSize(): number {
-  return TEAM_OFFICERS.length + TEAM_LEADS.length + TEAM_SHADOWS.length;
+  return (
+    TEAM_OFFICERS.length +
+    TEAM_LEADS.length +
+    TEAM_SHADOWS.length +
+    TEAM_CONTENT.members.length
+  );
 }

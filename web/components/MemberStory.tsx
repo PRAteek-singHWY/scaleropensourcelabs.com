@@ -5,11 +5,14 @@
 // This section used to render exactly one story, and the argument for that is
 // still worth knowing: a row of quotes reads as marketing and gets discounted as
 // a set, where one long account from a named person reads as somebody talking.
-// Six slides that each fill the viewport get most of that back — you are only
-// ever looking at one person, and the portrait is large enough to be a face
-// rather than an avatar. What keeps it honest is unchanged: a name, the situation
-// at the time, a link to the thing being described where there is one, and the
-// member's own words with nothing tidied into the site's voice.
+// Slides that each fill the viewport get most of that back — you are only ever
+// looking at one person at a time. What keeps it honest is unchanged: a name, the
+// situation at the time, a link to the thing being described where there is one,
+// and the member's own words with nothing tidied into the site's voice.
+//
+// THERE IS NO PORTRAIT. It was a monogram disc for everybody, since none of these
+// members has a photo on file, and a slide built around an empty frame advertises
+// the missing photograph rather than the words next to it. The quote is the slide.
 //
 // ONE SLIDE IS EXACTLY ONE RAIL WIDTH, which is why the slides are `w-full` and
 // not `w-screen`: a flex item's percentage width resolves against the flex
@@ -43,7 +46,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import Portrait from "@/components/Portrait";
 import { publishedStories, type Story } from "@/content/essence";
 
 /**
@@ -103,56 +105,63 @@ function Slide({
     <li
       ref={innerRef}
       aria-hidden={clone || undefined}
-      // Height is fixed only from lg up, where the portrait is sized as a
-      // percentage of it — a percentage needs something definite to be a
-      // percentage OF. Below that the slide is as tall as its own words.
-      className="stories-slide w-full shrink-0 lg:h-[clamp(32rem,76vh,42rem)]"
+      // A FLOOR, NOT A FIXED HEIGHT. It was `h-` while the portrait was sized as
+      // a percentage of it — a percentage needs something definite to be a
+      // percentage OF — and the cost was that a quote taller than the box was
+      // cut off by it, which on a 700px-tall window took the first line and the
+      // batch off the longer stories. With the portrait gone nothing needs the
+      // exact number, so the clamp becomes the shortest a slide may be. The rail
+      // stretches every slide to the tallest of them (align-items: stretch), so
+      // the panel is still one height and still does not jump between people.
+      //
+      // The clamp is 60% of the band this section first shipped with
+      // (32/76vh/42rem): the panel was taller than the words needed, so the
+      // extra was empty blue above and below a centred stack.
+      className="stories-slide w-full shrink-0 lg:min-h-[clamp(19.2rem,45.6vh,25.2rem)]"
     >
-      {/* `justify-center` is the COLUMN's rule — it centres the stack vertically
-          on a phone. Once the axis turns at lg it would centre the row
-          horizontally instead, floating the portrait ~90px in from the measure
-          and moving it every time a quote changed length. lg:justify-start pins
-          it to the same left edge as the heading above. */}
+      {/* `justify-center` centres the words vertically in the slide; the figure's
+          own mx-auto centres them across it. Nothing is pinned to the left edge
+          any more, which is also what keeps the words off the arrows: a centred
+          56rem measure leaves ~190px of blue either side at lg, and the arrows'
+          targets end 72px in. */}
       {/* pb-28 below lg is not decoration: it is the landing strip the arrows sit
           in once they drop to the bottom corner. */}
-      <div className="section flex h-full flex-col justify-center gap-9 pb-28 pt-16 lg:flex-row lg:items-center lg:justify-start lg:gap-16 lg:py-0">
-        {/* ~70% of the slide's height at lg, and a circle above the words on a
-            phone, where a 4:5 portrait beside a paragraph would leave both
-            columns too narrow to read. */}
-        <div className="h-28 w-28 shrink-0 lg:h-[70%] lg:aspect-[4/5] lg:w-auto">
-          {/* Portrait's monogram is sized in container units, so the frame has to
-              be a size container — on its own element, since containing the
-              inline size of the box that is deriving its width from an aspect
-              ratio is asking two rules to settle the same number. */}
-          <div className="h-full w-full [container-type:inline-size]">
-            <Portrait
-              name={story.name}
-              photo={story.photo}
-              className="h-full w-full rounded-full lg:rounded-[24px]"
-            />
-          </div>
-        </div>
+      <div className="section flex h-full flex-col justify-center pb-28 pt-16 lg:py-0">
+        {/* Wider than the 46rem it ran at beside a portrait: with the column gone
+            the quote has the slide to itself, and 56rem keeps a paragraph to
+            about eleven words a line — long enough not to waste the panel, short
+            enough to still be a readable measure. */}
+        <figure className="mx-auto min-w-0 text-center lg:max-w-[56rem]">
+          {/* THE QUOTATION MARKS ARE THE WHOLE DEVICE. The hairline rule that used
+              to run down the left went with the left alignment — a rule down one
+              side of centred text is a margin the text no longer has. No giant
+              decorative quote glyph either: a student describing a confusing month
+              does not want to be typeset as an inspirational poster. The marks
+              open on the first paragraph and close on the last, which is the
+              convention for a quote that runs over several.
 
-        <figure className="min-w-0 lg:max-w-[46rem]">
-          {/* A hairline rule down the left is the whole quotation device — the
-              convention for a quote, and it costs nothing. No giant decorative
-              quote marks: a student describing a confusing month does not want to
-              be typeset as an inspirational poster. */}
-          <blockquote className="space-y-5 border-l border-white/30 pl-6 sm:pl-8">
+              SET IN THE DISPLAY FACE, and font-medium is not optional with it —
+              Space Grotesk is loaded at 500 and 700 only (see layout.tsx), so an
+              unstated 400 renders as a synthetic light of the 500 master. */}
+          <blockquote className="space-y-5 font-display font-medium">
             {story.quote.map((para, i) => (
               <p key={i} className="text-body-lg text-white">
+                {i === 0 ? "“" : ""}
                 {para}
+                {i === story.quote.length - 1 ? "”" : ""}
               </p>
             ))}
           </blockquote>
 
-          <figcaption className="mt-9 pl-6 sm:pl-8">
-            <p className="text-body-lg font-semibold text-white">{story.name}</p>
+          <figcaption className="mt-9">
+            <p className="text-body-lg font-display font-bold text-white">
+              {story.name}
+            </p>
             <p className="mt-1.5 font-mono text-xs uppercase tracking-[0.16em] text-white">
               {story.situation}
             </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
               {story.github && (
                 <a
                   href={`https://github.com/${story.github}`}
@@ -186,9 +195,9 @@ function Slide({
 /**
  * An arrow, over the slide rather than over the page.
  *
- * 48px of disc inside a 56px target: this sits on top of a photograph, so it has
- * to be big enough to read as a control at a glance, and the target still clears
- * the 44px WCAG 2.5.5 floor with room. The glyphs are aria-hidden — the button
+ * 48px of disc inside a 56px target: this sits on top of a slide that moves under
+ * it, so it has to be big enough to read as a control at a glance, and the target
+ * still clears the 44px WCAG 2.5.5 floor with room. The glyphs are aria-hidden — the button
  * takes its whole accessible name from the label.
  *
  * EDGES AT lg, A PAIR IN THE BOTTOM CORNER BELOW IT. Pinned left and right at the

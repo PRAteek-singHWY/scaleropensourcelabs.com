@@ -155,6 +155,7 @@ import {
   TEAM_OFFICERS,
   TEAM_LEADS,
   TEAM_SHADOWS,
+  TEAM_CONTENT,
   publishedSelections,
   type Programme,
 } from "@/content/club";
@@ -178,7 +179,12 @@ import {
  */
 export function memberCount(extraNames: string[] = []): number {
   const names = new Set<string>();
-  for (const m of [...TEAM_OFFICERS, ...TEAM_LEADS, ...TEAM_SHADOWS]) {
+  for (const m of [
+    ...TEAM_OFFICERS,
+    ...TEAM_LEADS,
+    ...TEAM_SHADOWS,
+    ...TEAM_CONTENT.members,
+  ]) {
     names.add(m.name.trim().toLowerCase());
   }
   for (const a of publishedAlumni()) names.add(a.name.trim().toLowerCase());
@@ -207,7 +213,10 @@ export function achieverStats() {
     programmes: [...byProgramme.entries()]
       .sort((a, b) => b[1] - a[1])
       .map(([programme, count]) => ({ programme, count })),
-    orgs: new Set(live.map((s) => s.org)).size,
+    // Same guard as club.ts selectionStats: a selection whose org has not come in
+    // yet is not an organisation, and `new Set` would happily count `undefined` as
+    // one.
+    orgs: new Set(live.map((s) => s.org).filter(Boolean)).size,
   };
 }
 
