@@ -385,6 +385,25 @@ const GSOC_2025: [name: string, studyYear: string, org?: string][] = [
   ["Sauhard Gupta", "3rd year"],
 ];
 
+/* The first selections outside GSoC, and the reason the wall stops being a GSoC
+   wall. Same shape and same rules as the arrays above: the org slot stays empty
+   until the club supplies it, and the card prints "org TBA" rather than a guess.
+
+   VIVEK SINGH SOLANKI APPEARS TWICE ON PURPOSE — once for GSoC 2026 above and once
+   for LFX below. Two selections into two programmes are two facts, and the wall is
+   a list of selections, not of people. Everything that counts PEOPLE dedupes by
+   name already (see NumbersStrip), so this adds a card without inflating the
+   member count. Note also that he is a different person from the "Vivek Singh"
+   selected into Summer of Bitcoin; the names are close enough that a future editor
+   will wonder, so: not a duplicate, and not a typo. */
+const SOB_2026: [name: string, studyYear: string, org?: string][] = [
+  ["Vivek Singh", "2nd year"],
+];
+
+const LFX_2026: [name: string, studyYear: string, org?: string][] = [
+  ["Vivek Singh Solanki", "3rd year", "Besu"],
+];
+
 /**
  * The published list. These render everywhere — local, preview and production.
  *
@@ -399,16 +418,17 @@ const GSOC_2025: [name: string, studyYear: string, org?: string][] = [
  * WHAT IS STILL MISSING, and it belongs here rather than in a ticket: not one of
  * these entries has a proof `url`. The page's entire argument is "somebody else
  * picked them, go and check", and until each name carries a link — the programme's
- * accepted-projects page, the student's proposal, the announcement — these fifteen
- * are the only claims on this site a reader cannot verify. The roster prints an em
- * dash in the Proof column for each, which is honest but is not evidence. Add `url`
- * per entry as the links come in; nothing else has to change.
+ * accepted-projects page, the student's proposal, the announcement — these are the
+ * only claims on this site a reader cannot verify. The roster prints an em dash in
+ * the Proof column for each, which is honest but is not evidence. Add `url` per
+ * entry as the links come in; nothing else has to change.
  *
  * The ten LFX / C4GT / SoB rows that used to pad this list to twenty-five are gone,
  * deliberately. "Placeholder Seven, Example Foundation" is layout padding, not a
  * selected student; publishing it would have put visible nonsense on a public page
- * beside fifteen real people and undercut every real name next to it. Those
- * programmes get real entries the same way these did.
+ * beside real people and undercut every real name next to it. Those programmes get
+ * real entries the same way these did — the SoB and LFX rows below are the first of
+ * them, supplied by the club per student rather than generated to fill the grid.
  */
 export const SELECTIONS: Selection[] = [
   ...GSOC_2026.map(([name, studyYear, org]) => ({
@@ -423,6 +443,22 @@ export const SELECTIONS: Selection[] = [
     name,
     programme: "GSOC" as Programme,
     year: "2025",
+    studyYear,
+    org,
+    consented: true,
+  })),
+  ...SOB_2026.map(([name, studyYear, org]) => ({
+    name,
+    programme: "SOB" as Programme,
+    year: "2026",
+    studyYear,
+    org,
+    consented: true,
+  })),
+  ...LFX_2026.map(([name, studyYear, org]) => ({
+    name,
+    programme: "LFX" as Programme,
+    year: "2026",
     studyYear,
     org,
     consented: true,
@@ -525,6 +561,20 @@ export type ProgrammeInfo = {
   pays: string;
   /** What OSC specifically does to get you in. This is the product. */
   weDo: string;
+  /**
+   * What the club has to show for this programme, when a list of names is the
+   * wrong shape for it.
+   *
+   * The "who from SST has done it" row is normally DERIVED from SELECTIONS, and
+   * that stays the default: a selective programme's answer is a set of people who
+   * were each individually picked, and deriving it is what stops this page and the
+   * Hall of Fame disagreeing. But the open tier is a participation programme —
+   * dozens take part and there is nothing to be selected into — so the honest
+   * answer is a count plus whoever stood out, which no list of Selection rows can
+   * express without inventing a selection that never happened. Prose here, names
+   * in SELECTIONS; when both exist the row shows both.
+   */
+  ours?: string;
   url: string;
 };
 
@@ -589,6 +639,8 @@ export const PROGRAMMES: ProgrammeInfo[] = [
       "No stipend. Certificates, swag and a leaderboard — plus mentors, which is the part that is actually worth having.",
     weDo:
       "Nothing to prepare. Register when it opens and pick a project in a language you can already run. Use it to learn the mechanics — fork, branch, PR, review, merge — so the paid programmes below are not your first time using Git in anger.",
+    ours:
+      "30+ students participated in GSSoC '26. Top contributor from SST: Bhumi N Deshpande.",
     url: "https://gssoc.girlscript.tech/",
   },
   {
@@ -601,6 +653,7 @@ export const PROGRAMMES: ProgrammeInfo[] = [
     pays: "Swag, or a tree planted in your name. That is the whole reward.",
     weDo:
       "Have one project picked and built on your machine before 1 October, so you spend the month contributing rather than setting up. Come to a session in September and we will do it with you.",
+    ours: "Many of us had our first PRs merged here.",
     url: "https://hacktoberfest.com/",
   },
 ];

@@ -24,7 +24,7 @@
 // The evidence did not go anywhere. It moved to where it was already stronger:
 // the floating chips still carry the API-verified merge count and the cohort
 // size (see Hero.tsx), the figure block under the hero states the total, and the
-// hall names all fifteen with links. Nobody lost a credit; the credit stopped
+// hall names every one of them with links. Nobody lost a credit; the credit stopped
 // being a leaderboard.
 //
 // NOTHING HERE IS A CLAIM. That is the other thing the change buys. A simulated

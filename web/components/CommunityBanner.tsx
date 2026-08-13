@@ -9,8 +9,10 @@
 // reason — the numbers and the faces have to be real:
 //
 //   1. "Join 300+ Contributors". There is no 300 anywhere in this repo, and no
-//      field that could become one: the club records fifteen published
-//      selections, eight people running it, and one project with an API-verified
+//      field that could become one: the club records its published
+//      selections (SELECTIONS in club.ts, and the count moves as names come in —
+//      which is why it is not written out here), eight people running it, and
+//      one project with an API-verified
 //      merge count. A recruitment page for sixteen-year-olds that inflates its
 //      community by twentyfold is the kind of claim that costs the club its
 //      credibility the first time somebody counts. The label reads from
