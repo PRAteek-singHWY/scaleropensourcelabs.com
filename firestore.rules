@@ -2,69 +2,111 @@ rules_version = '2';
 
 // Firestore security rules for scaleropensourcelabs.com
 //
-// THIS FILE IS THE SECURITY BOUNDARY. The Firebase web config in the client bundle
-// is a public identifier, not a credential (see web/lib/firebase.ts), so nothing here
-// is protected by being hard to find. What protects applicants' data is exactly this
-// file and nothing else.
+// THIS FILE IS THE SECURITY BOUNDARY. The Firebase web config in the client bundle is a
+// public identifier, not a credential (see web/lib/firebase.ts), and the site is a
+// static export with no server — so there is no back end doing checks. Everything that
+// protects members' data is in this file.
 //
-// APPLICATIONS CONTAIN A STUDENT'S NAME, EMAIL, COLLEGE YEAR AND BRANCH. Firebase's
-// "test mode" default is `allow read, write: if true` for thirty days, which would
-// make every application readable by anyone who opens the site and types two lines
-// into the browser console. That is the trap this file exists to avoid, and it is why
-// `read` is denied explicitly and unconditionally below rather than merely left
-// unmentioned.
+// The site now has sign-in. Three collections:
 //
-// The shape is the narrowest thing that works: the public may create one application
-// and may never read, change or delete anything. Organisers read submissions in the
-// Firebase console, where access is governed by Google account permissions on the
-// project rather than by these rules.
+//   users/{uid}        one profile per member. Readable and writable ONLY by that
+//                      member, plus readable by admins. Contains names, college
+//                      addresses, year, branch and hostel.
+//   admins/{email}     membership = adminship. Nobody can write it from any client.
+//   applications/{id}  legacy, from before sign-in. Create-only and unreadable, kept
+//                      so the rows already there stay protected.
+//
+// ONLY @sst.scaler.com MAY REGISTER, and this is where that is enforced. web/lib/auth.tsx
+// also passes the domain to Google and signs out anyone off-domain, but both of those
+// are conveniences: a client can be modified, and a token from another domain is still a
+// valid token. `isMember()` below is what actually refuses.
+//
+// email_verified is required as well as the domain. A Google Workspace sign-in always
+// carries it, so this costs nothing today — but it means that if email/password sign-in
+// is ever enabled, an unverified person who typed somebody else's college address still
+// cannot read or write anything. Without it, adding a password form later would quietly
+// open exactly the hole this file exists to close.
 //
 // DEPLOY WITH:  firebase deploy --only firestore:rules
-// Editing this file alone changes nothing until it is deployed. A rules file that is
-// correct in git and permissive in production is the worst case, because review passes.
+// Editing this file alone changes nothing. A rules file that is correct in git and
+// permissive in production is the worst case, because review passes.
 //
-// THE CLOSED SETS BELOW MIRROR web/content/join.ts AND MUST NOT DRIFT. Adding a path
-// there and not here means real applicants get a permission error on submit, which
-// presents as an outage rather than as a validation failure. I got two of these values
-// wrong on the first attempt — `some` for `some-git`, `hackathon` for `build-day` —
-// which is why `npm run rules` now diffs this file against the content and fails.
+// THE CLOSED SETS BELOW MIRROR web/content/join.ts AND MUST NOT DRIFT. Adding an option
+// there and not here means a real member gets a permission error on save, which presents
+// as an outage rather than as a validation failure. Two of these values were wrong on the
+// first attempt — `some` for `some-git`, `hackathon` for `build-day` — which is why
+// `npm run rules` diffs this file against the content and fails the build.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Rules functions must be declared inside a match block, not at service level.
-    function isWellFormedApplication(d) {
+    // ---------------------------------------------------------------- helpers
+
+    /** Signed in, on the club's domain, with a verified address. The domain test is a
+     *  regex anchored at BOTH ends: `endsWith` alone would accept
+     *  "eve@evil.com@sst.scaler.com" and a leading-wildcard match would accept
+     *  "sst.scaler.com.evil.com". */
+    function isMember() {
+      return request.auth != null
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('^[^@]+@sst[.]scaler[.]com$');
+    }
+
+    /** An admin is a member whose address has a document in `admins`. Looked up by
+     *  email rather than uid so organisers can be added before they first sign in.
+     *
+     *  Lowercased on lookup because Google returns the address as the person typed it;
+     *  the document id in `admins` must therefore always be lowercase. */
+    function isAdmin() {
+      return isMember()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
+    }
+
+    /** Fields a member may never change after the first save. `created_at` is what
+     *  "member since" is read from, and `email`/`uid` are the identity the whole model
+     *  hangs on. */
+    function immutablesUnchanged() {
+      return request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.created_at == resource.data.created_at;
+    }
+
+    /** The profile shape. Mirrors web/lib/profile.ts and web/content/join.ts. */
+    function isWellFormedProfile(d, uid) {
       return
-        // Exactly the expected fields. `hasOnly` is the important half: `hasAll` alone
-        // would let a submitter append a hundred keys of their own.
+        // Exactly the expected fields. `hasOnly` is the load-bearing half: `hasAll`
+        // alone would let somebody append a hundred keys of their own — including, say,
+        // an `isAdmin` field that a future careless rule might read.
         d.keys().hasOnly([
-          'name', 'email', 'year_branch', 'hostel', 'github', 'level', 'path',
-          'interests', 'programs', 'programs_other', 'why', 'heard_from',
-          'updates', 'submitted_at'
+          'uid', 'email', 'name', 'year_branch', 'hostel', 'level', 'path',
+          'interests', 'programs', 'programs_other', 'github', 'why',
+          'heard_from', 'updates', 'created_at', 'updated_at'
         ])
         && d.keys().hasAll([
-          'name', 'email', 'year_branch', 'hostel', 'level', 'path', 'programs',
-          'why', 'submitted_at'
+          'uid', 'email', 'name', 'year_branch', 'hostel', 'level', 'path',
+          'programs', 'why', 'updated_at'
         ])
+
+        // Identity cannot be forged. The document id, the uid inside it and the signed-in
+        // token must all agree, and the stored address must be the one that signed in —
+        // so a member cannot file a profile under somebody else's name or address.
+        && d.uid == uid
+        && d.uid == request.auth.uid
+        && d.email == request.auth.token.email
 
         // Required strings, bounded. The form's maxlength is a courtesy to the reader;
         // these are the real limits, because a direct SDK call never sees the form.
-        // `why` matches the textarea's maxLength of 400.
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
-        && d.email is string && d.email.size() > 3 && d.email.size() <= 200
-        && d.email.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
         && d.year_branch is string && d.year_branch.size() > 0 && d.year_branch.size() <= 120
         && d.why is string && d.why.size() > 0 && d.why.size() <= 400
 
-        // Optional strings. Present-or-absent rather than nullable, so the stored
-        // shape stays predictable for whoever reads these later.
+        // Optional strings. Present-or-absent rather than nullable, so an absent github
+        // unambiguously means "not given".
         && (!('github' in d) || (d.github is string && d.github.size() <= 100))
         && (!('heard_from' in d) || (d.heard_from is string && d.heard_from.size() <= 60))
 
         // Closed sets — see the drift warning in the header.
-        // `hostel` is required, and the two values are the whole list: the form offers
-        // no opt-out, so an absent or empty hostel is a hand-rolled write, not an
-        // applicant who declined to answer.
         && d.hostel in ['uniworld-1', 'uniworld-2']
         && d.level in ['none', 'some-git', 'merged']
         && d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track']
@@ -74,11 +116,7 @@ service cloud.firestore {
              && d.interests.hasOnly(['web', 'ml', 'systems', 'design', 'docs'])
            ))
 
-        // Programmes. Unlike `interests` this one is REQUIRED and must be non-empty,
-        // which is the form's rule too — the browser will not submit without a tick.
-        // Enforced here as well because a direct SDK call never sees the form, and an
-        // application with an empty programmes list would look like a UI bug to
-        // whoever reads it rather than like the forgery it is.
+        // Programmes: required and non-empty, which is the form's rule too.
         && d.programs is list
         && d.programs.size() > 0
         && d.programs.size() <= 10
@@ -87,7 +125,7 @@ service cloud.firestore {
              'gssoc', 'ssoc', 'esoc', 'other'
            ])
         // 'other' and its free text are a pair, checked in BOTH directions: no bare
-        // 'other' with nothing to explain it, and no stray text without the tick that
+        // 'other' with nothing explaining it, and no stray text without the tick that
         // is supposed to have produced it.
         && (!d.programs.hasAny(['other'])
             || ('programs_other' in d
@@ -100,27 +138,63 @@ service cloud.firestore {
 
         && (!('updates' in d) || d.updates is bool)
 
-        // The server's clock, not the submitter's. `request.time` cannot be forged, so
-        // submission order is trustworthy even though everything else here is supplied
-        // by the client.
-        && d.submitted_at == request.time;
+        // The server's clock, never the client's, so "member since" and "last edited"
+        // cannot be backdated.
+        && d.updated_at == request.time
+        && (!('created_at' in d) || d.created_at == request.time || d.created_at == resource.data.created_at);
     }
 
+    // ---------------------------------------------------------------- members
+
+    match /users/{uid} {
+      // GET and LIST are separated on purpose. A single `read` rule using
+      // `request.auth.uid == uid` cannot express "admins may query the collection":
+      // Firestore evaluates a list against the rule without knowing each document, so
+      // the owner clause would make every query fail. Splitting them gives members
+      // their own row and admins the whole table, with no rule that is true for both.
+      allow get: if isMember() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      // First save. Only for yourself, and only a valid profile.
+      allow create: if isMember()
+        && request.auth.uid == uid
+        && isWellFormedProfile(request.resource.data, uid);
+
+      // Edits. Same validation, plus identity and created_at frozen.
+      allow update: if isMember()
+        && request.auth.uid == uid
+        && isWellFormedProfile(request.resource.data, uid)
+        && immutablesUnchanged();
+
+      // Nobody deletes a profile from a client, including its owner and including
+      // admins. A member asking to be removed is a conversation and a console action,
+      // not a button — and it keeps an admin session from being able to wipe the roster.
+      allow delete: if false;
+    }
+
+    // ----------------------------------------------------------------- admins
+
+    match /admins/{email} {
+      // You may read exactly your OWN row, which is how the client discovers whether to
+      // show the dashboard link. Scoped to the caller's address so this cannot be used
+      // to enumerate who the admins are.
+      allow get: if isMember() && request.auth.token.email.lower() == email;
+      allow list: if false;
+      // Managed by hand in the Firebase console. Denied to every client so that a
+      // compromised admin session cannot appoint further admins — the one privilege
+      // escalation this model would otherwise allow.
+      allow write: if false;
+    }
+
+    // ---------------------------------------------------- legacy applications
+
     match /applications/{id} {
-      // Nobody reads through the client. Stated outright rather than relying on
-      // deny-by-default, so anyone loosening it has to delete a line that says false
-      // rather than add one that was never there.
+      // Nothing writes here any more; the profile replaced it. Reads stay denied
+      // because these rows hold the same personal details as a profile, and the rows
+      // stay immutable so the history is intact.
       allow read: if false;
-
-      // Immutable once submitted. An applicant has no identity to prove ownership
-      // with, so neither they nor a stranger can edit or remove one.
+      allow create: if false;
       allow update, delete: if false;
-
-      // Anyone may submit exactly one well-formed application. Validated rather than
-      // accepted: an unvalidated create-only collection is a free document store, and
-      // the size limits are the only thing stopping a script filling the project's
-      // quota with one enormous field.
-      allow create: if isWellFormedApplication(request.resource.data);
     }
 
     // Everything else is closed. Deny-by-default would already do this; the explicit

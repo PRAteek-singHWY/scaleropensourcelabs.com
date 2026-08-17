@@ -82,6 +82,7 @@ const mono = JetBrains_Mono({
 import Nav from "@/components/Nav";
 import Reveal from "@/components/Reveal";
 import Footer from "@/components/Footer";
+import { AuthProvider } from "@/lib/auth";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://scaleropensourcelabs.com";
@@ -148,10 +149,18 @@ export default function RootLayout({
             seven. Reveal renders nothing; it opts the document in to the scroll
             settle, and doing that once at the root is also what stops each route
             re-registering its own observer on navigation. */}
-        <Nav />
-        <Reveal />
-        {children}
-        <Footer />
+        {/* AuthProvider wraps the whole document rather than just /join, because the
+            nav shows whether somebody is signed in and the nav is on every route. It
+            costs nothing on the routes that do not care: firebase/auth is dynamically
+            imported inside the provider, so a reader who never signs in never
+            downloads it, and with no Firebase config the provider resolves
+            immediately to "signed out" and renders no extra markup. */}
+        <AuthProvider>
+          <Nav />
+          <Reveal />
+          {children}
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

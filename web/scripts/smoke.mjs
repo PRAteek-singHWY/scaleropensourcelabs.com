@@ -171,16 +171,34 @@ for (const path of ["/projects", "/hall-of-fame", "/"]) {
 await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
 await assertOurSite(pg);
 await pg.waitForTimeout(700);
+// /join IS BEHIND SIGN-IN NOW, so the two assertions that used to live here — that the
+// form preselects ?path and rejects a bogus one — cannot run from a signed-out browser:
+// there is no #af-path to read until somebody has signed in with a college Google
+// account, which needs the Auth emulator and a popup. That behaviour did not go away and
+// is not untested; it moved to the emulator end-to-end run, which signs in for real.
+//
+// What smoke can still assert is the part that would silently break the funnel: that the
+// gate is what renders, and that the QUERY STRING SURVIVES it. Every page's closing
+// action links to /join?path=<id>, and sign-in does not navigate — so if the param were
+// ever dropped here, the preselection would be dead no matter how correct the form is.
+await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
+await pg.waitForTimeout(900);
 ok(
-  "join form preselects ?path=program-track",
-  (await pg.evaluate(() => document.querySelector("#af-path")?.value)) === "program-track",
+  "join shows the sign-in step to a signed-out reader",
+  await pg.evaluate(() =>
+    /sign in with your college account/i.test(document.querySelector("main")?.innerText ?? ""),
+  ),
 );
-
-await pg.goto(`${BASE}/join?path=not-a-real-path`, { waitUntil: "networkidle" });
-await pg.waitForTimeout(700);
 ok(
-  "join form ignores a bogus ?path",
-  (await pg.evaluate(() => document.querySelector("#af-path")?.value)) === "",
+  "join keeps ?path through the sign-in gate",
+  new URL(pg.url()).searchParams.get("path") === "program-track",
+);
+// The form must NOT be reachable without signing in. This is a UI assertion, not a
+// security one — the boundary is firestore.rules — but a form rendering to a signed-out
+// visitor would mean the gate had broken open.
+ok(
+  "the profile form is not rendered before sign-in",
+  (await pg.evaluate(() => document.querySelectorAll("#pf-path, #pf-name").length)) === 0,
 );
 
 await b.close();

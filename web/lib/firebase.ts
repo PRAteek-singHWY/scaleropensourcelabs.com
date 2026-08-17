@@ -22,6 +22,7 @@
 
 import type { FirebaseApp } from "firebase/app";
 import type { Firestore } from "firebase/firestore";
+import type { Auth } from "firebase/auth";
 
 /** The six values Firebase needs. All public; see the note above. */
 const config = {
@@ -55,11 +56,19 @@ const EMULATOR = process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR ?? "";
  *  half-filled config that initialises and then fails per-request is worse than one
  *  that declines to initialise at all. */
 export function isConfigured(): boolean {
-  // Against the emulator only a projectId is needed — there is no real project to
-  // authenticate to, and requiring the full set would mean inventing five fake values
-  // just to run locally.
-  if (EMULATOR) return Boolean(config.projectId);
-  return Boolean(config.apiKey && config.projectId && config.appId);
+  // authDomain is in this list because SIGN-IN CANNOT WORK WITHOUT IT: signInWithPopup
+  // hosts its handler on the project's auth domain, and with the value missing it throws
+  // `auth/auth-domain-config-required`. It was absent from this check originally, which
+  // meant a deployment with five of the six values would render a working-looking
+  // "Continue with Google" button that failed on click with a generic message. Found by
+  // driving the real button rather than by reading the config.
+  //
+  // Required even against the emulator, for the same reason — the emulator intercepts
+  // the request but the SDK still validates the field first.
+  if (EMULATOR) return Boolean(config.projectId && config.authDomain);
+  return Boolean(
+    config.apiKey && config.projectId && config.appId && config.authDomain,
+  );
 }
 
 let appPromise: Promise<FirebaseApp> | null = null;
@@ -132,6 +141,68 @@ export async function getDb(): Promise<Firestore | null> {
   return db;
 }
 
-/** The single collection this site writes to. Named here so the rules file, the
- *  form and any future admin view cannot disagree about it. */
+/** Guards the Auth emulator wiring, same reason as `emulatorConnected` above. */
+let authEmulatorConnected = false;
+
+/** The Auth handle, or null when Firebase is not configured.
+ *
+ *  Separate from getDb() and dynamically imported for the same reason: firebase/auth is
+ *  another ~100KB, and the five routes with no sign-in must not carry it. */
+export async function getAuthClient(): Promise<Auth | null> {
+  const app = await getApp();
+  if (!app) return null;
+  const { getAuth, connectAuthEmulator } = await import("firebase/auth");
+  const auth = getAuth(app);
+
+  // The Auth emulator is a DIFFERENT port from Firestore's (9099 by default). Derived
+  // from the Firestore host so one env var covers both, because two would inevitably
+  // be set inconsistently.
+  if (EMULATOR && !authEmulatorConnected) {
+    const [host] = EMULATOR.split(":");
+    connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
+    authEmulatorConnected = true;
+    console.info(`[osc] Auth -> emulator ${host}:9099`);
+  }
+
+  return auth;
+}
+
+/** Collection names, in one place, so the rules file, the client and any future admin
+ *  view cannot disagree about them. `npm run rules` asserts these against
+ *  firestore.rules. */
+
+/** Legacy. The anonymous application form wrote here before sign-in existed. Nothing
+ *  writes to it now — the profile replaces it — but the rules still protect the rows
+ *  already in it, and deleting the name would orphan them. */
 export const APPLICATIONS = "applications";
+
+/** One document per registered member, keyed by the Firebase Auth uid. Keying on the
+ *  uid rather than storing it as a field is what makes the ownership rule a single
+ *  comparison instead of a query, and it makes a second profile per person impossible
+ *  by construction. */
+export const USERS = "users";
+
+/** Membership of this collection is what makes somebody an admin. Keyed by EMAIL rather
+ *  than uid so an organiser can be added from the Firebase console before they have
+ *  ever signed in — with uid keys you would have to make them sign in, read their uid
+ *  out of the Auth tab, and then create the document, which is a worse first day.
+ *
+ *  Writes are denied to every client, including admins: the list is managed by hand in
+ *  the console, so a compromised admin session cannot appoint more admins. */
+export const ADMINS = "admins";
+
+/** THE ONLY EMAIL DOMAIN THAT MAY REGISTER.
+ *
+ *  Enforced in three places, deliberately: the Google sign-in call passes it as a hint,
+ *  lib/auth.tsx signs out anybody who arrives with another domain, and firestore.rules
+ *  checks it on every read and write. Only the third one is security — the first is
+ *  convenience and the second is a clear error message. If you change this, change the
+ *  regex in firestore.rules too; `npm run rules` fails if they disagree. */
+export const ALLOWED_EMAIL_DOMAIN = "sst.scaler.com";
+
+/** True for an address this club will register. Case-insensitive because Google returns
+ *  the address as the user typed it and nobody thinks about capitals in an email. */
+export function isAllowedEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return email.trim().toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`);
+}

@@ -48,28 +48,42 @@ before launch. Each is a numbered step below.
 
 ## What it does
 
-One form writes to one collection, and nothing reads it back.
+Members sign in, fill a profile once, and organisers read the roster.
 
 ```
-/join page  ──addDoc()──▶  Firestore collection `applications`
-                                      │
-                                      ▼
-                          organisers read them in the
-                          Firebase console (Google account
-                          permissions, not these rules)
+/join  ──Google sign-in (@sst.scaler.com only)──▶  Firebase Auth
+                    │
+                    ▼
+          profile form ──setDoc()──▶  users/{uid}      one doc per member
+                                          │             owner-only read/write
+                                          ▼
+/admin  ──list, admins only──────────▶  breakdowns + table + CSV export
 ```
 
-That is the whole architecture. There is no server, no admin SDK, no API route, and
-no client anywhere that reads an application. The site stays a static build.
+No server, no admin SDK, no API route. The site stays a static build; everything is the
+client talking to Firestore under the rules.
 
 | File | Role |
 |---|---|
 | `firestore.rules` | **The security boundary.** Read this one properly. |
-| `firebase.json` | Tells the Firebase CLI where the rules live. |
-| `web/lib/firebase.ts` | Lazy client init. Returns `null` when unconfigured. |
-| `web/components/JoinForm.tsx` | The submit handler. |
-| `web/scripts/rules.mjs` | Asserts the rules and the form still agree. Runs in CI. |
+| `firebase.json` | Rules path, emulator ports, and the Hosting config. |
+| `web/lib/firebase.ts` | Lazy client init, collection names, the allowed domain. |
+| `web/lib/auth.tsx` | Sign-in, sign-out, and the admin check. |
+| `web/lib/profile.ts` | The profile shape and its read/write. |
+| `web/components/JoinGate.tsx` | The four states of `/join`. |
+| `web/components/ProfileForm.tsx` | The form itself. |
+| `web/components/AdminDashboard.tsx` | The organisers' view. |
+| `web/scripts/rules.mjs` | Text check: rules vs the form. Runs in CI. |
+| `web/scripts/rules-emulator.mjs` | Executes the rules as several different users. |
 | `web/.env.example` | The variables, with notes. |
+
+Three collections:
+
+| Collection | Who can read | Who can write |
+|---|---|---|
+| `users/{uid}` | that member, and admins | that member only, validated |
+| `admins/{email}` | your own row only | **nobody, from any client** |
+| `applications/{id}` | nobody | nobody — legacy, kept sealed |
 
 ---
 
@@ -148,16 +162,21 @@ firebase deploy --only firestore:rules
 
 What the rules say, in short:
 
-- `create` — anyone, but only a **validated** document (exact field set, length
-  limits, values from closed lists, server timestamp).
-- `read` — **nobody**, ever, through any client.
-- `update` / `delete` — **nobody**. Applications are immutable once submitted.
+- Only a **verified @sst.scaler.com** account can do anything at all.
+- A member may read and write **their own** `users/{uid}` document, validated against the
+  form's exact field set, length limits and closed value lists.
+- `email`, `uid` and `created_at` are **frozen after the first save**.
+- Only an **admin** may list the membership. No client may delete a profile — including
+  admins, and including its owner.
+- `admins` cannot be written by any client, so a compromised admin session cannot appoint
+  more admins.
 - Every other path in the project — closed.
 
 ### 5. App Check (do this before launch)
 
-`applications` is a public create-only endpoint. Without attestation it will
-eventually be filled by a script.
+Writes now require a signed-in @sst.scaler.com account, so the open-endpoint problem is
+much smaller than it was — but App Check is still worth having: it attests that requests
+come from this app rather than from a script replaying a stolen token.
 
 **Build** → **App Check** → register the web app with **reCAPTCHA v3**. Put the site
 key in `.env.local`:
@@ -180,10 +199,14 @@ so a real applicant can still apply if attestation breaks.
 cd web && npm run dev
 ```
 
-Open `/join`, fill the form, submit. You should get **"You're in the queue."**, and a
-new document under **Firestore → Data → applications**.
+Open `/join`. You should get **"Sign in with your college account"**. Sign in with an
+`@sst.scaler.com` Google account, fill the profile, and save — you should land on
+**"You're in the club."** with your details listed, and a new document under
+**Firestore → Data → users**, whose id is your Auth uid.
 
-If you get anything else, the table below tells you which of the six things is wrong.
+Then try it with a personal Gmail account: sign-in should refuse it and say so.
+
+If you get anything else, the troubleshooting table below names the likely cause.
 
 ---
 
@@ -275,6 +298,56 @@ and refused".
 
 ---
 
+## Authentication (required — the join form needs it)
+
+Registration is Google sign-in restricted to **@sst.scaler.com**. Two console steps, and
+sign-in fails with a confusing error if either is missed.
+
+### 1. Enable the Google provider
+
+**Authentication → Sign-in method → Add new provider → Google → Enable.** Set the support
+email to the club address and save.
+
+Without this, sign-in fails with `auth/operation-not-allowed`.
+
+### 2. Authorise the domains the site is served from
+
+**Authentication → Settings → Authorized domains.** Add every origin the site runs on:
+
+```
+scaleropensourcelabs.com
+osc-website-610b9.web.app        ← usually there already
+localhost                        ← for local development
+```
+
+Miss this and sign-in fails with `auth/unauthorized-domain`. The site says so explicitly
+rather than showing a generic error, because it is the one configuration mistake here that
+looks exactly like a code bug.
+
+> **Why Google sign-in and not email + password.** With a password form, anybody could
+> register `principal@sst.scaler.com` without owning it — and the address is the only thing
+> the club uses to decide who is a member, so an unverified one is worthless. Google
+> sign-in proves the person controls the mailbox. The domain is enforced in
+> `firestore.rules`, which also requires `email_verified`, so enabling a password provider
+> later cannot quietly open that hole.
+
+### 3. Make somebody an organiser
+
+Admins are members of the `admins` collection, keyed by **lowercase email**. No client can
+write it — not even an admin — so it is managed by hand:
+
+**Firestore → Data → Start collection** → collection id `admins` → document id
+`someone@sst.scaler.com` → add any field (e.g. `added_by: "console"`). The document only
+has to exist.
+
+Keying by email rather than uid means you can add an organiser **before** they have ever
+signed in. They see a **Dashboard** link on `/join` and can open `/admin`.
+
+To remove an organiser, delete their document. Do not add a `write` rule to this
+collection: denying it is what stops a compromised admin session appointing more admins.
+
+---
+
 ## Reading submissions
 
 **Firestore → Data → `applications`.** Access is governed by who has permissions on
@@ -289,32 +362,55 @@ change than it looks.
 
 ### The document shape
 
+One document per member at `users/{uid}`, where `{uid}` is the Firebase Auth uid:
+
 ```js
-{
-  name:         "Asha Verma",             // required
-  email:        "asha@example.com",       // required, format-checked
-  year_branch:  "2nd year, CSE",          // required
-  hostel:       "uniworld-1",             // required, closed set
-  level:        "none",                   // required, closed set
-  path:         "build-day",              // required, closed set
-  why:          "…",                      // required, ≤400 chars
-  interests:    ["web", "ml"],            // optional, ≤5, closed set
-  programs:     ["gsoc", "outreachy"],    // required, ≥1, ≤10, closed set
-  programs_other: "Season of Docs",       // required iff programs contains "other"
-  github:       "octocat",                // optional, omitted if blank
-  heard_from:   "senior",                 // optional, omitted if blank
-  updates:      false,                    // optional bool
-  submitted_at: <server timestamp>        // set by Firestore, not the client
+users/l8JdTxxca59NYDtbsrhTGdF0iKLE {
+  uid          "l8JdTxx..."            // same as the document id
+  email        "asha@sst.scaler.com"   // pinned to the signed-in address by the rules
+  name         "Asha Verma"
+  year_branch  "3rd year, ECE"         // free text, one field
+  hostel       "uniworld-1"            // closed set
+  level        "some-git"              // closed set
+  path         "program-track"         // closed set
+  programs     ["gsoc", "outreachy"]   // closed set, at least one
+  interests    ["web"]                 // optional
+  github       "asha"                  // optional, omitted when blank
+  heard_from   "senior"                // optional
+  why          "…"                     // ≤400 chars
+  updates      true
+  created_at   <server timestamp>      // written once, frozen by the rules
+  updated_at   <server timestamp>      // moves on every save
 }
 ```
 
-`programs` is the only list field that is **required and non-empty**. `interests` may be
-absent; `programs` may not. `programs_other` and the `"other"` value are a pair enforced
-in both directions, so no application arrives saying only "other".
+**Not JSON files** — Firestore documents, which are JSON-*like* with typed fields
+(string, number, boolean, array, map, timestamp). They look like JSON in the console and
+export as JSON, but they are rows in a real database with per-field security.
 
-`submitted_at` uses `request.time` and is enforced by the rules, so submission order
-cannot be forged even though every other field comes from the browser. Optional fields
-are **omitted rather than stored empty**, so `github` being absent means "not given".
+Keyed on the uid rather than storing it as a field, which buys two things: the ownership
+rule is a comparison (`request.auth.uid == uid`) rather than a query, and a second profile
+for the same person is impossible by construction.
+
+`created_at` is frozen on edit, so "member since" is trustworthy. `email` and `uid` are
+frozen too — a member cannot re-file their profile under somebody else's address.
+
+Optional fields are **omitted rather than stored empty**, so an absent `github`
+unambiguously means "not given".
+
+### Capacity
+
+For a few hundred members this sits inside the free Spark plan with room to spare:
+
+| | Free limit | 300 members |
+|---|---|---|
+| Auth accounts | unlimited | 300 |
+| Storage | 1 GiB | ~600 KB |
+| Reads/day | 50,000 | a few hundred |
+| Writes/day | 20,000 | a few hundred |
+
+The dashboard does one read per member per load, unpaginated, which is deliberate at this
+scale. Past a few thousand members that needs revisiting.
 
 ---
 

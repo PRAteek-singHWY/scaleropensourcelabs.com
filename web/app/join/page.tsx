@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import ApplyForm from "@/components/ApplyForm";
+import JoinGate from "@/components/JoinGate";
 import Duo from "@/components/Duo";
 import Note from "@/components/fx/Note";
 import Sticker from "@/components/fx/Sticker";
@@ -160,7 +160,17 @@ export default function Join() {
               </div>
             </div>
 
-            <ApplyForm />
+            {/* WAS <ApplyForm />, THE ANONYMOUS ONE-SHOT FORM. It is now sign-in
+                first: register with a college Google account, then fill a profile
+                once that you can come back and edit. The column this sits in, the
+                copy beside it and the two tiles above are unchanged — the flow
+                changed, not the page.
+
+                Everything about the gate is client-side, because the site is a
+                static export. Route-gating is therefore cosmetic and the data is
+                protected by firestore.rules instead. See the note at the top of
+                lib/auth.tsx before assuming a hidden page is a safe one. */}
+            <JoinGate />
           </div>
         </section>
     </main>
