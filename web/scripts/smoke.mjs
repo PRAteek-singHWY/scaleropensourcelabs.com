@@ -175,7 +175,8 @@ await pg.waitForTimeout(700);
 // form preselects ?path and rejects a bogus one — cannot run from a signed-out browser:
 // there is no #af-path to read until somebody has signed in with a college Google
 // account, which needs the Auth emulator and a popup. That behaviour did not go away and
-// is not untested; it moved to the emulator end-to-end run, which signs in for real.
+// is not untested; it moved to scripts/e2e-auth.mjs, which signs in for real against the
+// Auth emulator. Run it with `npm run e2e:auth`.
 //
 // What smoke can still assert is the part that would silently break the funnel: that the
 // gate is what renders, and that the QUERY STRING SURVIVES it. Every page's closing

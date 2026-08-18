@@ -268,6 +268,29 @@ actual collection.
 Delete `.env.local` when you are done, or the form will keep pointing at an emulator
 that is no longer running.
 
+### Testing the whole flow in a browser
+
+```bash
+# emulators running, dev server on 3007, then:
+SITE_URL=http://localhost:3007 npm run e2e:auth
+```
+
+29 assertions that drive a real browser through the whole journey: a gmail.com account
+refused by name, a college account through to the details form, `?path=` surviving the
+sign-in step, the save, the **edit** (the path that only breaks the second time somebody
+uses the page), a member refused the dashboard, and an organiser served it with all six
+breakdowns.
+
+It also reads the stored document back with the owner token — the only way to check what
+was written, since the rules forbid a client read — and asserts the document id is the auth
+uid, the stored address is the signed-in one, and `created_at` stayed put while
+`updated_at` moved.
+
+**It is the only check that would catch a CSP mistake breaking sign-in.** Google sign-in
+needs `apis.google.com` in `script-src` and the auth domain in `frame-src`; with either
+missing the page renders perfectly, the button is present, the click does nothing, and the
+only trace is a console violation. That happened, and this is what found it.
+
 ### Testing the rules directly
 
 ```bash
