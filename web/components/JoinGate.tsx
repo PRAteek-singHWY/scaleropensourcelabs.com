@@ -105,9 +105,10 @@ export default function JoinGate() {
           Sign in with your college account
         </h2>
         <p className="measure mt-4 text-body text-haze">
-          Registration is open to <strong className="text-ink">@{DOMAIN}</strong> accounts
-          only. That is the whole check — no fee, no interview, no prior experience. Once
-          you are in you fill a profile once, and you never fill this form again.
+          Sign-up is open to <strong className="text-ink">@{DOMAIN}</strong> accounts only —
+          no other address can register. That is the whole check: no fee, no interview, no
+          prior experience. Then you fill in your details once, and never fill this form
+          again.
         </p>
 
         <button
@@ -128,7 +129,7 @@ export default function JoinGate() {
         <p className="mt-7 border-t border-seam pt-5 text-[15px] leading-relaxed text-dust">
           We use Google sign-in rather than a password so that nobody can register an
           address they do not own — and so you have no password to invent or lose. We
-          never see your password, and we store only what you type into the profile.
+          never see your password, and we store only the details you type in on the next step.
         </p>
       </div>
     );
@@ -164,13 +165,17 @@ export default function JoinGate() {
             </button>
           </div>
         </div>
+{/* "JOIN THE CLUB", NOT "CREATE YOUR PROFILE". Signing in is not joining — it only
+            proves which college you are at. This step is the join, so it says so, and the
+            reader is not left wondering what a "profile" is for or whether they are
+            already a member. */}
         <h2 className="mt-4 font-display text-display-md font-bold tracking-tight">
-          {editing ? "Update your details" : "Create your profile"}
+          {editing ? "Update your details" : "Join the club"}
         </h2>
         <p className="measure mt-4 text-body text-haze">
           {editing
             ? "Change anything and save. Your name and address stay as they are on your college account."
-            : "Fill this once. It is what the organisers see when they are putting build-day pairs and programme cohorts together."}
+            : "Fill in these details to finish joining. It takes a minute, you only do it once, and it is what the organisers see when they are putting build-day pairs and programme cohorts together."}
         </p>
 
         {loadError && (
@@ -222,7 +227,7 @@ export default function JoinGate() {
   return (
     <div className="card rounded-panel bg-raise p-8 sm:p-10">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <p className="chip chip-pop">You&apos;re registered</p>
+        <p className="chip chip-pop">Details saved</p>
         <button
           type="button"
           onClick={() => void signOut()}
@@ -232,12 +237,18 @@ export default function JoinGate() {
         </button>
       </div>
 
+{/* NOT "You're in the club." That was the copy here first and it overclaims at
+          exactly the wrong moment: filling in a form is not membership, and telling
+          somebody they have arrived before they have been to a single session is the kind
+          of unearned claim the rest of this site refuses to make. What is true is that
+          their details are in and somebody will be in touch — so it says that, and the
+          club part happens on a Saturday. */}
       <h2 className="mt-4 font-display text-display-md font-bold tracking-tight">
-        You&apos;re in the club.
+        That&apos;s you signed up.
       </h2>
       <p className="measure mt-4 text-body text-haze">
         Somebody will message you before the next session. There is nothing else to do
-        and nothing to prepare — bring a laptop.
+        and nothing to prepare — turn up with a laptop and you are in.
       </p>
 
       <dl className="mt-8 divide-y divide-seam border-y border-seam">

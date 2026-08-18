@@ -422,10 +422,15 @@ export default function ProfileForm({
         disabled={state === "saving"}
         className="btn btn-primary w-full disabled:opacity-60"
       >
+        {/* "Finish joining", not "Create my profile" and not "Join the club". The first
+            described a mechanism nobody cares about; the second would repeat the heading
+            two inches above it, and a button that echoes its own heading reads as a
+            placeholder. This names the outcome, and it matches the sentence above the
+            fields — "fill in these details to finish joining". */}
         {state === "saving"
           ? "Saving…"
           : isFirstSave
-            ? "Create my profile"
+            ? "Finish joining"
             : "Save changes"}
       </button>
 
@@ -441,8 +446,8 @@ export default function ProfileForm({
       {/* What happens to the data, next to the button rather than in a policy page
           nobody opens. It is the member's information, not ours. */}
       <p className="border-t border-seam pt-5 text-[15px] leading-relaxed text-dust">
-        Your profile is visible to you and to the club organisers, and to nobody else. It
-        is not published on this site — the names on it are only there because those
+        Your details are visible to you and to the club organisers, and to nobody else.
+        Nothing here is published on this site — the names on it are only there because those
         people were asked and said yes. You can edit or correct any of this at any time.
       </p>
     </form>
