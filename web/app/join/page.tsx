@@ -11,6 +11,11 @@ import Sticker from "@/components/fx/Sticker";
 // the next action, and a closing "here is what to do next" band underneath a
 // half-filled form is an invitation to abandon it.
 //
+// It does now close on a band, but the distinction above is what that band is
+// built to respect — it contains no link, so it argues for the form rather than
+// offering somewhere else to be. Anything added down there has to clear the same
+// bar: no exits under an unfinished form.
+//
 // It is also absent from PAGES, so it appears in neither the nav strip nor beside
 // the other routes in the footer. The nav carries it as a filled button at the
 // other end of the bar — putting the same word in the strip as well would be the
@@ -171,6 +176,60 @@ export default function Join() {
                 protected by firestore.rules instead. See the note at the top of
                 lib/auth.tsx before assuming a hidden page is a safe one. */}
             <JoinGate />
+          </div>
+        </section>
+
+        {/* ---- The two futures ---------------------------------------------
+            The closing band, and the exception the comment at the top of this
+            file now carries: it is not a NextAction. Every other route ends by
+            handing you somewhere else to go, which under a half-filled form
+            would be an exit. This band has no link in it at all. It restates
+            the decision already on the screen and then stops, so the only
+            thing to do with it is scroll back up and finish.
+
+            NOT INSIDE ApplyForm. It lived in the card for one revision and the
+            card is the wrong container: at 15px inside a 7-unit padded tile it
+            read as a third disclaimer under the two grey notes about data, and
+            disclaimers are what people skip. On the page at display-md it is
+            the loudest type below the hero.
+
+            The asymmetry is the whole argument. Both eyebrows take .label, so
+            they read as one pair rather than a warning and a reward — the
+            weight sits in the body copy instead: `dust` on the left, `ink` on
+            the right, plus the accent rule down the right column. The future
+            where you did nothing is literally the dimmer of the two.
+            Do not try to colour the eyebrow to sharpen it: .label sets its own
+            colour and every custom class in globals.css is declared after
+            @tailwind utilities, so a text-* utility on it silently does
+            nothing. See the note on .page-top there. */}
+        <section className="section pb-24 pt-4">
+          {/* One column until lg, and lg rather than sm because these are
+              30-word paragraphs at display size — the point where two of them
+              fit side by side without either dropping to four words a line is
+              a good deal wider than the point where two columns fit. */}
+          <div
+            className="grid gap-10 border-t border-seam pt-12 lg:grid-cols-2 lg:gap-14"
+            data-reveal-group
+          >
+            <div>
+              <p className="label">If you close this tab without applying</p>
+              <p className="mt-4 text-display-md font-medium text-dust text-balance">
+                You&apos;ll open it again in February. The same form, one semester
+                less, and a batch of students who already know how to review your
+                code.
+              </p>
+            </div>
+
+            {/* The accent rule is the second column's left edge at lg and its top
+                edge below that, so the band never loses the mark that says which
+                of the two futures the page is pointing at. */}
+            <div className="border-l-2 border-accent pl-7 lg:pl-14">
+              <p className="label">If you hit the button</p>
+              <p className="mt-4 text-display-md font-semibold text-ink text-balance">
+                Someone reads it this week. You show up regularly. By November
+                you&apos;re the one answering the questions.
+              </p>
+            </div>
           </div>
         </section>
     </main>
