@@ -493,7 +493,7 @@ export default function Home() {
                       reader who has scrolled past that section already knows what
                       the green means. */}
                   <th scope="col" className="px-5 pb-5 align-bottom">
-                    <span className="chip chip-mint chip-true">OSC club 🟢</span>
+                    <span className="chip chip-mint chip-true">OSC club</span>
                   </th>
                 </tr>
               </thead>
