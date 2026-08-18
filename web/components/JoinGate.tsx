@@ -126,7 +126,22 @@ export default function JoinGate() {
           </p>
         )}
 
+        {/* THE WAY OUT FOR SOMEBODY THE DOMAIN RULE SHUTS OUT, and it needs to exist.
+            Restricting sign-up to @sst.scaler.com is deliberate, but it means a student
+            whose college account is broken, or anybody from outside SST who wants to
+            reach the club, now has NO route at all — where the anonymous form this
+            replaced was open to everyone. A closed door with no bell on it is a worse
+            outcome than the one the restriction was protecting against, and it costs one
+            sentence to fix. */}
         <p className="mt-7 border-t border-seam pt-5 text-[15px] leading-relaxed text-dust">
+          No college account, or yours is not working? Email{" "}
+          <a href={`mailto:${LINKS.email}`} className="link-u text-accent">
+            {LINKS.email}
+          </a>{" "}
+          and a person will reply — there is no form you have to use.
+        </p>
+
+        <p className="mt-3 text-[15px] leading-relaxed text-dust">
           We use Google sign-in rather than a password so that nobody can register an
           address they do not own — and so you have no password to invent or lose. We
           never see your password, and we store only the details you type in on the next step.
