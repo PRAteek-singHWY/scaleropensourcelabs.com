@@ -82,8 +82,22 @@ async function signIn(pg, email, name) {
     pg.getByRole("button", { name: /continue with google/i }).click(),
   ]);
   await pop.waitForLoadState("domcontentloaded");
-  await pop.getByText(/add new account/i).click();
-  await pop.waitForTimeout(600);
+  // A DOM CLICK, AND SCROLLED INTO VIEW FIRST. The emulator's picker lists every account
+  // created earlier in the run, so by the time the organiser signs in "Add new account"
+  // has been pushed below the fold and Playwright's click lands on nothing — the admin
+  // block then failed with a timeout on a selector three steps later, which looks like a
+  // dashboard fault rather than a picker one. It cost two misdiagnosed red runs.
+  await pop.waitForTimeout(400);
+  const added = await pop.evaluate(() => {
+    const el = [...document.querySelectorAll("button, a, [role=button]")]
+      .find((n) => /add new account/i.test(n.innerText || ""));
+    if (!el) return false;
+    el.scrollIntoView({ block: "center" });
+    el.click();
+    return true;
+  });
+  if (!added) throw new Error("emulator picker: could not find 'Add new account'");
+  await pop.waitForTimeout(700);
   await pop.locator("#email-input").fill(email);
   await pop.locator("#display-name-input").fill(name);
   await pop.evaluate(() =>
@@ -120,6 +134,14 @@ console.log("-- a student signs up --");
   ok("a non-college address is refused", /not an @sst\.scaler\.com address/i.test(refusal));
   ok("and it stays on the sign-in step",
     /sign in with your college account/i.test(await pg.locator("main").innerText()));
+  // A REFUSAL MUST NOT BE A DEAD END. Before this, somebody signed into a personal Gmail
+  // on a shared laptop was told their address was wrong and left looking at the same
+  // "Continue with Google" button, with nothing saying the fix is to pick another
+  // account. The button relabels and the copy names the address they used.
+  ok("the refusal names the address that was used",
+    (await pg.locator("main").innerText()).includes("outsider@gmail.com"));
+  ok("and the button now offers a different account",
+    await pg.getByRole("button", { name: /choose a different account/i }).isVisible().catch(() => false));
 
   await pg.reload({ waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(2000);

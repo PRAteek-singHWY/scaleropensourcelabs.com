@@ -58,6 +58,8 @@ type AuthState = {
   configured: boolean;
   busy: boolean;
   error: string;
+  /** Set when the last attempt was refused for being off-domain. */
+  wrongAccount: string;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -72,6 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  /** The off-domain address somebody just tried, so the card can offer "use a different
+   *  account" rather than leaving them staring at a refusal. */
+  const [wrongAccount, setWrongAccount] = useState("");
 
   // Subscribe once. onAuthStateChanged also fires on page load with the restored
   // session, which is what makes sign-in survive a refresh without us storing anything.
@@ -83,7 +88,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       const auth = await getAuthClient();
       if (!auth || !alive) return;
-      const { onAuthStateChanged } = await import("firebase/auth");
+      const { onAuthStateChanged, getRedirectResult } = await import("firebase/auth");
+
+      // THE OTHER HALF OF THE REDIRECT FALLBACK. Coming back from a full-page redirect,
+      // onAuthStateChanged alone would report the user and silently swallow any error
+      // from the sign-in itself — so a reader who was refused mid-redirect would land on
+      // a sign-in card with no explanation. This surfaces it.
+      //
+      // It resolves to null on an ordinary page load, which is the common case, so it
+      // costs a promise and nothing else.
+      try {
+        await getRedirectResult(auth);
+      } catch (e) {
+        const code = (e as { code?: string })?.code ?? "";
+        if (alive && code) {
+          console.error("[osc] redirect sign-in failed", e);
+          setError("Sign-in did not complete. Please try again.");
+        }
+      }
       unsub = onAuthStateChanged(auth, (u) => {
         if (!alive) return;
         // Belt and braces against a session restored from before a domain change, or
@@ -143,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       configured,
       busy,
       error,
+      wrongAccount,
       async signIn() {
         setError("");
         if (!configured) {
@@ -153,21 +176,60 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const auth = await getAuthClient();
           if (!auth) throw new Error("Could not reach the sign-in service");
-          const { GoogleAuthProvider, signInWithPopup } = await import("firebase/auth");
+          const { GoogleAuthProvider, signInWithPopup, signInWithRedirect } =
+            await import("firebase/auth");
           const provider = new GoogleAuthProvider();
-          // The hint, not the guard — see the note at the top of this file.
-          provider.setCustomParameters({ hd: ALLOWED_EMAIL_DOMAIN });
+          provider.setCustomParameters({
+            // The domain hint, not the guard — see the note at the top of this file.
+            hd: ALLOWED_EMAIL_DOMAIN,
+            // ALWAYS SHOW THE ACCOUNT CHOOSER. Without this, Google silently reuses
+            // whichever account the browser is already signed into — and on a shared
+            // laptop, or for anybody whose default is a personal Gmail, that means being
+            // refused for an account they never chose. They then have no idea what to do
+            // differently, because they were never asked. Forcing the chooser turns a
+            // dead end into a decision.
+            prompt: "select_account",
+          });
 
-          const cred = await signInWithPopup(auth, provider);
+          let cred;
+          try {
+            cred = await signInWithPopup(auth, provider);
+          } catch (popupErr) {
+            const pc = (popupErr as { code?: string })?.code ?? "";
+            // A CLOSED popup is the reader's decision; rethrow and let the handler below
+            // stay quiet about it. Anything else means the popup could not be used at
+            // all, and the right answer is a full-page redirect rather than an error.
+            //
+            // THIS IS THE MOBILE PATH, and it is why the fallback exists rather than
+            // being defensive padding: signInWithPopup fails outright in most in-app
+            // browsers (Instagram, LinkedIn) and is unreliable on iOS Safari — which is
+            // where a student clicking a link in a club post actually is. Before this,
+            // those readers got "your browser blocked the sign-in popup" and no way
+            // forward.
+            if (
+              pc === "auth/popup-closed-by-user" ||
+              pc === "auth/cancelled-popup-request" ||
+              pc === "auth/user-cancelled"
+            ) {
+              throw popupErr;
+            }
+            console.info("[osc] popup unavailable, falling back to redirect", pc);
+            // Navigates away. Execution stops here; the result is picked up by
+            // getRedirectResult on the way back in.
+            await signInWithRedirect(auth, provider);
+            return;
+          }
 
           if (!isAllowedEmail(cred.user.email)) {
             await auth.signOut();
+            setWrongAccount(cred.user.email ?? "");
             setError(
               `${cred.user.email ?? "That account"} is not an @${ALLOWED_EMAIL_DOMAIN} address. ` +
-                "Use your college account.",
+                "Use your college account instead.",
             );
             return;
           }
+          setWrongAccount("");
         } catch (e) {
           const code = (e as { code?: string })?.code ?? "";
           // A closed popup is not an error worth shouting about — the reader did it on
@@ -178,8 +240,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             code === "auth/cancelled-popup-request"
           ) {
             setError("");
-          } else if (code === "auth/popup-blocked") {
-            setError("Your browser blocked the sign-in popup. Allow popups and try again.");
+          } else if (code === "auth/network-request-failed") {
+            setError("That failed on the network rather than on your account. Check your connection and try again.");
+          } else if (code === "auth/operation-not-allowed") {
+            // The one configuration mistake that looks like the member's fault.
+            setError(
+              "Google sign-in is not switched on for this project yet. An organiser needs to " +
+                "enable it under Authentication → Sign-in method.",
+            );
+            console.error("[osc] enable the Google provider in Firebase Authentication", e);
           } else if (code === "auth/unauthorized-domain") {
             // The one configuration mistake that looks like a code bug.
             setError(
@@ -197,13 +266,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async signOut() {
         setError("");
+        setWrongAccount("");
         const auth = await getAuthClient();
         await auth?.signOut();
         setUser(null);
         setIsAdmin(false);
       },
     }),
-    [user, isAdmin, configured, busy, error],
+    [user, isAdmin, configured, busy, error, wrongAccount],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

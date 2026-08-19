@@ -45,7 +45,8 @@ function labelsOf(list: readonly { value: string; label: string }[], vs?: string
 }
 
 export default function JoinGate() {
-  const { user, configured, busy, error, signIn, signOut, isAdmin } = useAuth();
+  const { user, configured, busy, error, wrongAccount, signIn, signOut, isAdmin } =
+    useAuth();
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [editing, setEditing] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -117,13 +118,32 @@ export default function JoinGate() {
           disabled={busy}
           className="btn btn-primary mt-7 disabled:opacity-60"
         >
-          {busy ? "Opening Google…" : "Continue with Google"}
+          {/* The label changes once an attempt has been refused: pressing the same
+              "Continue with Google" again reads like it will do the same thing, when in
+              fact the chooser now reopens and a different account can be picked. */}
+          {busy
+            ? "Opening Google…"
+            : wrongAccount
+              ? "Choose a different account"
+              : "Continue with Google"}
         </button>
 
         {error && (
-          <p className="mt-4 text-[15px] leading-relaxed text-ember" role="alert">
-            {error}
-          </p>
+          <div className="mt-4" role="alert">
+            <p className="text-[15px] leading-relaxed text-ember">{error}</p>
+            {/* A REFUSAL USED TO BE A DEAD END. Somebody signed into a personal Gmail on
+                a shared laptop was told their address was wrong and left looking at the
+                same button, with no hint that the fix is to pick another account. The
+                button above now says so, and this line names what to look for. */}
+            {wrongAccount && (
+              <p className="mt-2 text-[15px] leading-relaxed text-dust">
+                You signed in as{" "}
+                <span className="font-mono text-haze">{wrongAccount}</span>. Press the
+                button again and pick your college account from the list — Google will
+                ask which one to use.
+              </p>
+            )}
+          </div>
         )}
 
         {/* NO "NO COLLEGE ACCOUNT?" FALLBACK, and this reverses a judgement I made a
