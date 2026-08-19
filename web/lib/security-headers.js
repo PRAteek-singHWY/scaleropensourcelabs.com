@@ -23,7 +23,7 @@ const isDev = process.env.NODE_ENV === "development";
  *  next.config.js. Directives that only make sense in development are appended there
  *  and never reach a generated .htaccess, which is only ever produced by a production
  *  build. */
-function buildCSP({ dev = isDev } = {}) {
+function buildCSP({ dev = isDev, authDomain = "" } = {}) {
   return [
     "default-src 'self'",
     // next/font self-hosts its files at build time, so no font CDN is needed.
@@ -82,9 +82,15 @@ function buildCSP({ dev = isDev } = {}) {
       "frame-src 'self'",
       "https://www.google.com",
       "https://accounts.google.com",
-      process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
-        ? `https://${process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}`
-        : "https://*.firebaseapp.com",
+      // authDomain, from the environment when a bundler has loaded it, and from an
+      // explicit override when a plain node script generates this policy — see the
+      // note in scripts/hosting-config.mjs. The wildcard is the last resort so that a
+      // contributor with no config still gets a policy that works for them.
+      authDomain
+        ? `https://${authDomain}`
+        : process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+          ? `https://${process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}`
+          : "https://*.firebaseapp.com",
       dev ? "http://localhost:* http://127.0.0.1:*" : "",
     ]
       .filter(Boolean)
@@ -104,9 +110,9 @@ function buildCSP({ dev = isDev } = {}) {
 /** The full header set as {key, value} pairs, in the shape next.config.js wants.
  *  `dev` is a parameter rather than read from the environment so the .htaccess
  *  generator can force the production policy regardless of how it was invoked. */
-function securityHeaders({ dev = isDev } = {}) {
+function securityHeaders({ dev = isDev, authDomain = "" } = {}) {
   return [
-    { key: "Content-Security-Policy", value: buildCSP({ dev }) },
+    { key: "Content-Security-Policy", value: buildCSP({ dev, authDomain }) },
     // Two years, subdomains included. Safe here: the domain serves only this site and
     // there is no plaintext service to break.
     {

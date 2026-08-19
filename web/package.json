@@ -14,7 +14,7 @@
     "palette": "node scripts/palette.mjs",
     "rules": "node scripts/rules.mjs",
     "rules:emulator": "node scripts/rules-emulator.mjs",
-    "build:static": "STATIC_EXPORT=1 next build && node scripts/htaccess.mjs && node scripts/hosting-config.mjs",
+    "build:static": "node scripts/preflight-deploy.mjs && STATIC_EXPORT=1 next build && node scripts/htaccess.mjs && node scripts/hosting-config.mjs",
     "e2e:auth": "node scripts/e2e-auth.mjs"
   },
   "dependencies": {

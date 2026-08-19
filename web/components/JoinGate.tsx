@@ -126,22 +126,14 @@ export default function JoinGate() {
           </p>
         )}
 
-        {/* THE WAY OUT FOR SOMEBODY THE DOMAIN RULE SHUTS OUT, and it needs to exist.
-            Restricting sign-up to @sst.scaler.com is deliberate, but it means a student
-            whose college account is broken, or anybody from outside SST who wants to
-            reach the club, now has NO route at all — where the anonymous form this
-            replaced was open to everyone. A closed door with no bell on it is a worse
-            outcome than the one the restriction was protecting against, and it costs one
-            sentence to fix. */}
+        {/* NO "NO COLLEGE ACCOUNT?" FALLBACK, and this reverses a judgement I made a
+            turn earlier. I added an organisers' email here on the reasoning that a closed
+            door should have a bell on it. The club's answer is that the door is the point:
+            an @sst.scaler.com address IS the membership test, so somebody without one is
+            not a student here, and offering them a way in invites exactly the conversation
+            the restriction exists to avoid. The footer carries the organisers' address on
+            every page for anyone who genuinely needs to reach the club. */}
         <p className="mt-7 border-t border-seam pt-5 text-[15px] leading-relaxed text-dust">
-          No college account, or yours is not working? Email{" "}
-          <a href={`mailto:${LINKS.email}`} className="link-u text-accent">
-            {LINKS.email}
-          </a>{" "}
-          and a person will reply — there is no form you have to use.
-        </p>
-
-        <p className="mt-3 text-[15px] leading-relaxed text-dust">
           We use Google sign-in rather than a password so that nobody can register an
           address they do not own — and so you have no password to invent or lose. We
           never see your password, and we store only the details you type in on the next step.

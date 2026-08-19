@@ -15,7 +15,7 @@
 //
 // Idempotent: running it twice produces the same file, so it is safe in a build step.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -24,12 +24,25 @@ const here = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const { securityHeaders, REDIRECTS } = require(join(here, "..", "lib", "security-headers.js"));
 
+// READ .env.local, NOT process.env. `next build` loads that file itself, so the values
+// baked into the bundle live there — this script runs as a plain node process and sees
+// none of them. Without this the auth domain fell back to a `https://*.firebaseapp.com`
+// wildcard in frame-src: functional, since it still covers the real domain, but broader
+// than it needs to be on a policy whose whole argument is that it is strict.
+const ENV = join(here, "..", ".env.local");
+const envFile = existsSync(ENV) ? readFileSync(ENV, "utf8") : "";
+const fromEnvFile = (k) =>
+  (envFile.match(new RegExp(`^${k}=(.*)$`, "m"))?.[1] ?? "").trim();
+
 const CONFIG = join(here, "..", "..", "firebase.json");
 const config = JSON.parse(readFileSync(CONFIG, "utf8"));
 
 // The production policy, forced: a build run with NODE_ENV=development must never ship
 // 'unsafe-eval' or localhost origins to a live host.
-const headers = securityHeaders({ dev: false });
+const headers = securityHeaders({
+  dev: false,
+  authDomain: fromEnvFile("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"),
+});
 
 config.hosting = {
   // Relative to the repo root, where firebase.json lives.
