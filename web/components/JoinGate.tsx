@@ -22,14 +22,7 @@ import Link from "next/link";
 import ProfileForm from "@/components/ProfileForm";
 import { useAuth } from "@/lib/auth";
 import { DOMAIN, isComplete, readProfile, type Profile } from "@/lib/profile";
-import {
-  HEARD_FROM,
-  HOSTELS,
-  INTERESTS,
-  LEVELS,
-  PATHS,
-  PROGRAMS,
-} from "@/content/join";
+import { HOSTELS, LEVELS, PATHS, PROGRAMS } from "@/content/join";
 import { LINKS } from "@/content/site";
 
 /** Code -> label, for showing a stored profile back to its owner in human words. Built
@@ -245,10 +238,7 @@ export default function JoinGate() {
     ["Route in", PATHS.find((x) => x.id === p.path)?.name ?? p.path],
     ["Programmes", labelsOf(PROGRAMS, p.programs)],
     ...(p.programs_other ? ([["Other programme", p.programs_other]] as [string, string][]) : []),
-    ["Interests", labelsOf(INTERESTS, p.interests)],
     ["GitHub", p.github ? `github.com/${p.github}` : "not given"],
-    ["Heard about us via", labelOf(HEARD_FROM, p.heard_from)],
-    ["Session updates", p.updates ? "yes" : "no"],
   ];
 
   return (

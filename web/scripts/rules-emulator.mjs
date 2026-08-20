@@ -93,11 +93,7 @@ const profileFor = (uid, email, over = {}) => ({
   level: "some-git",
   path: "program-track",
   programs: ["gsoc", "outreachy"],
-  interests: ["web"],
   github: "asha",
-  why: "I want a first merged pull request that somebody real reviewed.",
-  heard_from: "senior",
-  updates: true,
   // NO created_at / updated_at HERE. They are added by withStamps() below, which uses
   // serverTimestamp(). Literal Dates in this base object made every edit case send a
   // forged created_at, so the rules refused them and two tests failed for a reason that
@@ -156,11 +152,9 @@ await check("edit your own profile", true, () =>
     { merge: true },
   ),
 );
-await check("create a profile with no github, interests or heard_from", true, () => {
+await check("create a profile with no github", true, () => {
   const d = profileFor("uid-min", "minimal@sst.scaler.com");
   delete d.github;
-  delete d.interests;
-  delete d.heard_from;
   return setDoc(
     doc(member("uid-min", "minimal@sst.scaler.com"), "users", "uid-min"),
     withStamps(d),
@@ -262,9 +256,18 @@ await check("'other' with nothing naming it", false, badProfile({ programs: ["ot
 await check("free text without 'other' ticked", false,
   badProfile({ programs: ["gsoc"], programs_other: "GSoC again" }));
 await check("an interest outside the known set", false, badProfile({ interests: ["crypto"] }));
-await check("a why over the 400-character limit", false, badProfile({ why: "x".repeat(401) }));
 await check("an empty required field", false, badProfile({ name: "" }));
 await check("an extra field the form never sends", false, badProfile({ isAdmin: true }));
+// The four fields cut from the form. `hasOnly` is strict, so these are now refused
+// outright — which is the point: an older client left open in a tab cannot keep writing
+// a field the form no longer asks for and nothing reads.
+for (const gone of [
+  { why: "an essay nobody reads" },
+  { heard_from: "senior" },
+  { interests: ["web"] },
+  { updates: true },
+])
+  await check(`the removed field "${Object.keys(gone)[0]}" is refused`, false, badProfile(gone));
 await check("a client-forged updated_at", false, () =>
   setDoc(doc(member(UID_B, MAIL_B), "users", UID_B), profileFor(UID_B, MAIL_B)),
 );

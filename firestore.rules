@@ -72,7 +72,15 @@ service cloud.firestore {
         && request.resource.data.created_at == resource.data.created_at;
     }
 
-    /** The profile shape. Mirrors web/lib/profile.ts and web/content/join.ts. */
+    /** The profile shape. Mirrors web/lib/profile.ts and web/content/join.ts.
+     *
+     *  FOUR FIELDS WERE REMOVED from this list — why, heard_from, interests and updates —
+     *  because each cost a member time at sign-up and nothing read it back. `hasOnly` is
+     *  strict, so a document still carrying one of them is now REJECTED rather than
+     *  tolerated. That is safe here only because the site had never been deployed with
+     *  sign-in, so no member profile exists in production yet. If that changes, removing a
+     *  field means either leaving it in `hasOnly` or migrating the documents first — a
+     *  strict list turns an old field into a member who can no longer edit their profile. */
     function isWellFormedProfile(d, uid) {
       return
         // Exactly the expected fields. `hasOnly` is the load-bearing half: `hasAll`
@@ -80,12 +88,11 @@ service cloud.firestore {
         // an `isAdmin` field that a future careless rule might read.
         d.keys().hasOnly([
           'uid', 'email', 'name', 'year_branch', 'hostel', 'level', 'path',
-          'interests', 'programs', 'programs_other', 'github', 'why',
-          'heard_from', 'updates', 'created_at', 'updated_at'
+          'programs', 'programs_other', 'github', 'created_at', 'updated_at'
         ])
         && d.keys().hasAll([
           'uid', 'email', 'name', 'year_branch', 'hostel', 'level', 'path',
-          'programs', 'why', 'updated_at'
+          'programs', 'updated_at'
         ])
 
         // Identity cannot be forged. The document id, the uid inside it and the signed-in
@@ -99,22 +106,15 @@ service cloud.firestore {
         // these are the real limits, because a direct SDK call never sees the form.
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
         && d.year_branch is string && d.year_branch.size() > 0 && d.year_branch.size() <= 120
-        && d.why is string && d.why.size() > 0 && d.why.size() <= 400
 
         // Optional strings. Present-or-absent rather than nullable, so an absent github
         // unambiguously means "not given".
         && (!('github' in d) || (d.github is string && d.github.size() <= 100))
-        && (!('heard_from' in d) || (d.heard_from is string && d.heard_from.size() <= 60))
 
         // Closed sets — see the drift warning in the header.
         && d.hostel in ['uniworld-1', 'uniworld-2']
         && d.level in ['none', 'some-git', 'merged']
         && d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track']
-        && (!('interests' in d) || (
-             d.interests is list
-             && d.interests.size() <= 5
-             && d.interests.hasOnly(['web', 'ml', 'systems', 'design', 'docs'])
-           ))
 
         // Programmes: required and non-empty, which is the form's rule too.
         && d.programs is list
@@ -135,8 +135,6 @@ service cloud.firestore {
             || (d.programs_other is string
                 && d.programs_other.size() <= 120
                 && d.programs.hasAny(['other'])))
-
-        && (!('updates' in d) || d.updates is bool)
 
         // The server's clock, never the client's, so "member since" and "last edited"
         // cannot be backdated.

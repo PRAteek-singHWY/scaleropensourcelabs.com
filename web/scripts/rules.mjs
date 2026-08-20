@@ -94,7 +94,6 @@ for (const [field, fromContent] of [
   ["level", contentValues("LEVELS")],
   ["path", contentIds("PATHS")],
   ["hostel", contentValues("HOSTELS")],
-  ["interests", contentValues("INTERESTS")],
   ["programs", contentValues("PROGRAMS")],
 ]) {
   const fromRules = rulesSet(field);
@@ -157,6 +156,18 @@ ok("the admin list cannot be enumerated",
 ok("legacy applications stay unreadable",
   /match \/applications\/\{id\}[\s\S]*?allow read: if false/.test(rules));
 ok("no test-mode wildcard write", !/allow read, write:\s*if true/.test(rules));
+// FIELDS THAT WERE DELETED STAY DELETED, in both files or neither. `hasOnly` is strict,
+// so a field reintroduced to the form but not the rules means every save fails; the
+// reverse leaves a field the rules accept and nothing writes. Either way it is silent.
+for (const gone of ["why", "heard_from", "interests", "updates"]) {
+  const inRules = new RegExp(`'${gone}'`).test(rules);
+  const inContent = new RegExp(`export const ${gone.toUpperCase()}\\b`).test(content);
+  ok(
+    `the removed field "${gone}" is absent from both`,
+    !inRules && !inContent,
+    inRules || inContent ? `rules=${inRules} content=${inContent}` : "",
+  );
+}
 ok("server timestamps are enforced",
   /updated_at\s*==\s*request\.time/.test(rules));
 ok("identity fields are frozen on edit",

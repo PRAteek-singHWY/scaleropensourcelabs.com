@@ -8,10 +8,20 @@
 //   * a second profile for the same person is impossible by construction rather than
 //     by a uniqueness check nobody remembers to write.
 //
-// The field list is deliberately the SAME set the old anonymous application form
-// collected, because the profile replaces that form rather than adding a second thing
-// to fill in. Two consequences worth stating: nothing is lost by dropping the old form,
-// and firestore.rules validates this shape rather than a new one.
+// THE FIELD LIST IS THE SHORTEST THING THAT ANSWERS A REAL QUESTION. It started as a
+// copy of the old anonymous application form and four fields have since been cut,
+// because each one cost a member time at sign-up and nothing read it back:
+//
+//   why         a 400-character essay. Nothing consumed it. The single biggest piece of
+//               friction on the form, asked of somebody who has not joined yet.
+//   heard_from  marketing attribution nobody was attributing.
+//   interests   a second taxonomy that overlapped `programs` — the dashboard was
+//               charting both and they answered the same question twice.
+//   updates     a consent tick for messages the club sends anyway, and says it sends
+//               on the very next screen.
+//
+// What is left is exactly what the organisers' dashboard counts: who, which year and
+// branch, which hostel, how experienced, which route in, which programmes.
 //
 // `email` is stored even though it is already on the Auth record. It is denormalised on
 // purpose: the admin dashboard lists members without being able to read the Auth API
@@ -34,11 +44,7 @@ export type Profile = {
   path: string;
   programs: string[];
   programs_other?: string;
-  interests?: string[];
   github?: string;
-  why: string;
-  heard_from?: string;
-  updates?: boolean;
   /** Server timestamps, not client clocks. `created_at` is written once and the rules
    *  refuse to let an update change it, so "member since" is trustworthy. */
   created_at?: unknown;
@@ -55,7 +61,6 @@ export const REQUIRED_FIELDS = [
   "level",
   "path",
   "programs",
-  "why",
 ] as const;
 
 /** True when every required field carries a real answer.
@@ -122,17 +127,13 @@ export async function saveProfile(
     level: data.level,
     path: data.path,
     programs: data.programs,
-    why: data.why.trim(),
-    updates: data.updates === true,
     updated_at: serverTimestamp(),
   };
   if (isFirstSave) body.created_at = serverTimestamp();
   if (data.programs.includes("other") && data.programs_other?.trim()) {
     body.programs_other = data.programs_other.trim();
   }
-  if (data.interests?.length) body.interests = data.interests;
   if (data.github?.trim()) body.github = data.github.trim();
-  if (data.heard_from) body.heard_from = data.heard_from;
 
   await setDoc(doc(db, USERS, uid), body, { merge: true });
 }

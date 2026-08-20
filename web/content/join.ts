@@ -151,14 +151,6 @@ export const LEVELS = [
   { value: "merged", label: "I have merged pull requests already" },
 ] as const;
 
-export const INTERESTS = [
-  { value: "web", label: "Web" },
-  { value: "ml", label: "ML / AI" },
-  { value: "systems", label: "Systems" },
-  { value: "design", label: "Design" },
-  { value: "docs", label: "Docs / writing" },
-] as const;
-
 // The hostels. Two, because there are two.
 //
 // REQUIRED, and the list is exhaustive: everyone the club takes applications from lives
@@ -205,12 +197,3 @@ export const PROGRAMS = [
  *  than compared against the string inline, so the form and the rules check are
  *  talking about the same thing. */
 export const PROGRAM_OTHER = "other";
-
-export const HEARD_FROM = [
-  { value: "senior", label: "A senior or friend" },
-  { value: "session", label: "A club session or build day" },
-  { value: "poster", label: "A poster or campus screen" },
-  { value: "social", label: "Instagram / LinkedIn / Discord" },
-  { value: "search", label: "Found this site myself" },
-  { value: "other", label: "Something else" },
-] as const;

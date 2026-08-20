@@ -28,7 +28,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { readAllProfiles, type Profile } from "@/lib/profile";
-import { HOSTELS, INTERESTS, LEVELS, PATHS, PROGRAMS } from "@/content/join";
+import { HOSTELS, LEVELS, PATHS, PROGRAMS } from "@/content/join";
 
 const label = (list: readonly { value: string; label: string }[], v?: string) =>
   (v && list.find((x) => x.value === v)?.label) || v || "—";
@@ -151,16 +151,14 @@ export default function AdminDashboard() {
       // One member can pick several programmes, so this counts INTERESTS not members —
       // the percentages therefore sum past 100, which is correct and stated on screen.
       programs: tally(all.flatMap((r) => (r.programs ?? []).map((v) => label(PROGRAMS, v)))),
-      interests: tally(all.flatMap((r) => (r.interests ?? []).map((v) => label(INTERESTS, v)))),
       withGithub: all.filter((r) => r.github?.trim()).length,
-      wantUpdates: all.filter((r) => r.updates === true).length,
     };
   }, [rows]);
 
   function exportCsv() {
     const cols = [
       "name", "email", "year_branch", "hostel", "level", "path",
-      "programs", "programs_other", "interests", "github", "heard_from", "updates",
+      "programs", "programs_other", "github",
     ] as const;
     const esc = (v: unknown) => {
       const s = Array.isArray(v) ? v.join("; ") : v === undefined ? "" : String(v);
@@ -217,11 +215,10 @@ export default function AdminDashboard() {
       )}
 
       {/* The headline count, and the two facts most often asked for beside it. */}
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         {[
           ["Registered members", stats.total],
           ["With a GitHub account", stats.withGithub],
-          ["Want session updates", stats.wantUpdates],
         ].map(([k, v]) => (
           <div key={String(k)} className="card rounded-panel bg-raise p-6">
             <p className="label">{k}</p>
@@ -255,9 +252,9 @@ export default function AdminDashboard() {
       </div>
 
       <p className="text-[15px] leading-relaxed text-dust">
-        Programme and interest percentages are of members, and members pick more than one
-        — so those add up past 100%. Year and branch are parsed from the single free-text
-        field a member types, so anything unrecognised is counted as{" "}
+        Programme percentages are of members, and members pick more than one — so those
+        add up past 100%. Year and branch are parsed from the single free-text field a
+        member types, so anything unrecognised is counted as{" "}
         <strong className="text-haze">Unparsed</strong> rather than guessed at.
       </p>
 

@@ -21,8 +21,9 @@
 //   1. No countdown timer. A club timer that silently resets is a dark pattern, and on a
 //      site whose whole argument is "every claim here is checkable" it would be the one
 //      self-inflicted wound.
-//   2. No pre-ticked opt-in. Pre-ticked consent is not consent — the same rule the rest
-//      of this site applies to publishing a student's face.
+//   2. No opt-in tick at all any more. It asked for consent to send messages the club
+//      sends regardless, and says it sends on the very next screen — so it was a decision
+//      with only one sensible answer, which is a decision not worth asking for.
 //   3. No required GitHub field. The site tells beginners repeatedly that they are welcome
 //      with no experience; a required GitHub profile would call that a lie at the last
 //      possible moment, to exactly the person the club most wants.
@@ -36,9 +37,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { User } from "firebase/auth";
 import {
-  HEARD_FROM,
   HOSTELS,
-  INTERESTS,
   LEVELS,
   LEVEL_LABEL,
   PATHS,
@@ -128,11 +127,7 @@ export default function ProfileForm({
         path: str("path"),
         programs: data.getAll("programs").map(String),
         programs_other: str("programs_other"),
-        interests: data.getAll("interests").map(String),
         github: str("github"),
-        why: str("why"),
-        heard_from: str("heard_from"),
-        updates: data.get("updates") !== null,
       };
 
       await saveProfile(user.uid, user.email!, body, isFirstSave);
@@ -291,30 +286,6 @@ export default function ProfileForm({
 
       <fieldset>
         <legend className="label mb-3">
-          Areas you are curious about{" "}
-          <span className="normal-case tracking-normal text-dust">(pick any)</span>
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {INTERESTS.map((i) => (
-            <label
-              key={i.value}
-              className="flex cursor-pointer items-center gap-2.5 rounded-md border border-seam bg-sunk px-3.5 py-2.5 transition hover:border-accent/50"
-            >
-              <input
-                type="checkbox"
-                name="interests"
-                value={i.value}
-                defaultChecked={profile?.interests?.includes(i.value)}
-                className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
-              />
-              <span className="text-sm text-ink">{i.label}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend className="label mb-3">
           Open source programs you are interested in{" "}
           <span className="normal-case tracking-normal text-dust">
             (pick at least one)
@@ -364,58 +335,6 @@ export default function ProfileForm({
           </div>
         )}
       </fieldset>
-
-      <div>
-        <label htmlFor="pf-why" className="label mb-2 block">
-          One line on why open source interests you
-        </label>
-        <textarea
-          id="pf-why"
-          name="why"
-          required
-          rows={3}
-          maxLength={400}
-          className={`${field} resize-y`}
-          placeholder="Anything honest. &quot;I want a job&quot; is a real answer and we would rather have it than a paragraph you think we want."
-          defaultValue={profile?.why ?? ""}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="pf-heard" className="label mb-2 block">
-          How you heard about us
-        </label>
-        <select
-          id="pf-heard"
-          name="heard_from"
-          className={field}
-          defaultValue={profile?.heard_from ?? ""}
-        >
-          <option value="" disabled>
-            Pick one
-          </option>
-          {HEARD_FROM.map((h) => (
-            <option key={h.value} value={h.value}>
-              {h.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <label className="flex cursor-pointer gap-3 pt-1">
-        {/* Unticked by default on a first save. Pre-ticked consent is not consent — the
-            same rule this site applies to publishing a student's face. On an edit it
-            reflects what they actually chose. */}
-        <input
-          type="checkbox"
-          name="updates"
-          defaultChecked={profile?.updates === true}
-          className="mt-0.5 h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
-        />
-        <span className="text-[15px] leading-relaxed text-haze">
-          Message me about sessions and application deadlines.
-        </span>
-      </label>
 
       <button
         type="submit"

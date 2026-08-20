@@ -157,13 +157,20 @@ console.log("-- a student signs up --");
   await pg.goto(`${BASE}/join?path=not-a-real-path`, { waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(2500);
   ok("a hand-edited ?path is ignored", (await pg.locator("#pf-path").inputValue()) === "");
+  // The four fields cut from sign-up. Asserted absent so putting one back is a visible
+  // decision rather than something that reappears with a stray merge.
+  ok("the form asks nothing it does not read",
+    (await pg.evaluate(() =>
+      ["why", "heard_from", "interests", "updates"].filter(
+        (n) => document.querySelector(`[name="${n}"]`) !== null,
+      ),
+    )).length === 0);
 
   await pg.fill("#pf-year", "2nd year, CSE");
   await pg.selectOption("#pf-hostel", "uniworld-1");
   await pg.check('input[name="level"][value="none"]');
   await pg.selectOption("#pf-path", "build-day");
   await pg.check('input[name="programs"][value="gsoc"]');
-  await pg.fill("#pf-why", "Curious about how real projects get reviewed.");
   await pg.getByRole("button", { name: /finish joining/i }).click();
   await pg.getByText(/that.s you signed up/i).waitFor({ timeout: 25000 }).catch(() => {});
   ok("the details save", /that.s you signed up/i.test(await pg.locator("main").innerText()));
