@@ -26,6 +26,7 @@
 //   * does the profile save, and does the second save (an EDIT) still work?
 //   * does ?path= survive the sign-in step it was added in front of?
 //   * is the dashboard refused to a member and served to an admin?
+//   * do its sort, its filters and its refresh actually change what is on screen?
 //
 // The CSP question is the reason this is worth the machinery. Sign-in needs
 // apis.google.com in script-src and the auth domain in frame-src, and when either is
@@ -73,7 +74,40 @@ for (const [what, url] of [["Firestore", "http://127.0.0.1:8080/"], ["Auth", "ht
     process.exit(1);
   }
 }
+// CLEARING IS VERIFIED, NOT ASSUMED, and this is not belt-and-braces. Fire-and-forget
+// DELETEs gave two red runs in a row that a third run, with no code change, passed
+// cleanly. The mechanism: if `asha@sst.scaler.com` survives from the previous run, the
+// step that creates her hits an account that already exists, the emulator popup never
+// closes, and the suite times out on `#pf-name` — a failure that reads as a broken
+// details form when the form is fine. Anything that makes a run depend on the run before
+// it is worse than no test, because it teaches you to re-run instead of to look.
 for (const url of [FS, AUTH]) await fetch(url, { method: "DELETE" }).catch(() => {});
+{
+  const listAccounts = async () => {
+    try {
+      const r = await fetch(
+        `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/${PROJECT}/accounts:query`,
+        { method: "POST", headers: OWNER, body: "{}" },
+      );
+      return (await r.json())?.userInfo?.length ?? 0;
+    } catch {
+      return 0;
+    }
+  };
+  let left = await listAccounts();
+  for (let i = 0; i < 20 && left > 0; i++) {
+    await fetch(AUTH, { method: "DELETE" }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 250));
+    left = await listAccounts();
+  }
+  if (left > 0) {
+    console.error(
+      `\n  The Auth emulator still holds ${left} account(s) after clearing. Restart it:\n` +
+        `    npx firebase-tools emulators:start --only firestore,auth --project ${PROJECT}\n`,
+    );
+    process.exit(1);
+  }
+}
 
 /** Sign in through the emulator's popup as a brand-new account. */
 async function signIn(pg, email, name) {
@@ -246,8 +280,75 @@ console.log("\n-- an organiser opens the dashboard --");
   ok("search narrows the table", filtered.includes("no member matches"));
   ok("but the counts do not move with the filter", /registered members\s*1\b/.test(filtered));
 
+  await pg.getByLabel("Search members").fill("");
+  await pg.waitForTimeout(400);
+
   ok("no horizontal page overflow despite the wide table",
     !(await pg.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)));
+
+  // -- SORTING AND FILTERING NEED MORE THAN ONE ROW ---------------------------------
+  // With a single member, a sort is indistinguishable from no sort and a filter that
+  // drops nobody looks identical to one that is broken. Two more members are written
+  // straight through the owner token — the point here is the dashboard's behaviour, not
+  // the write path, which the sign-in block above already covered end to end.
+  const seeded = [
+    ["zara", "Zara Qureshi", "1st year, CSE", "uniworld-2", "none", ["other"], "Season of Docs", 0],
+    ["arun", "Arun Iyer", "2nd year, ME", "uniworld-1", "merged", ["lfx"], null, 40],
+  ];
+  for (const [uid, name, yb, hostel, level, programs, other, daysAgo] of seeded) {
+    const ts = new Date(Date.now() - daysAgo * 86400000).toISOString();
+    const fields = {
+      uid: { stringValue: uid }, email: { stringValue: `${uid}@sst.scaler.com` },
+      name: { stringValue: name }, year_branch: { stringValue: yb },
+      hostel: { stringValue: hostel }, level: { stringValue: level },
+      path: { stringValue: "build-day" },
+      programs: { arrayValue: { values: programs.map((v) => ({ stringValue: v })) } },
+      created_at: { timestampValue: ts }, updated_at: { timestampValue: ts },
+    };
+    if (other) fields.programs_other = { stringValue: other };
+    await fetch(`${REST}/users/${uid}`, { method: "PATCH", headers: OWNER, body: JSON.stringify({ fields }) });
+  }
+  await pg.getByRole("button", { name: /^refresh$/i }).click();
+  await pg.waitForTimeout(2500);
+
+  const t3 = (await pg.locator("main").innerText()).toLowerCase();
+  ok("refresh picks up members added since the page loaded", /registered members\s*3\b/.test(t3));
+  // "20 Aug 26" — a two-digit year, which is what the column actually prints.
+  ok("the joined date is shown, not just stored", /\d{1,2} [a-z]{3} \d{2}\b/.test(t3));
+  ok("the eight-week trend renders", t3.includes("sign-ups, last eight weeks"));
+  ok("this week is counted separately from the total", /joined this week\s*2\b/.test(t3));
+  // programs_other was collected, validated and exported but never displayed, so the one
+  // programme a member had to type was the one an organiser could not see.
+  ok("the free text behind 'other' is visible", t3.includes("season of docs"));
+
+  const names = async () => pg.locator("tbody tr td:first-child").allInnerTexts();
+  await pg.getByRole("button", { name: /^name/i }).click();
+  await pg.waitForTimeout(500);
+  const asc = await names();
+  ok("sorting by name puts A first", asc[0].trim() === "Arun Iyer", asc.join(" | "));
+  await pg.getByRole("button", { name: /^name/i }).click();
+  await pg.waitForTimeout(500);
+  const desc = await names();
+  ok("clicking the same header again reverses it", desc[0].trim() === "Zara Qureshi", desc.join(" | "));
+
+  await pg.getByLabel("Filter by year").selectOption("Year 1");
+  await pg.waitForTimeout(500);
+  // Lowercased for the same reason as t3: .label uppercases in CSS, and innerText
+  // returns the rendered text, so "Registered members" comes back shouting.
+  const t4 = (await pg.locator("main").innerText()).toLowerCase();
+  ok("the year filter narrows the table", /1 of 3 shown/.test(t4), t4.match(/\d+ of \d+ shown/)?.[0] ?? "");
+  ok("an active filter is announced", /1 filter on/.test(t4));
+  ok("the totals still count everybody", /registered members\s*3\b/.test(t4));
+
+  await pg.getByLabel("Filter by experience").selectOption("merged");
+  await pg.waitForTimeout(500);
+  ok("two filters combine rather than replace",
+    /no member matches/i.test(await pg.locator("main").innerText()));
+
+  await pg.getByRole("button", { name: /^clear 2$/i }).click();
+  await pg.waitForTimeout(500);
+  ok("clear restores every row", /3 of 3 shown/.test(await pg.locator("main").innerText()));
+
   await pg.close();
 }
 
