@@ -157,3 +157,34 @@ export async function readAllProfiles(): Promise<Profile[]> {
 
 /** For the empty-state copy, so the domain is not written out twice. */
 export const DOMAIN = ALLOWED_EMAIL_DOMAIN;
+
+/** A Firestore timestamp, an ISO string or a Date -> a Date, or null.
+ *
+ *  Lives here rather than in a component because created_at is now read in two
+ *  places — the organisers' table and the member's own card — and a six-line date
+ *  coercion copied into both is a copy that drifts. It takes `unknown` because that
+ *  is genuinely what a stored timestamp is on the client: the SDK hands back a
+ *  Timestamp, the REST API and the emulator hand back a string, and a locally
+ *  echoed profile can hold a Date. */
+export function toDate(v: unknown): Date | null {
+  if (!v) return null;
+  if (v instanceof Date) return isNaN(+v) ? null : v;
+  if (typeof v === "object" && typeof (v as { toDate?: unknown }).toDate === "function") {
+    const d = (v as { toDate: () => Date }).toDate();
+    return isNaN(+d) ? null : d;
+  }
+  if (typeof v === "string" || typeof v === "number") {
+    const d = new Date(v);
+    return isNaN(+d) ? null : d;
+  }
+  return null;
+}
+
+/** "20 Aug 26". An em dash when there is no date, so a missing value reads as
+ *  absent rather than as the epoch. */
+export function fmtDate(v: unknown): string {
+  const d = toDate(v);
+  return d
+    ? d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" })
+    : "\u2014";
+}

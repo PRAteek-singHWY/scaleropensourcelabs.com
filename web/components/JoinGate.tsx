@@ -16,12 +16,58 @@
 // into "signed out". Rendering the sign-in card while the session is still being
 // restored shows a sign-in prompt to somebody who is already signed in — every time
 // they load the page.
+//
+// ---------------------------------------------------------------------------------
+// THE DESIGN, AND WHY IT IS THIS AND NOT SOMETHING CLEVERER.
+//
+// This card used to be a white rectangle with a chip, a heading, a paragraph, a button
+// and a grey footnote — a login panel that would fit any SaaS product and shared nothing
+// with the rest of the site, which is loud on purpose: electric blue, high-vis yellow,
+// black keylines, hard offset shadows, monospace utility type.
+//
+// Two directions were considered first and rejected on the page's own terms:
+//
+//   * THE PULL REQUEST. Model joining as a PR against the club's roster — a branch
+//     name, a checks list, "sign in to open the PR". It is the most club-native
+//     metaphor available and the site already speaks git fluently. It is also
+//     precisely wrong here: the headline six inches to the left says "Most people
+//     arrive having never opened a pull request." A door that requires you to
+//     understand pull requests contradicts the sentence promising you do not need to.
+//
+//   * THE TERMINAL. `$ osc join --account you@sst.scaler.com`, reusing the terminal
+//     block the footer already carries. Rejected because the standing instruction on
+//     this site is LESS techy, and /join is the page held up as the calm one. A
+//     command prompt where the sign-in button goes is the opposite of that.
+//
+// What is here instead is two things, one loud and one quiet.
+//
+//   THE GATE PLATE is the loud one, and it is the only bold object on the card. The
+//   single fact that decides whether a reader can join at all — the address must end
+//   @sst.scaler.com — was previously the middle clause of a four-line paragraph.
+//   It is now a yellow plate with a black keyline, in the same register as the JOIN
+//   button in the nav. Black on #FFD600 is 14.9:1, the highest-contrast pair in the
+//   palette, which is what licenses using the loudest colour on the site for the one
+//   sentence a reader cannot afford to skim. The same plate returns on the finished
+//   state carrying their own address, so the object that opens the flow also closes it.
+//
+//   THE STEP SPINE is the quiet one. It replaces a "Step 1 of 2" chip, which counted
+//   the steps without naming them: a reader could see a second step existed but not
+//   what it would ask of them, which is the thing that decides whether they start at
+//   all. Two steps, named, with the reached ones filled — and it is a real sequence, so
+//   the numbering is carrying information rather than decorating.
+//
+// Everything else is deliberately unchanged and quiet: the card keeps `.card`'s pale
+// border and diffuse shadow rather than the black keyline, because this stylesheet's
+// own rule is that controls get the hard shadow and content panels do not — "if
+// everything wore the hard shadow the page would be a wall of outlines with nothing to
+// press". The plate and the button are the two things you can press or must read; they
+// are the two things wearing the keyline.
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import ProfileForm from "@/components/ProfileForm";
 import { useAuth } from "@/lib/auth";
-import { DOMAIN, isComplete, readProfile, type Profile } from "@/lib/profile";
+import { DOMAIN, fmtDate, isComplete, readProfile, toDate, type Profile } from "@/lib/profile";
 import { HOSTELS, LEVELS, PATHS, PROGRAMS } from "@/content/join";
 import { LINKS } from "@/content/site";
 
@@ -35,6 +81,88 @@ function labelOf(list: readonly { value: string; label: string }[], v?: string) 
 function labelsOf(list: readonly { value: string; label: string }[], vs?: string[]) {
   if (!vs?.length) return "—";
   return vs.map((v) => labelOf(list, v)).join(", ");
+}
+
+/** The plate's edge: the black keyline, and DELIBERATELY NOT the offset shadow.
+ *
+ *  Two reasons, and the second is the one that decided it.
+ *
+ *  `.hard` — this stylesheet's keyline-and-shadow token for panels — carries
+ *  `:hover { translate(2px, 2px) }` for the interactive ones, so a plate of text
+ *  wearing it moves under the pointer like a button that does nothing when clicked.
+ *
+ *  But the shadow itself was the real problem. With it, the plate and the
+ *  "Continue with Google" button four inches below were the same object: 2px black
+ *  keyline, 4px hard offset, on a saturated fill. This stylesheet's rule is that the
+ *  hard shadow marks a CONTROL — "controls get a black keyline and an unblurred
+ *  shadow, content panels get a pale border and a diffuse one" — so two identical
+ *  objects where exactly one is pressable is the ambiguity that rule exists to
+ *  prevent. The keyline keeps the plate loud; the shadow now belongs to the button
+ *  alone, which is the only thing on the card you can press.
+ *
+ *  Costs nothing in dark mode: on a #141822 card a black keyline and a black shadow
+ *  are both close to invisible, and the yellow fill was already carrying the shape. */
+const PLATE = "border-2 border-black";
+
+/** Where you are, in two named steps.
+ *
+ *  An ordered list because it is one: `aria-current="step"` marks the live entry, so a
+ *  screen reader gets the same "1 of 2, and the next one is about your details" the
+ *  filled dots give everybody else. The connector is aria-hidden — it is a rule between
+ *  two items, not a third item. */
+function Steps({ at }: { at: 1 | 2 }) {
+  const steps = [
+    { n: "01", name: "Sign in" },
+    { n: "02", name: "Your details" },
+  ] as const;
+
+  return (
+    <ol className="flex flex-wrap items-center gap-x-3 gap-y-2" aria-label="Where you are">
+      {steps.map((s, i) => {
+        const idx = i + 1;
+        const done = idx < at;
+        const live = idx === at;
+        return (
+          <li key={s.n} className="flex items-center gap-3">
+            <span className="flex items-center gap-2">
+              <span
+                aria-hidden
+                className={[
+                  "grid h-7 w-7 shrink-0 place-items-center rounded-full font-mono text-[12px] font-bold leading-none",
+                  done || live
+                    ? "bg-accent text-bg"
+                    : // Dashed, not solid: a step you have not reached is not a box that
+                      // is empty, it is one that has not been drawn yet.
+                      "border border-dashed border-seam text-dust",
+                ].join(" ")}
+              >
+                {done ? "✓" : s.n}
+              </span>
+              <span
+                aria-current={live ? "step" : undefined}
+                className={[
+                  "font-mono text-label uppercase tracking-wider",
+                  live ? "font-bold text-ink" : done ? "text-haze" : "text-dust",
+                ].join(" ")}
+              >
+                {s.name}
+              </span>
+            </span>
+            {/* A CONNECTOR JOINS TWO THINGS, so it has to disappear when they stop being
+                side by side — otherwise it is a rule pointing at nothing, which is what
+                it was at 320px.
+                376px IS MEASURED, NOT PICKED. Sweeping the viewport 320→420 in 4px steps
+                with the connector forced visible, the two steps sit on one row from
+                376px up and on two rows below it. A round 360 was the first guess and
+                was wrong by four steps of the sweep. */}
+            {i === 0 && (
+              <span aria-hidden className="hidden h-px w-5 bg-seam min-[376px]:block sm:w-8" />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
 }
 
 export default function JoinGate() {
@@ -83,9 +211,11 @@ export default function JoinGate() {
   // ---------------------------------------------------------------- still checking
   if (user === undefined || (user && profile === undefined)) {
     return (
+      // The spine renders here too, so the card does not reflow when the check
+      // resolves into the sign-in state a fraction of a second later.
       <div className="card rounded-panel bg-raise p-8 sm:p-10" aria-busy="true">
-        <p className="label">One moment</p>
-        <p className="mt-3 text-body text-haze">Checking your sign-in…</p>
+        <Steps at={1} />
+        <p className="mt-6 text-body text-haze">Checking your sign-in…</p>
       </div>
     );
   }
@@ -94,15 +224,33 @@ export default function JoinGate() {
   if (!user) {
     return (
       <div className="card rounded-panel bg-raise p-8 sm:p-10">
-        <p className="chip">Step 1 of 2</p>
-        <h2 className="mt-4 font-display text-display-md font-bold tracking-tight">
+        <Steps at={1} />
+
+        <h2 className="mt-6 font-display text-display-md font-bold tracking-tight">
           Sign in with your college account
         </h2>
-        <p className="measure mt-4 text-body text-haze">
-          Sign-up is open to <strong className="text-ink">@{DOMAIN}</strong> accounts only —
-          no other address can register. That is the whole check: no fee, no interview, no
-          prior experience. Then you fill in your details once, and never fill this form
-          again.
+
+        {/* THE ONE FACT THAT DECIDES EVERYTHING, given the loudest object on the card.
+            It was the middle clause of a paragraph before, which is where a reader who
+            skims — every reader — loses it, and being refused for the wrong Google
+            account is the single most common way this page fails somebody. */}
+        <div className={`${PLATE} mt-6 rounded-tile bg-pop px-5 py-4 text-black`}>
+          <p className="font-mono text-label uppercase tracking-wider text-black/70">
+            Open to
+          </p>
+          {/* break-all, because the address is the one string here that cannot be
+              allowed to push the card wider than its column on a 390px phone. */}
+          <p className="mt-1 break-all font-mono text-[1.0625rem] font-bold leading-tight">
+            @{DOMAIN}
+          </p>
+          <p className="mt-2 text-[0.8125rem] leading-snug text-black/80">
+            No other address can register. That is the whole check.
+          </p>
+        </div>
+
+        <p className="measure mt-6 text-body text-haze">
+          No fee, no interview, no prior experience. Sign in, fill in your details once,
+          and you never fill this form again.
         </p>
 
         <button
@@ -122,7 +270,7 @@ export default function JoinGate() {
         </button>
 
         {error && (
-          <div className="mt-4" role="alert">
+          <div className="mt-5" role="alert">
             <p className="text-[15px] leading-relaxed text-ember">{error}</p>
             {/* A REFUSAL USED TO BE A DEAD END. Somebody signed into a personal Gmail on
                 a shared laptop was told their address was wrong and left looking at the
@@ -146,11 +294,19 @@ export default function JoinGate() {
             not a student here, and offering them a way in invites exactly the conversation
             the restriction exists to avoid. The footer carries the organisers' address on
             every page for anyone who genuinely needs to reach the club. */}
-        <p className="mt-7 border-t border-seam pt-5 text-[15px] leading-relaxed text-dust">
-          We use Google sign-in rather than a password so that nobody can register an
-          address they do not own — and so you have no password to invent or lose. We
-          never see your password, and we store only the details you type in on the next step.
-        </p>
+        {/* LABELLED, so it can be skipped. The same words as an unlabelled grey block
+            read as terms nobody finishes; under a heading that says what they answer,
+            the reader who wondered can stop and everybody else can move on. */}
+        <div className="mt-8 border-t border-seam pt-5">
+          <p className="font-mono text-label uppercase tracking-wider text-dust">
+            Why Google, not a password
+          </p>
+          <p className="mt-2 text-[15px] leading-relaxed text-dust">
+            So nobody can register an address they do not own, and so you have no password
+            to invent or lose. We never see your password. We store only the details you
+            type in on the next step.
+          </p>
+        </div>
       </div>
     );
   }
@@ -160,8 +316,12 @@ export default function JoinGate() {
   if (!complete || editing) {
     return (
       <div className="card rounded-panel bg-raise p-8 sm:p-10">
-        <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <p className="chip">{editing ? "Editing your profile" : "Step 2 of 2"}</p>
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+          {/* Editing is not a step in the join — somebody changing their hostel in
+              March is not two-thirds of the way into signing up — so the spine is
+              replaced by a plain chip in that mode rather than shown at a stage that
+              would be a lie. */}
+          {editing ? <p className="chip">Editing your details</p> : <Steps at={2} />}
           <div className="flex items-baseline gap-4">
             {/* ALSO HERE, not only on the finished profile. An organiser who has not
                 filled in a profile of their own — which is most of them, at least at
@@ -185,11 +345,11 @@ export default function JoinGate() {
             </button>
           </div>
         </div>
-{/* "JOIN THE CLUB", NOT "CREATE YOUR PROFILE". Signing in is not joining — it only
+        {/* "JOIN THE CLUB", NOT "CREATE YOUR PROFILE". Signing in is not joining — it only
             proves which college you are at. This step is the join, so it says so, and the
             reader is not left wondering what a "profile" is for or whether they are
             already a member. */}
-        <h2 className="mt-4 font-display text-display-md font-bold tracking-tight">
+        <h2 className="mt-6 font-display text-display-md font-bold tracking-tight">
           {editing ? "Update your details" : "Join the club"}
         </h2>
         <p className="measure mt-4 text-body text-haze">
@@ -229,9 +389,9 @@ export default function JoinGate() {
 
   // ---------------------------------------------------------------- done
   const p = profile!;
+  const joined = toDate(p.created_at);
   const rows: [string, string][] = [
     ["Name", p.name],
-    ["College email", p.email],
     ["Year and branch", p.year_branch],
     ["Hostel", labelOf(HOSTELS, p.hostel)],
     ["Experience", labelOf(LEVELS, p.level)],
@@ -243,8 +403,13 @@ export default function JoinGate() {
 
   return (
     <div className="card rounded-panel bg-raise p-8 sm:p-10">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <p className="chip chip-pop">Details saved</p>
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        {/* The ORDINARY blue chip, not `chip-pop`. It was yellow, which put two yellow
+            objects in one card — and the plate below is the one that has to carry it.
+            Yellow is the loudest colour on this site; spending it twice on one screen
+            spends it on nothing. The chip is a transient "that worked", the plate is
+            the standing fact, and only one of them needs to be the loud one. */}
+        <p className="chip">Details saved</p>
         <button
           type="button"
           onClick={() => void signOut()}
@@ -254,13 +419,13 @@ export default function JoinGate() {
         </button>
       </div>
 
-{/* NOT "You're in the club." That was the copy here first and it overclaims at
+      {/* NOT "You're in the club." That was the copy here first and it overclaims at
           exactly the wrong moment: filling in a form is not membership, and telling
           somebody they have arrived before they have been to a single session is the kind
           of unearned claim the rest of this site refuses to make. What is true is that
           their details are in and somebody will be in touch — so it says that, and the
           club part happens on a Saturday. */}
-      <h2 className="mt-4 font-display text-display-md font-bold tracking-tight">
+      <h2 className="mt-5 font-display text-display-md font-bold tracking-tight">
         That&apos;s you signed up.
       </h2>
       <p className="measure mt-4 text-body text-haze">
@@ -268,6 +433,30 @@ export default function JoinGate() {
         and nothing to prepare — turn up with a laptop and you are in.
       </p>
 
+      {/* THE GATE PLATE, RETURNED. The same yellow object that carried the domain rule
+          on the way in now carries the address it let through, which is what makes the
+          two screens one flow rather than two forms.
+          "REGISTERED", not "MEMBER" — for the same reason the heading above is not "you
+          are in the club". Being on the list is what has happened; the club part happens
+          on a Saturday, and the plate does not get to promise it either. */}
+      <div className={`${PLATE} mt-7 rounded-tile bg-pop px-5 py-4 text-black`}>
+        <p className="font-mono text-label uppercase tracking-wider text-black/70">
+          Registered
+        </p>
+        <p className="mt-1 break-all font-mono text-[1.0625rem] font-bold leading-tight">
+          {p.email}
+        </p>
+        {/* Only when there is a real timestamp. A "signed up —" line is worse than no
+            line: it invites the reader to wonder what went wrong with a date. */}
+        {joined && (
+          <p className="mt-2 font-mono text-[0.8125rem] uppercase tracking-wider text-black/80">
+            Signed up {fmtDate(p.created_at)}
+          </p>
+        )}
+      </div>
+
+      {/* The address is on the plate above, so it is not repeated as a row — it was the
+          only row in this table that the reader could already see twice on the screen. */}
       <dl className="mt-8 divide-y divide-seam border-y border-seam">
         {rows.map(([k, v]) => (
           <div key={k} className="grid gap-1 py-3 sm:grid-cols-[14rem_1fr] sm:gap-4">

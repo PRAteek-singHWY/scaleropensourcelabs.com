@@ -3,7 +3,6 @@ import Link from "next/link";
 import JoinGate from "@/components/JoinGate";
 import Duo from "@/components/Duo";
 import Note from "@/components/fx/Note";
-import Sticker from "@/components/fx/Sticker";
 
 // THE APPLICATION FORM. One route, one job.
 //
@@ -65,16 +64,24 @@ export default function Join() {
               1024 up.
               So a flush sticker needs a band that is empty in both axes, not
               just a corner. */}
-          {/* Sticker 1 of 3. Bottom of the left column, where that column runs
-              out of copy and the form beside it keeps going — 350-450px of dead
-              space at every width this sticker is visible at, which is the only
-              part of this section wide enough and empty enough to hold it. */}
-          <Sticker
-            text="Works on my machine 💻"
-            rotate={-3}
-            effect="wobble"
-            className="left-0 bottom-24 min-[1600px]:-left-8"
-          />
+          {/* THE "WORKS ON MY MACHINE" STICKER USED TO SIT HERE, AND IT WAS LANDING
+              ON THE "FREE" TILE AT EVERY WIDTH IT RENDERED AT. Measured, not guessed:
+              at 1280 the sticker occupied y 567-607 / x -1-249 and the tile occupied
+              y 563-665 / x 24-274; at 1440 it was 532-572 over a tile at 524-630; at
+              1600, 581-620 over 571-678. A direct hit on the word "Free" in all three.
+
+              Its own comment said it sat in "350-450px of dead space at the bottom of
+              the left column", and that was true when the left column carried more copy
+              and the form beside it was a tall anonymous one. Sign-in replaced that form
+              with a short card, the left column now ends at these two tiles, and the
+              dead space the sticker was placed in stopped existing — so `bottom-24`
+              stopped meaning "under the copy" and started meaning "on top of it".
+
+              It is removed rather than moved because there is no longer an empty band on
+              this section to move it to: both columns end within 10px of each other, and
+              inventing space for a decoration on the page whose whole brief is "less
+              crowded" is the wrong trade. The gutter note below stays, so the section
+              keeps a sticker voice without a sticker sitting on the content. */}
           {/* Opposite gutter, level with the form itself — it answers the first
               thing anybody wonders while looking at a sign-up form.
 

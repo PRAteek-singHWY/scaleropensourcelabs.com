@@ -27,7 +27,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { readAllProfiles, type Profile } from "@/lib/profile";
+import { fmtDate, readAllProfiles, toDate, type Profile } from "@/lib/profile";
 import { HOSTELS, LEVELS, PATHS, PROGRAMS } from "@/content/join";
 
 const label = (list: readonly { value: string; label: string }[], v?: string) =>
@@ -37,25 +37,6 @@ const label = (list: readonly { value: string; label: string }[], v?: string) =>
  *  string depending on how the document was written — the emulator's REST seeding and the
  *  SDK do not agree. All three are coerced here so nothing downstream has to care, and an
  *  unreadable value becomes null rather than an Invalid Date that formats as "NaN". */
-function toDate(v: unknown): Date | null {
-  if (!v) return null;
-  if (v instanceof Date) return isNaN(+v) ? null : v;
-  if (typeof v === "object" && typeof (v as { toDate?: unknown }).toDate === "function") {
-    const d = (v as { toDate: () => Date }).toDate();
-    return isNaN(+d) ? null : d;
-  }
-  if (typeof v === "string" || typeof v === "number") {
-    const d = new Date(v);
-    return isNaN(+d) ? null : d;
-  }
-  return null;
-}
-
-const fmtDate = (v: unknown) => {
-  const d = toDate(v);
-  return d ? d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" }) : "—";
-};
-
 /** Monday of the week a date falls in, so weekly buckets line up. */
 function weekStart(d: Date): Date {
   const x = new Date(d);
