@@ -162,6 +162,74 @@ console.log("-- a student signs up --");
   ok("the sign-in step is what a signed-out reader sees",
     /sign in with your college account/i.test(await pg.locator("main").innerText()));
 
+  // THE ONE CONTROL ON THE CARD OWNS THE COLUMN. A primary action that spans its
+  // container is a bigger tap target and cannot be missed; asserted as a ratio rather
+  // than a pixel count so it survives any change to the card's padding.
+  {
+    const [bw, cw] = await pg.evaluate(() => [
+      document.querySelector("#apply button.btn-primary").getBoundingClientRect().width,
+      document.querySelector("#apply .rounded-panel").clientWidth,
+    ]);
+    ok("the sign-in button spans the card", bw / cw > 0.75, `${Math.round(bw)}px in ${cw}px`);
+  }
+
+  // THE WORKING STATE, ASSERTED MID-FLIGHT. It exists for about a second and it is the
+  // difference between a reader waiting and a reader clicking again — and clicking again
+  // is how you get auth/cancelled-popup-request, which then looks like a broken button.
+  {
+    const btn = pg.locator("#apply button.btn-primary");
+    const popping = pg.waitForEvent("popup", { timeout: 15000 });
+    await btn.click();
+    await pg.waitForTimeout(150);
+    ok("the button says what is happening while it happens",
+      /redirecting to google/i.test(await btn.innerText()));
+    // NOT "and cannot be pressed twice". It deliberately can: Firebase takes five to
+    // seven seconds to notice a closed popup, so a button disabled for the duration is
+    // a dead control at exactly the moment somebody wants to pick another account.
+    ok("and stays pressable, so a closed chooser is not a dead end",
+      !(await btn.isDisabled()));
+    ok("while still announcing itself as busy",
+      (await btn.getAttribute("aria-busy")) === "true");
+    ok("with a spinner, not only a label",
+      (await btn.locator("svg.animate-spin").count()) === 1);
+    // Closing the chooser must hand the card back. A `busy` that is set on click and
+    // only cleared on success leaves the one control on the page disabled forever, and
+    // the reader's only way out is a reload.
+    const pop = await popping.catch(() => null);
+    await pop?.close();
+    await pg.waitForTimeout(1200);
+    ok("and pressing it again reopens the chooser rather than doing nothing",
+      await (async () => {
+        const again = pg.waitForEvent("popup", { timeout: 12000 });
+        await btn.click();
+        const p2 = await again.catch(() => null);
+        await p2?.close();
+        return Boolean(p2);
+      })());
+  }
+
+  // The three links in the card's footer. Google will not publish an OAuth consent
+  // screen without a reachable privacy policy, so these are a release requirement and
+  // not decoration — and a sign-in card with dead links is worse than one with none.
+  {
+    const hrefs = await pg.evaluate(() =>
+      [...document.querySelectorAll('#apply a[href^="/privacy"]')].map((a) => a.getAttribute("href")),
+    );
+    ok("the card links privacy, terms and data deletion", hrefs.length === 3, hrefs.join(" "));
+    const targets = [];
+    for (const h of hrefs) {
+      await pg.goto(`${BASE}${h}`, { waitUntil: "domcontentloaded" });
+      await pg.waitForTimeout(400);
+      const id = h.split("#")[1];
+      targets.push(await pg.evaluate((i) => Boolean(document.getElementById(i)), id));
+    }
+    ok("and every one lands on a section that exists", targets.every(Boolean), targets.join(","));
+    ok("the page says how to get your data deleted",
+      /delete your record/i.test(await pg.locator("main").innerText()));
+    await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
+    await pg.waitForTimeout(1500);
+  }
+
   // An address off the domain must be refused, and the message must name it.
   await signIn(pg, "outsider@gmail.com", "Outsider");
   const refusal = (await pg.locator('[role="alert"]').first().textContent().catch(() => "")) ?? "";

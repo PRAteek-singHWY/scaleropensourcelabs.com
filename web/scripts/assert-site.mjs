@@ -26,6 +26,12 @@ export const ROUTES = [
   // becomes relevant is a bug. So on this route exactly zero nav items are current,
   // and a check expecting one would be asserting the bug.
   { path: "/join", name: "join", inNav: false },
+  // Also inNav: false, and for a different reason from /join's. /privacy is a reference
+  // document, not a stop on the tour — it is reached from the sign-in card, at the one
+  // moment somebody is deciding whether to hand over their college identity. Listed here
+  // anyway so smoke and the QA sweep cover it: a page nothing links from the nav is
+  // exactly the page that rots unnoticed.
+  { path: "/privacy", name: "privacy", inNav: false },
 ];
 
 const MARKER = "Scaler Open Source Club";
