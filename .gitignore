@@ -2,3 +2,9 @@
 node_modules/
 firestore-debug.log
 firebase-debug.log
+
+# Firebase Hosting's upload cache. It is a manifest of which local files were already
+# uploaded, rewritten on every deploy, and it is per-machine — committing it means every
+# deploy produces a diff nobody reads and two people deploying produce a conflict over a
+# file neither of them wrote.
+.firebase/
