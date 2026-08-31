@@ -38,12 +38,16 @@ This used to be a single `club.ts`. It was split when the site became five pages
 because one 800-line file holding five pages' content meant every content PR touched
 it and every one of them conflicted.
 
-> **Editing the join form's options?** `join.ts` holds the four paths, the three
-> experience levels and the interest checkboxes — and `firestore.rules` at the repo
-> root keeps a **second copy** of those values, because Firestore rules cannot import
-> anything. Change one without the other and every applicant who picks the new option
-> gets a permission error on submit, while the page still renders perfectly. Run
-> `npm run rules` to check, and see [FIREBASE.md](FIREBASE.md).
+> **Editing the join form's options?** `join.ts` holds the four paths, the two hostels
+> and the programme list — and `firestore.rules` at the repo root keeps a **second copy**
+> of those values, because Firestore rules cannot import anything. Change one without the
+> other and every member who picks the new option gets a permission error on save, while
+> the page still renders perfectly. Run `npm run rules` to check, and see
+> [FIREBASE.md](FIREBASE.md).
+>
+> The signed-in half of the site — `/join`, `/onboarding`, `/dashboard`, `/admin` — is not
+> content and does not live in `web/content/`. Nothing there is published on the site; see
+> FIREBASE.md before changing it.
 
 ```ts
 // content/people.ts
@@ -127,8 +131,8 @@ npm run qa           # must report 0 issues — same
 npm run browsers     # all three engines
 ```
 
-`npm run qa` drives real Chromium across **all six routes** × four viewports × both
-themes — 48 combinations. It checks contrast, tap-target sizes, text size, heading
+`npm run qa` drives real Chromium across **every route** × four viewports × both
+themes — 80 combinations. It checks contrast, tap-target sizes, text size, heading
 order, alt text, horizontal overflow, and that `.tap` is never combined with a margin
 utility. **Zero issues is the bar**, and it is not negotiable for a site whose
 audience includes people reading it on a phone on campus wifi.
@@ -137,6 +141,14 @@ audience includes people reading it on a phone on campus wifi.
 button's visibility on every route, and that the outline and scroll reveals re-derive
 after a client-side navigation. Run it before `qa`, because a page serving no
 JavaScript passes most of what `qa` checks.
+
+**Both of those run signed out**, so on `/onboarding` and `/dashboard` they only ever see
+the "sign in first" card. If you touched sign-in, the profile form, the dashboard or
+anything under `/admin`, a green run there means the door is not broken and nothing more —
+the signed-in half is covered by `npm run e2e:auth`, which drives the whole flow in a real
+browser against the Auth and Firestore emulators, and by `npm run rules:emulator`, which
+executes `firestore.rules` as several different people. Both need the emulators running;
+see [FIREBASE.md](FIREBASE.md).
 
 If you changed anything visual, also **look at it in both themes**. On this project
 that has caught bugs every single time — including a wordmark rendering at 1.11:1

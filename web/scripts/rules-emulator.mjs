@@ -83,21 +83,39 @@ async function check(label, shouldSucceed, op) {
 const member = (uid, email) =>
   env.authenticatedContext(uid, { email, email_verified: true }).firestore();
 
-/** The shape the profile form writes. */
+/** The shape the profile form writes. Three fields plus the identity and the optionals —
+ *  batch, branch and year are read from the address by web/lib/batch.ts and are not
+ *  stored, so there is nothing about them for the rules to validate. */
 const profileFor = (uid, email, over = {}) => ({
   uid,
   email,
   name: "Asha Verma",
-  year_branch: "2nd year, CSE",
   hostel: "uniworld-1",
-  level: "some-git",
-  path: "program-track",
-  programs: ["gsoc", "outreachy"],
   github: "asha",
+  path: "program-track",
   // NO created_at / updated_at HERE. They are added by withStamps() below, which uses
   // serverTimestamp(). Literal Dates in this base object made every edit case send a
   // forged created_at, so the rules refused them and two tests failed for a reason that
   // had nothing to do with what they were testing.
+  ...over,
+});
+
+/** A mentor, as AdminMentors writes one. */
+const mentorFor = (over = {}) => ({
+  name: "Priya Nair",
+  description: "Kubernetes and Go. Good on proposal structure; not the person for frontend.",
+  programme: "gsoc",
+  org: "CNCF",
+  active: true,
+  ...over,
+});
+
+/** An enrollment, as MentorPicker writes one. */
+const enrollmentFor = (uid, email, over = {}) => ({
+  uid,
+  email,
+  programme: "gsoc",
+  first_only: true,
   ...over,
 });
 
@@ -112,10 +130,15 @@ const withStamps = (d, { created = true } = {}) => ({
   updated_at: serverTimestamp(),
 });
 
+// REAL-SHAPED ADDRESSES, not `asha@sst.scaler.com`. Every college account looks like
+// `asha.23bcs10045@…`, and the dot in the local part is exactly the character a
+// carelessly written domain regex mishandles. Using the real shape here means the
+// anchored `^[^@]+@sst[.]scaler[.]com$` is being exercised against what it will actually
+// meet, rather than against a simpler address that would pass a weaker check too.
 const UID_A = "uid-asha";
-const MAIL_A = "asha@sst.scaler.com";
+const MAIL_A = "asha.23bcs10045@sst.scaler.com";
 const UID_B = "uid-ravi";
-const MAIL_B = "ravi@sst.scaler.com";
+const MAIL_B = "ravi.24bcs10192@sst.scaler.com";
 const UID_ADMIN = "uid-organiser";
 const MAIL_ADMIN = "organiser@sst.scaler.com";
 
@@ -148,15 +171,19 @@ await check("read your own profile", true, () =>
 await check("edit your own profile", true, () =>
   setDoc(
     doc(member(UID_A, MAIL_A), "users", UID_A),
-    withStamps(profileFor(UID_A, MAIL_A, { year_branch: "3rd year, CSE" }), { created: false }),
+    withStamps(profileFor(UID_A, MAIL_A, { hostel: "uniworld-2" }), { created: false }),
     { merge: true },
   ),
 );
-await check("create a profile with no github", true, () => {
-  const d = profileFor("uid-min", "minimal@sst.scaler.com");
+// The minimum a member can file: the three required fields and nothing else. Both
+// optionals absent, which is what most members actually save — no GitHub, and no ?path=
+// because they came in through the nav button rather than a page's closing action.
+await check("create a profile with neither github nor path", true, () => {
+  const d = profileFor("uid-min", "minimal.25bcs10001@sst.scaler.com");
   delete d.github;
+  delete d.path;
   return setDoc(
-    doc(member("uid-min", "minimal@sst.scaler.com"), "users", "uid-min"),
+    doc(member("uid-min", "minimal.25bcs10001@sst.scaler.com"), "users", "uid-min"),
     withStamps(d),
   );
 });
@@ -248,17 +275,15 @@ console.log("\n-- validation --");
 const badProfile = (over) => () =>
   setDoc(doc(member(UID_B, MAIL_B), "users", UID_B), withStamps(profileFor(UID_B, MAIL_B, over)));
 await check("a hostel outside the closed set", false, badProfile({ hostel: "uniworld-3" }));
-await check("a level outside the closed set", false, badProfile({ level: "some" }));
 await check("a path outside the closed set", false, badProfile({ path: "hackathon" }));
-await check("a programme outside the known set", false, badProfile({ programs: ["nasa"] }));
-await check("an empty programmes list", false, badProfile({ programs: [] }));
-await check("'other' with nothing naming it", false, badProfile({ programs: ["other"] }));
-await check("free text without 'other' ticked", false,
-  badProfile({ programs: ["gsoc"], programs_other: "GSoC again" }));
-await check("an interest outside the known set", false, badProfile({ interests: ["crypto"] }));
 await check("an empty required field", false, badProfile({ name: "" }));
+// An OPTIONAL field written as "" rather than omitted. This is the shape a clear-the-box
+// edit would take if lib/profile.ts stopped sending deleteField(), and it is refused —
+// so the member would see a save fail with no idea why. The test is here to make that
+// coupling explicit rather than latent.
+await check("an optional field written as an empty string", false, badProfile({ github: "" }));
 await check("an extra field the form never sends", false, badProfile({ isAdmin: true }));
-// The four fields cut from the form. `hasOnly` is strict, so these are now refused
+// The eight fields cut from the form over time. `hasOnly` is strict, so these are refused
 // outright — which is the point: an older client left open in a tab cannot keep writing
 // a field the form no longer asks for and nothing reads.
 for (const gone of [
@@ -266,6 +291,12 @@ for (const gone of [
   { heard_from: "senior" },
   { interests: ["web"] },
   { updates: true },
+  // Replaced by the batch derived from the address. A tab open from before that change
+  // would still be sending this one.
+  { year_branch: "2nd year, CSE" },
+  { level: "some-git" },
+  { programs: ["gsoc"] },
+  { programs_other: "something" },
 ])
   await check(`the removed field "${Object.keys(gone)[0]}" is refused`, false, badProfile(gone));
 await check("a client-forged updated_at", false, () =>
@@ -315,6 +346,170 @@ await check("an admin appointing another admin", false, () =>
 );
 await check("a member appointing themselves admin", false, () =>
   setDoc(doc(member(UID_B, MAIL_B), "admins", MAIL_B), { added_by: "me" }),
+);
+
+console.log("\n-- mentors: published by organisers, read by everyone --");
+// The one collection a client may write that is not its own row. Everything below is
+// about keeping that widening exactly as wide as it was meant to be.
+const MENTOR_1 = "mentor-priya";
+const MENTOR_2 = "mentor-arjun";
+await check("an admin publishing a mentor", true, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "mentors", MENTOR_1), withStamps(mentorFor())),
+);
+await check("an admin publishing a second mentor", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "mentors", MENTOR_2),
+    withStamps(mentorFor({ name: "Arjun Rao", org: "Kubernetes" })),
+  ),
+);
+await check("an admin editing a mentor", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "mentors", MENTOR_1),
+    withStamps(mentorFor({ active: false }), { created: false }),
+    { merge: true },
+  ),
+);
+await check("a member reading the mentor list", true, () =>
+  getDocs(collection(member(UID_A, MAIL_A), "mentors")),
+);
+// THE WIDENING, TESTED AT ITS EDGE. A member may read every mentor and write none.
+await check("a member publishing a mentor", false, () =>
+  setDoc(doc(member(UID_A, MAIL_A), "mentors", "mentor-self"), withStamps(mentorFor())),
+);
+await check("a member editing a published mentor", false, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "mentors", MENTOR_1),
+    withStamps(mentorFor({ name: "Me Actually" }), { created: false }),
+    { merge: true },
+  ),
+);
+await check("a member deleting a mentor", false, () =>
+  deleteDoc(doc(member(UID_A, MAIL_A), "mentors", MENTOR_1)),
+);
+await check("an anonymous visitor reading the mentor list", false, () =>
+  getDocs(collection(env.unauthenticatedContext().firestore(), "mentors")),
+);
+const badMentor = (over) => () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "mentors", "mentor-bad"), withStamps(mentorFor(over)));
+await check("a mentor with a programme outside the closed set", false, badMentor({ programme: "nasa" }));
+await check("a mentor with no description", false, badMentor({ description: "" }));
+await check("a mentor description past 600 characters", false, badMentor({ description: "x".repeat(601) }));
+await check("a mentor with an extra field", false, badMentor({ capacity: 5 }));
+// active is a bool, not a truthy string. Worth a case because "false" is the value a
+// hand-written console edit produces, and it would render as visible.
+await check("a mentor whose active flag is a string", false, badMentor({ active: "false" }));
+
+console.log("\n-- enrollments: a member's own preferences --");
+// Re-enable MENTOR_1 first; it was hidden two cases above and a hidden mentor is still a
+// legal choice as far as the rules are concerned (the client filters the picker).
+await check("an admin re-showing a mentor", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "mentors", MENTOR_1),
+    withStamps(mentorFor({ active: true }), { created: false }),
+    { merge: true },
+  ),
+);
+await check("enrol with a first preference only", true, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "enrollments", UID_A),
+    withStamps(enrollmentFor(UID_A, MAIL_A, { mentor_1: MENTOR_1, first_only: true })),
+  ),
+);
+await check("enrol with two preferences", true, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "enrollments", UID_B),
+    withStamps(
+      enrollmentFor(UID_B, MAIL_B, {
+        mentor_1: MENTOR_1,
+        mentor_2: MENTOR_2,
+        first_only: false,
+      }),
+    ),
+  ),
+);
+await check("read your own enrollment", true, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "enrollments", UID_A)),
+);
+await check("change your own preferences", true, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "enrollments", UID_A),
+    withStamps(
+      enrollmentFor(UID_A, MAIL_A, { mentor_1: MENTOR_2, first_only: true }),
+      { created: false },
+    ),
+    { merge: true },
+  ),
+);
+// WITHDRAWING IS ALLOWED, and this is the one place the enrollment rules deliberately
+// differ from the profile rules. See the note on ENROLLMENTS in web/lib/firebase.ts.
+await check("withdraw your own enrollment", true, () =>
+  deleteDoc(doc(member(UID_A, MAIL_A), "enrollments", UID_A)),
+);
+
+console.log("\n-- enrollments: the pairing, in both directions --");
+const badEnrollment = (over) => () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "enrollments", UID_A),
+    withStamps(enrollmentFor(UID_A, MAIL_A, { mentor_1: MENTOR_1, ...over })),
+  );
+// THE TWO CASES THE PAIRING EXISTS FOR. Without the first, a member can claim to want
+// only their first choice while storing a second; without the second, "no second
+// preference" can be saved by omission, so a member who has not decided and a member who
+// has decided become indistinguishable in the organisers' list.
+await check("'first preference only' carrying a second preference", false,
+  badEnrollment({ first_only: true, mentor_2: MENTOR_2 }));
+await check("no second preference and no first_only flag", false,
+  badEnrollment({ first_only: false }));
+await check("the same mentor as both preferences", false,
+  badEnrollment({ first_only: false, mentor_2: MENTOR_1 }));
+await check("a first preference that is not a real mentor", false,
+  badEnrollment({ mentor_1: "mentor-does-not-exist", first_only: true }));
+await check("a second preference that is not a real mentor", false,
+  badEnrollment({ first_only: false, mentor_2: "mentor-does-not-exist" }));
+await check("a programme outside the closed set", false,
+  badEnrollment({ programme: "nasa", first_only: true }));
+await check("an extra field on an enrollment", false,
+  badEnrollment({ first_only: true, confirmed_mentor: MENTOR_1 }));
+
+console.log("\n-- enrollments: one member against another --");
+await check("reading somebody else's enrollment", false, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "enrollments", UID_B)),
+);
+await check("writing somebody else's enrollment", false, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "enrollments", UID_B),
+    withStamps(enrollmentFor(UID_B, MAIL_B, { mentor_1: MENTOR_1, first_only: true })),
+  ),
+);
+await check("claiming another address on your own enrollment", false, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "enrollments", UID_A),
+    withStamps(enrollmentFor(UID_A, MAIL_B, { mentor_1: MENTOR_1, first_only: true })),
+  ),
+);
+await check("listing every enrollment as a member", false, () =>
+  getDocs(collection(member(UID_A, MAIL_A), "enrollments")),
+);
+await check("an admin listing every enrollment", true, () =>
+  getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "enrollments")),
+);
+await check("an admin reading one enrollment", true, () =>
+  getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "enrollments", UID_B)),
+);
+// An organiser cannot quietly reassign somebody, for the same reason they cannot edit a
+// profile: the pairing is a conversation, and a silent overwrite is not one.
+await check("an admin editing somebody's preferences", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "enrollments", UID_B),
+    withStamps(
+      enrollmentFor(UID_B, MAIL_B, { mentor_1: MENTOR_2, first_only: true }),
+      { created: false },
+    ),
+    { merge: true },
+  ),
+);
+await check("an admin withdrawing somebody's enrollment", false, () =>
+  deleteDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "enrollments", UID_B)),
 );
 
 console.log("\n-- legacy applications stay sealed --");

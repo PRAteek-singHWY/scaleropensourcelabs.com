@@ -19,7 +19,7 @@ import AdminDashboard from "@/components/AdminDashboard";
 
 export const metadata: Metadata = {
   title: "Organisers",
-  description: "Club membership, by hostel, year, branch and programme.",
+  description: "Club membership by batch, year, branch and hostel, and the mentorship cohort.",
   robots: { index: false, follow: false },
 };
 
@@ -32,9 +32,10 @@ export default function Admin() {
           Who is in the club.
         </h1>
         <p className="measure mt-4 text-body-lg text-haze">
-          Every registered member, and the breakdowns most often asked for — by hostel, by
-          year, by branch, by programme. Counts are over the whole membership; the search
-          and filter below narrow only the list.
+          Every registered member and the breakdowns most often asked for — by batch, by
+          year, by branch, by hostel — then the mentor list and who has chosen whom. Counts
+          are over the whole membership; the search and filters below narrow only the
+          lists.
         </p>
 
         <div className="mt-10">

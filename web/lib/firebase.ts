@@ -191,6 +191,27 @@ export const USERS = "users";
  *  the console, so a compromised admin session cannot appoint more admins. */
 export const ADMINS = "admins";
 
+/** The mentors an organiser has published, one document each.
+ *
+ *  THE FIRST COLLECTION A CLIENT MAY WRITE THAT IS NOT ITS OWN PROFILE. Every other
+ *  write in this app is a member editing their own row; these are created and edited by
+ *  admins from the dashboard. That is a deliberate widening and it is acceptable for one
+ *  reason: a mentor entry is published, organiser-authored, non-personal copy — the same
+ *  kind of thing that lives in content/ — so the worst a compromised admin session can do
+ *  here is deface a list, not read or alter anybody's details. Contrast `admins`, where
+ *  the same reasoning does not hold and every client write stays denied. */
+export const MENTORS = "mentors";
+
+/** One document per member who has enrolled in a mentorship programme, keyed by uid for
+ *  the same reasons as USERS: ownership is a comparison rather than a query, and a second
+ *  enrollment per person is impossible by construction rather than by a uniqueness check.
+ *
+ *  A member may delete their own, which USERS deliberately forbids. The difference is what
+ *  the document means: a profile is the club's roster and losing one is losing a member,
+ *  whereas an enrollment is an expression of interest and withdrawing it is the member's
+ *  decision to make without emailing anybody. */
+export const ENROLLMENTS = "enrollments";
+
 /** THE ONLY EMAIL DOMAIN THAT MAY REGISTER.
  *
  *  Enforced in three places, deliberately: the Google sign-in call passes it as a hint,

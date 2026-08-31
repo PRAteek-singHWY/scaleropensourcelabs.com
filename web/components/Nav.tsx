@@ -155,19 +155,26 @@ export default function Nav() {
               in-page CTAs all over the site; if the bar wore it too, the one control
               that is on screen at every scroll position would look like every other
               button. Yellow makes it the single loudest thing in the chrome. */}
-          {/* THE LABEL CHANGES ONCE SOMEBODY IS SIGNED IN, and the destination does
-              not. "Join" to a member who joined last month is the bar telling them to
-              do a thing they have already done, which is how a site teaches people to
-              ignore its one persistent control. Signed in it reads "Profile" and takes
-              them to the same route, where the gate shows their details instead of a
-              sign-in card.
+          {/* THE LABEL AND THE DESTINATION BOTH CHANGE ONCE SOMEBODY IS SIGNED IN.
+              "Join" to a member who joined last month is the bar telling them to do a
+              thing they have already done, which is how a site teaches people to ignore
+              its one persistent control.
+
+              The destination used to stay /join, back when the gate on that page held
+              every signed-in state itself. It does not any more — /join is the door and
+              the dashboard is the room — so sending a member there would make the one
+              control that is on screen at every scroll position take them to a page that
+              immediately redirects. It points at the room.
 
               `user === undefined` — the session is still being restored — deliberately
               renders "Join" rather than a spinner or an empty button: it is the correct
               label for the majority of readers, it never shifts the bar's width enough
-              to reflow, and a member sees it settle to "Profile" a moment later. */}
-          <Link href={JOIN_HREF} className="btn btn-pop btn-compact shrink-0">
-            {user ? "Profile" : "Join"}
+              to reflow, and a member sees it settle to "Dashboard" a moment later. */}
+          <Link
+            href={user ? "/dashboard" : JOIN_HREF}
+            className="btn btn-pop btn-compact shrink-0"
+          >
+            {user ? "Dashboard" : "Join"}
           </Link>
         </div>
       </nav>

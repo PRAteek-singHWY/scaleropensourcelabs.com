@@ -65,6 +65,9 @@ for (const route of ROUTES) {
         // into an unscrollable overflow, which is exactly this failure.
         joinVisible:
           !!jr && jr.width > 0 && jr.height >= 44 && jr.right <= window.innerWidth + 1,
+        // Presence alone, for the app routes, where the assertion is that it is absent.
+        joinPresent: !!join,
+        hasSiteNav: !!document.querySelector('nav[aria-label="Main"]'),
         // Exactly one nav item may claim to be the current page.
         currentMarks: document.querySelectorAll(
           'nav[aria-label="Main"] [aria-current="page"]',
@@ -85,13 +88,25 @@ for (const route of ROUTES) {
   bad.slice(before, before + 3).forEach((l) => console.log("          " + l));
   ok(`${label} exactly one h1`, state.h1s === 1);
   ok(`${label} <main id="main"> for the skip link`, state.mainH);
-  ok(`${label} Join button visible at >=44px`, state.joinVisible);
-  // Five pages mark themselves; /join marks nothing. See ROUTES in assert-site.mjs.
-  const wantCurrent = route.inNav ? 1 : 0;
-  ok(
-    `${label} nav current marks == ${wantCurrent}`,
-    state.currentMarks === wantCurrent,
-  );
+
+  // THE MARKETING CHROME IS ASSERTED BOTH WAYS, and that is the point of the branch.
+  // A signed-in route that grew a Join button would be the bug this whole split exists to
+  // fix — a bar arguing the case for joining, shown to somebody who joined last month —
+  // so its absence is checked rather than merely tolerated.
+  if (route.app) {
+    ok(`${label} no marketing nav on the app shell`, !state.hasSiteNav);
+    ok(`${label} no Join button on the app shell`, !state.joinPresent);
+  } else {
+    ok(`${label} Join button visible at >=44px`, state.joinVisible);
+    // Six pages mark themselves; /join and /privacy mark nothing. See assert-site.mjs.
+    const wantCurrent = route.inNav ? 1 : 0;
+    ok(
+      `${label} nav current marks == ${wantCurrent}`,
+      state.currentMarks === wantCurrent,
+    );
+  }
+
+  // Both shells carry the theme control, so this stays the hydration probe everywhere.
   ok(`${label} hydrated (theme icon painted)`, state.hydrated);
   ok(`${label} no horizontal overflow`, state.docW <= state.winW + 1);
   ok(`${label} no canvas (3D removed)`, state.canvases === 0);
@@ -199,8 +214,50 @@ ok(
 // visitor would mean the gate had broken open.
 ok(
   "the profile form is not rendered before sign-in",
-  (await pg.evaluate(() => document.querySelectorAll("#pf-path, #pf-name").length)) === 0,
+  (await pg.evaluate(() => document.querySelectorAll("#pf-name, #pf-hostel").length)) === 0,
 );
+
+// ---------------------------------------------------------------------------
+// The two signed-in routes, seen by somebody who is not signed in.
+//
+// THE FAILURE THIS CATCHES IS A FLASH, NOT A LEAK. Both routes are static HTML on a CDN
+// and anybody can fetch them; what stops a stranger reading anybody's details is
+// firestore.rules. What these assert is that neither route paints the wrong thing while
+// it works out who you are — a static export ships before auth resolves, so a route that
+// treats "still checking" as "signed out" shows a sign-in prompt to every returning
+// member, and one that treats it as "signed in" renders an empty dashboard to a stranger.
+// Signed out, the correct end state is the members-only card and no form.
+for (const path of ["/onboarding", "/dashboard"]) {
+  await pg.goto(BASE + path, { waitUntil: "networkidle" });
+  await assertOurSite(pg);
+  // Deliberately long. The point is the SETTLED state: a shorter wait would pass while
+  // the page was still on its "checking your sign-in" card and prove nothing.
+  await pg.waitForTimeout(1200);
+  const label = path.padEnd(12);
+  const text = await pg.evaluate(
+    () => document.querySelector("main")?.innerText ?? "",
+  );
+  // TWO ACCEPTABLE END STATES, because this suite runs with and without a Firebase
+  // config. With one, a signed-out reader is asked to sign in; without one — which is
+  // how a contributor fixing a typo runs the site, and how CI runs it — the honest
+  // answer is that there is nothing to sign in to. Asserting only the first would fail
+  // on a machine with no .env.local for a reason that has nothing to do with the routes.
+  ok(
+    `${label} settles on a signed-out state`,
+    /sign in first|sign-in is not set up here/i.test(text),
+  );
+  // THE ONE THAT MATTERS. Landing on the "checking" card and staying there means the
+  // auth state never resolved, which on a static route is indistinguishable from a dead
+  // page — and it is what a botched redirect looks like.
+  ok(
+    `${label} does not settle on the checking card`,
+    !/checking your sign-in|loading your dashboard/i.test(text),
+  );
+  ok(
+    `${label} renders no form before sign-in`,
+    (await pg.evaluate(() => document.querySelectorAll("#pf-name, #pf-hostel, #am-name").length)) === 0,
+  );
+}
 
 await b.close();
 
