@@ -48,16 +48,30 @@ before launch. Each is a numbered step below.
 
 ## What it does
 
-Members sign in, fill a profile once, and organisers read the roster.
+Members sign in, answer three questions once, land on a dashboard, and can enrol in the
+GSoC mentorship cohort. Organisers read the roster and publish the mentors.
 
 ```
-/join  ──Google sign-in (@sst.scaler.com only)──▶  Firebase Auth
-                    │
-                    ▼
-          profile form ──setDoc()──▶  users/{uid}      one doc per member
-                                          │             owner-only read/write
-                                          ▼
-/admin  ──list, admins only──────────▶  breakdowns + table + CSV export
+/join       ──Google sign-in (@sst.scaler.com only)──▶  Firebase Auth
+                        │
+                        ▼
+/onboarding   name · GitHub · hostel ──setDoc()──▶  users/{uid}   one doc per member
+              (batch/branch/year are READ FROM             │        owner-only read/write
+               the address, never stored)                  │
+                        │                                  │
+                        ▼                                  │
+/dashboard    their details, and the mentorship card       │
+                        │                                  │
+                        │  pick a 1st preference, and      │
+                        │  either a 2nd or "first only"    │
+                        ▼                                  │
+                  enrollments/{uid} ◀───────────────┐      │
+                        ▲                           │      │
+                        │                           │      ▼
+/admin  ──list, admins only──▶ roster · breakdowns · CSV
+        ──write───────────────▶ mentors/{id}  ──────┘
+                                 published by organisers,
+                                 readable by every member
 ```
 
 No server, no admin SDK, no API route. The site stays a static build; everything is the
@@ -70,20 +84,45 @@ client talking to Firestore under the rules.
 | `web/lib/firebase.ts` | Lazy client init, collection names, the allowed domain. |
 | `web/lib/auth.tsx` | Sign-in, sign-out, and the admin check. |
 | `web/lib/profile.ts` | The profile shape and its read/write. |
-| `web/components/JoinGate.tsx` | The four states of `/join`. |
-| `web/components/ProfileForm.tsx` | The form itself. |
+| `web/lib/batch.ts` | Batch, branch and roll, parsed out of the college address. |
+| `web/lib/mentorship.ts` | Mentors and enrolments. |
+| `web/components/JoinGate.tsx` | The door: `/join`, sign-in only. |
+| `web/components/MemberOnly.tsx` | The three states before "signed in", shared by both member routes. |
+| `web/components/ProfileForm.tsx` | The three questions. |
+| `web/components/MemberDashboard.tsx` | `/dashboard`. Also decides who still needs onboarding. |
+| `web/components/MentorPicker.tsx` | Enrolment and the preference picker. |
 | `web/components/AdminDashboard.tsx` | The organisers' view. |
+| `web/components/AdminMentors.tsx` | Publishing, editing, hiding and deleting mentors. |
+| `web/components/AdminMentorship.tsx` | Who enrolled, and the demand per mentor. |
 | `web/scripts/rules.mjs` | Text check: rules vs the form. Runs in CI. |
 | `web/scripts/rules-emulator.mjs` | Executes the rules as several different users. |
+| `web/scripts/e2e-auth.mjs` | Drives the whole flow in a real browser. |
 | `web/.env.example` | The variables, with notes. |
 
-Three collections:
+Five collections:
 
 | Collection | Who can read | Who can write |
 |---|---|---|
 | `users/{uid}` | that member, and admins | that member only, validated |
 | `admins/{email}` | your own row only | **nobody, from any client** |
+| `mentors/{id}` | every signed-in member | **admins** — see below |
+| `enrollments/{uid}` | that member, and admins | that member only, validated |
 | `applications/{id}` | nobody | nobody — legacy, kept sealed |
+
+**`mentors` is the one collection a client may write that is not its own row.** That
+widening was deliberate, and it is acceptable because a mentor entry is published,
+organiser-authored, non-personal copy — the worst a stolen admin session can do there is
+deface a list. The same argument does **not** hold for `admins`, which is why every client
+write to that collection stays denied: appointing an admin is the one privilege escalation
+this model would otherwise allow.
+
+**Nothing about a member's batch is stored anywhere.** `23bcs10045` in
+`asha.23bcs10045@sst.scaler.com` is the 2023–27 batch, branch BCS, roll 10045, and
+`web/lib/batch.ts` reads it on demand. The rules pin the stored address to
+`request.auth.token.email`, so a value derived from it cannot be forged and cannot drift
+out of step with the document it describes. The consequence to know about: you cannot
+*query* by batch, because it is not a field — the organisers' dashboard filters in the
+browser over a membership it has already read.
 
 ---
 
@@ -364,24 +403,45 @@ write it — not even an admin — so it is managed by hand:
 has to exist.
 
 Keying by email rather than uid means you can add an organiser **before** they have ever
-signed in. They see a **Dashboard** link on `/join` and can open `/admin`.
+signed in. They see a link to the organisers' dashboard on `/dashboard` and can open
+`/admin`.
 
 To remove an organiser, delete their document. Do not add a `write` rule to this
 collection: denying it is what stops a compromised admin session appointing more admins.
 
+### 4. Publish the first mentor
+
+Until one mentor exists, the mentorship card on every member's dashboard says enrolment
+has not opened — which is true, and better than a button that cannot work. So an organiser
+has to publish one before the cohort can start.
+
+**`/admin` → Mentors → Add a mentor.** Name, description, programme; organisation, GitHub
+and email are optional. The description is the field that matters: it is what a student
+reads before choosing, so write what the mentor works on and what they are *not* the
+person to ask, not an adjective about them.
+
+Retiring a mentor is **Hide from members**, not Delete. Hiding takes them out of the
+picker while every preference already recorded against them still shows their name;
+deleting is only offered for a mentor nobody has picked, because a deleted mentor with a
+preference pointing at them leaves an id where a name should be.
+
 ---
 
-## Reading submissions
+## Reading the data
 
-**Firestore → Data → `applications`.** Access is governed by who has permissions on
-the Firebase project, not by the rules in this repo — so adding an organiser means
-adding their Google account under **Project settings → Users and permissions**, and
-removing one means removing it there.
+**Everything is on `/admin`**, which is where an organiser should be looking: the
+membership with its breakdowns, the mentor list, who enrolled and which mentors they
+asked for. It is served by the `list` rules on `users` and `enrollments`, which only an
+address in `admins` satisfies — the page itself is not the gate, and it ships to anybody
+who asks for the URL.
 
-There is deliberately no admin page on the site. Building one means giving a client
-`read` on this collection, which is the one thing the rules exist to prevent. If you
-need one later, it needs a real server with authentication, and it is a much larger
-change than it looks.
+For anything the dashboard does not show, **Firestore → Data** in the console. Console
+access is governed by who has permissions on the Firebase *project* — **Project settings →
+Users and permissions** — which is a separate list from `admins` and a much more powerful
+one. Somebody who only needs the roster belongs in `admins`, not in the project.
+
+Nothing turns a preference into an allocation. The dashboard shows demand per mentor and
+who asked for whom; pairing the cohort is still a decision somebody makes.
 
 ### The document shape
 
@@ -389,23 +449,66 @@ One document per member at `users/{uid}`, where `{uid}` is the Firebase Auth uid
 
 ```js
 users/l8JdTxxca59NYDtbsrhTGdF0iKLE {
-  uid          "l8JdTxx..."            // same as the document id
-  email        "asha@sst.scaler.com"   // pinned to the signed-in address by the rules
+  uid          "l8JdTxx..."                        // same as the document id
+  email        "asha.23bcs10045@sst.scaler.com"    // pinned to the signed-in address
   name         "Asha Verma"
-  year_branch  "3rd year, ECE"         // free text, one field
-  hostel       "uniworld-1"            // closed set
-  level        "some-git"              // closed set
-  path         "program-track"         // closed set
-  programs     ["gsoc", "outreachy"]   // closed set, at least one
-  interests    ["web"]                 // optional
-  github       "asha"                  // optional, omitted when blank
-  heard_from   "senior"                // optional
-  why          "…"                     // ≤400 chars
-  updates      true
-  created_at   <server timestamp>      // written once, frozen by the rules
-  updated_at   <server timestamp>      // moves on every save
+  hostel       "uniworld-1"                        // closed set
+  github       "asha"                              // optional, omitted when blank
+  path         "program-track"                     // optional, closed set — see below
+  created_at   <server timestamp>                  // written once, frozen by the rules
+  updated_at   <server timestamp>                  // moves on every save
 }
 ```
+
+Three fields are asked for; the rest is either identity or carried in. **There is no
+`year_branch`, `level` or `programs`** — those were removed, and the rules reject a
+document that still carries them. Batch, branch and year come from the address
+(`23bcs10045` → 2023–27, BCS, roll 10045). Experience level and programme interest were
+self-assessments made before somebody had met the club, that nothing acted on; interest is
+now expressed by *enrolling*, which is a decision with a consequence.
+
+`path` is the one field nobody is asked for. Every closing action on the site links to
+`/join?path=<id>`; the value rides through sign-in and both redirects in the query string
+and is saved silently, then shown back on the dashboard where it can be changed or
+cleared. It is optional because most members arrive through the nav button with no path
+at all.
+
+```js
+mentors/61SsdoQwMgUKoXo5HxsZ {          // auto-generated id
+  name         "Priya Nair"
+  description  "Kubernetes and Go. Good on proposal structure; not for frontend."
+  programme    "gsoc"                   // closed set, same list as PROGRAMS
+  org          "CNCF"                   // optional
+  github       "priya"                  // optional
+  email        "…"                      // optional
+  active       true                     // false hides them from the picker
+  created_at   <server timestamp>
+  updated_at   <server timestamp>
+}
+
+enrollments/l8JdTxxca59NYDtbsrhTGdF0iKLE {   // keyed by uid, like a profile
+  uid          "l8JdTxx..."
+  email        "asha.23bcs10045@sst.scaler.com"
+  programme    "gsoc"
+  mentor_1     "61SsdoQ..."             // must name a mentor that EXISTS
+  mentor_2     "mentor-arjun"           // absent exactly when first_only is true
+  first_only   false
+  created_at   <server timestamp>
+  updated_at   <server timestamp>
+}
+```
+
+**Exactly one of `mentor_2` and `first_only: true`, always, enforced in both directions.**
+A document carrying both is contradictory; one carrying neither stores an unanswered
+question as though it were an answer, and an organiser pairing thirty students needs to
+tell "I only want Priya" apart from "I have not decided". Both mentor ids must reference a
+document that exists, which costs one read per write and is what stops the interest list
+displaying a raw id where a name should be.
+
+Members may **delete their own enrolment**, which profiles deliberately forbid: a profile
+is the club's roster and losing one loses a member, whereas an enrolment is an expression
+of interest and withdrawing it is the member's own decision. Admins can read every
+enrolment and change none.
 
 **Not JSON files** — Firestore documents, which are JSON-*like* with typed fields
 (string, number, boolean, array, map, timestamp). They look like JSON in the console and
@@ -439,14 +542,18 @@ scale. Past a few thousand members that needs revisiting.
 
 ## Changing the form
 
-**`firestore.rules` hardcodes the allowed values for `level`, `path`, `hostel`,
-`interests` and `programs`, because Firestore rules cannot import anything.** They are a
-second copy of the lists in `web/content/join.ts`.
+**`firestore.rules` hardcodes the allowed values for `hostel`, `path` and `programme`,
+because Firestore rules cannot import anything.** They are a second copy of the lists in
+`web/content/join.ts`.
 
-If you add a path, a level, a hostel, an interest or a programme, **you must update both
-files.** Otherwise
+If you add a hostel, a path or a programme, **you must update both files.** Otherwise
 every applicant who picks the new option gets a permission error on submit — the form
 looks perfect, the page renders correctly, and only that one option is broken.
+
+`programme` is written **twice** in the rules — once for a mentor and once for an
+enrolment — and both copies have to match `PROGRAMS`. Update one and not the other and an
+organiser can publish a mentor that no member is then allowed to choose. `npm run rules`
+checks both.
 
 This is not hypothetical: two of the five values were wrong when this was first
 written (`some` for `some-git`, `hackathon` for `build-day`). So there is a check:

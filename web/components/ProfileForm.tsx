@@ -1,20 +1,29 @@
 "use client";
 
-// THE PROFILE. This replaces the anonymous application form rather than sitting beside
-// it — same questions, same markup, same field styling, but written to users/{uid} and
-// editable afterwards instead of being fired once into a collection nobody can read.
+// THE PROFILE. Three questions, asked once, editable afterwards.
 //
-// What changed from the form it replaces, and why:
+// It began as a copy of the old anonymous application form and has been cut in half twice.
+// What decided each cut was the same test: does the answer change anybody's behaviour, and
+// could we have got it without asking?
 //
 //   * EMAIL IS NOT A FIELD. It comes from the signed-in Google account and is shown
 //     read-only. Letting somebody type it would let them type somebody else's, and the
 //     rules pin the stored value to the token anyway — so an editable box could only
 //     ever produce a save that fails.
+//   * NEITHER IS YEAR, BRANCH OR ROLL. They are in the address. `abhinav.23bcs10045@…`
+//     is batch 2023–27, branch BCS, roll 10045, and lib/batch.ts reads them out on
+//     demand. This used to be one free-text box ("1st year, CSE") that the organisers'
+//     dashboard then had to guess at with two regexes. The panel at the top of this form
+//     shows what was derived, so a member can see it is right rather than trust it.
 //   * NAME IS PREFILLED from the Google profile, and stays editable. "Prateek Singh" as
 //     Google has it is right more often than not, and the ones it gets wrong are
 //     exactly the people who want to fix it.
 //   * IT LOADS AND SAVES REPEATEDLY, so every default has to come from the stored
 //     profile. A form that forgets what you told it last week is not a profile.
+//
+// WHAT IS LEFT IS THREE INPUTS: name, GitHub, hostel. Hostel is the one that looks like it
+// could go and cannot — build days and evening sessions are planned around which building
+// people have to walk back to, and nothing in the address says which.
 //
 // FIVE THINGS THIS FORM WILL NOT DO, carried over from the anonymous form it replaces:
 //
@@ -33,21 +42,20 @@
 //      `maxLength` work before hydration and behave the way the reader's browser has
 //      taught them.
 
-import { useEffect, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import type { User } from "firebase/auth";
-import {
-  HOSTELS,
-  LEVELS,
-  LEVEL_LABEL,
-  PATHS,
-  PROGRAMS,
-  PROGRAM_OTHER,
-} from "@/content/join";
+import { HOSTELS, PATHS } from "@/content/join";
+import { batchFromEmail } from "@/lib/batch";
 import { saveProfile, type Profile } from "@/lib/profile";
 import { LINKS } from "@/content/site";
 
 // One string, applied to every text control, so the form cannot drift field by field.
+//
+// IT IS DELIBERATELY BIGGER THAN A FORM FIELD. 3.25rem tall and 17px type, against the
+// 2.5rem and 14px it was. A stack of small grey inputs is what a form looks like, and
+// this screen is not really a form — it is the one page where somebody joins the club,
+// asked three questions, once. Controls sized like the buttons around them read as an
+// application; controls sized like a spreadsheet read as data entry.
 //
 // The focus halo is the same 3px accent ring at 18% that `.card` wears on hover, so a
 // focused field and a hovered tile are visibly the same system saying the same thing. It
@@ -55,55 +63,42 @@ import { LINKS } from "@/content/site";
 // and it is ADDITIVE to the border recolour rather than a replacement, so the affordance
 // survives a forced-colours mode that flattens shadows.
 const field =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
+  "w-full rounded-tile border border-seam bg-sunk px-4 py-3.5 text-[17px] text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
+
+/** A field's label. Sentence case at body size rather than the uppercase mono `.label`
+ *  token, which is a data label — right above a table column, wrong above something a
+ *  person is about to type their own name into. */
+const legend = "mb-2.5 block text-[15px] font-semibold text-ink";
 
 export default function ProfileForm({
   user,
   profile,
+  /** The `?path=` a reader arrived with, already validated against PATHS by the caller.
+   *
+   *  NOT A FORM FIELD, and that is the point. Every closing action on the site links to
+   *  /join?path=<id>, so a reader who pressed "join the program track" has answered this
+   *  question already; asking it again on the next screen is the site forgetting what it
+   *  was just told. It rides through sign-in and the redirect to /onboarding in the query
+   *  string, is saved silently, and is shown back on the dashboard where it can be
+   *  changed or cleared.
+   *
+   *  An existing profile's stored value always wins, or coming back through an old link
+   *  would quietly rewrite what somebody chose. */
+  path = "",
   onSaved,
 }: {
   user: User;
   /** null on a first visit; the stored profile when editing. */
   profile: Profile | null;
+  path?: string;
   onSaved: (p: Profile) => void;
 }) {
   const isFirstSave = profile === null;
-
-  // PATH PRESELECTION SURVIVES SIGN-IN, and this is a regression fix rather than a new
-  // feature. Every page's closing action links here as /join?path=<id>, so a reader who
-  // clicked "join the program track" should arrive with that chosen. Adding a sign-in step
-  // in front of the form silently broke that: the gate does not navigate — signInWithPopup
-  // keeps the URL, query string and all — so the parameter is still there when this form
-  // finally renders, and all that was missing was reading it.
-  //
-  // It is a DEFAULT, not a lock, and only for a first save: an existing profile's stored
-  // path always wins, or coming back through an old link would quietly rewrite what
-  // somebody chose.
-  //
-  // Validated against the real list rather than trusted. A hand-edited ?path=anything
-  // would otherwise become the select's value and save a path that does not exist —
-  // which the rules would reject, presenting as a broken form.
-  const params = useSearchParams();
-  const requested = params.get("path");
-  const preselectedPath = PATHS.some((p) => p.id === requested) ? requested! : "";
-
-  const [programs, setPrograms] = useState<string[]>(profile?.programs ?? []);
-  const firstProgram = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<"idle" | "saving" | "error">("idle");
   const [message, setMessage] = useState("");
 
-  // setCustomValidity rather than a banner of our own. `required` on a checkbox means
-  // "this box must be ticked", not "one of this group", so the browser has no native check
-  // for "pick at least one" — and rather than invent one, this borrows the browser's,
-  // including the scroll-into-view and the focus we would otherwise reimplement badly.
-  // Cleared the moment something is ticked, or the form stays permanently unsubmittable.
-  useEffect(() => {
-    firstProgram.current?.setCustomValidity(
-      programs.length === 0
-        ? "Pick at least one programme — or Other, and tell us which."
-        : "",
-    );
-  }, [programs]);
+  const batch = batchFromEmail(user.email);
+  const effectivePath = profile?.path ?? path;
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -121,13 +116,9 @@ export default function ProfileForm({
     try {
       const body = {
         name: str("name"),
-        year_branch: str("year_branch"),
         hostel: str("hostel"),
-        level: str("level"),
-        path: str("path"),
-        programs: data.getAll("programs").map(String),
-        programs_other: str("programs_other"),
         github: str("github"),
+        path: effectivePath,
       };
 
       await saveProfile(user.uid, user.email!, body, isFirstSave);
@@ -153,19 +144,68 @@ export default function ProfileForm({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      {/* Who you are signed in as. Shown rather than assumed: this is the address the
-          club will use to contact them and the one their membership hangs on, so seeing
-          it here is how somebody notices they signed in with the wrong account. */}
-      <div className="rounded-md border border-seam bg-sunk px-3.5 py-3">
-        <p className="label mb-1">Signed in as</p>
-        <p className="font-mono text-sm text-ink">{user.email}</p>
+    <form onSubmit={onSubmit} className="space-y-8">
+      {/* WHO WE THINK YOU ARE, shown rather than assumed. This is the address the club
+          will use to contact them and the one their membership hangs on, so seeing it
+          here is how somebody notices they signed in with the wrong account.
+          The chips underneath are the derived half, and they are displayed for a specific
+          reason: a value read out of somebody's address without telling them is the kind
+          of quiet inference that feels like surveillance when they find out. Showing it
+          makes it checkable, and makes a parse failure visible to the one person who can
+          tell us the address is unusual.
+          AN IDENTITY PANEL, NOT A GREY BOX. It was a `bg-sunk` rectangle with two lines of
+          small mono in it, which is how a form displays a value it could not make
+          editable. The accent hairline and the initial disc make it the same object as
+          the account chip in the header above — one idea, in two places. */}
+      <div className="rounded-panel border border-edge bg-sunk p-5">
+        <div className="flex items-center gap-3.5">
+          <span
+            aria-hidden
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-accent font-display text-lg font-bold text-bg"
+          >
+            {(user.displayName || user.email || "·").trim()[0]?.toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <p className="label">Signed in as</p>
+            <p className="mt-0.5 break-all font-mono text-[15px] text-ink">{user.email}</p>
+          </div>
+        </div>
+
+        {batch ? (
+          <>
+            {/* Four facts, four objects. As one run-on mono line it read as a debug
+                string; as chips it reads as a record of who you are, which is what it
+                is. */}
+            <ul className="mt-4 flex flex-wrap gap-2">
+              {[batch.label, batch.branch, batch.yearLabel, `Roll ${batch.roll}`].map((v) => (
+                <li
+                  key={v}
+                  className="rounded-full border border-seam bg-raise px-3 py-1 font-mono text-[13px] text-haze"
+                >
+                  {v}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-[13px] leading-relaxed text-dust">
+              Read from your college address, so we do not have to ask. Wrong? Tell an
+              organiser — nobody can edit it here, and nothing depends on it.
+            </p>
+          </>
+        ) : (
+          // NOT AN ERROR, AND NOT SILENT. Organisers and anybody on an older address land
+          // here. Saying so is better than showing nothing, because the alternative is a
+          // member wondering later why their batch is blank on the dashboard.
+          <p className="mt-4 text-[13px] leading-relaxed text-dust">
+            We could not read a batch from this address, which is fine — nothing depends
+            on it.
+          </p>
+        )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="pf-name" className="label mb-2 block">
-            Name
+          <label htmlFor="pf-name" className={legend}>
+            What should we call you?
           </label>
           <input
             id="pf-name"
@@ -178,163 +218,82 @@ export default function ProfileForm({
           />
         </div>
         <div>
-          <label htmlFor="pf-year" className="label mb-2 block">
-            Year and branch
-          </label>
-          <input
-            id="pf-year"
-            name="year_branch"
-            required
-            maxLength={120}
-            className={field}
-            placeholder="1st year, CSE"
-            defaultValue={profile?.year_branch ?? ""}
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label htmlFor="pf-hostel" className="label mb-2 block">
-            Hostel
-          </label>
-          {/* The empty first option is what makes `required` bite: a select whose
-              default is already a real hostel can never be "unanswered", so the browser
-              would let a wrong-by-default answer through. */}
-          <select
-            id="pf-hostel"
-            name="hostel"
-            required
-            className={field}
-            defaultValue={profile?.hostel ?? ""}
-          >
-            <option value="" disabled>
-              Select your hostel
-            </option>
-            {HOSTELS.map((h) => (
-              <option key={h.value} value={h.value}>
-                {h.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="pf-github" className="label mb-2 block">
+          <label htmlFor="pf-github" className={legend}>
             GitHub{" "}
-            <span className="normal-case tracking-normal text-dust">(optional)</span>
+            <span className="font-normal text-dust">— if you have one</span>
           </label>
-          <input
-            id="pf-github"
-            name="github"
-            maxLength={100}
-            className={field}
-            placeholder="octocat"
-            autoComplete="off"
-            spellCheck={false}
-            defaultValue={profile?.github ?? ""}
-          />
-        </div>
-      </div>
-
-      <fieldset>
-        <legend className="label mb-3">Where you are right now</legend>
-        <div className="space-y-2">
-          {LEVELS.map((l) => (
-            <label
-              key={l.value}
-              className="flex cursor-pointer items-center gap-3 rounded-md border border-seam bg-sunk px-3.5 py-3 transition hover:border-accent/50"
+          {/* A `@` sitting in the field rather than a placeholder saying "octocat".
+              The placeholder was doing two jobs badly: naming the format and standing in
+              for a label. The prefix names the format permanently and survives the
+              first keystroke. */}
+          <div className="relative">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-[17px] text-dust"
             >
-              <input
-                type="radio"
-                name="level"
-                value={l.value}
-                required
-                defaultChecked={profile?.level === l.value}
-                className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
-              />
-              <span className="text-sm text-ink">{l.label}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <div>
-        <label htmlFor="pf-path" className="label mb-2 block">
-          Which path interests you
-        </label>
-        <select
-          id="pf-path"
-          name="path"
-          required
-          className={field}
-          defaultValue={profile?.path ?? preselectedPath}
-        >
-          <option value="" disabled>
-            Pick one — you can change your mind later
-          </option>
-          {(["beginner", "intermediate"] as const).map((level) => (
-            <optgroup key={level} label={LEVEL_LABEL[level]}>
-              {PATHS.filter((p) => p.level === level).map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </div>
-
-      <fieldset>
-        <legend className="label mb-3">
-          Open source programs you are interested in{" "}
-          <span className="normal-case tracking-normal text-dust">
-            (pick at least one)
-          </span>
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {PROGRAMS.map((p, i) => (
-            <label
-              key={p.value}
-              className="flex cursor-pointer items-center gap-2.5 rounded-md border border-seam bg-sunk px-3.5 py-2.5 transition hover:border-accent/50"
-            >
-              <input
-                // Only the first box needs the ref: the message belongs to the group and
-                // the browser reports it on whichever element carries it.
-                ref={i === 0 ? firstProgram : undefined}
-                type="checkbox"
-                name="programs"
-                value={p.value}
-                checked={programs.includes(p.value)}
-                onChange={(e) =>
-                  setPrograms((current) =>
-                    e.target.checked
-                      ? [...current, p.value]
-                      : current.filter((v) => v !== p.value),
-                  )
-                }
-                className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
-              />
-              <span className="text-sm text-ink">{p.label}</span>
-            </label>
-          ))}
-        </div>
-        {programs.includes(PROGRAM_OTHER) && (
-          <div className="mt-3">
-            <label htmlFor="pf-programs-other" className="label mb-2 block">
-              Which programme
-            </label>
+              @
+            </span>
             <input
-              id="pf-programs-other"
-              name="programs_other"
-              required
-              maxLength={120}
-              className={field}
-              placeholder="The name of it, or a link"
-              defaultValue={profile?.programs_other ?? ""}
+              id="pf-github"
+              name="github"
+              maxLength={100}
+              className={`${field} pl-9 font-mono`}
+              placeholder="octocat"
+              autoComplete="off"
+              spellCheck={false}
+              defaultValue={profile?.github ?? ""}
             />
           </div>
-        )}
+        </div>
+      </div>
+
+      {/* TWO TILES, NOT A DROPDOWN. There are exactly two hostels and there always will
+          be until a third building exists, so a <select> was hiding a two-way choice
+          behind a tap and a scrolling list — the single most form-like control on the
+          screen, spent on the question with the fewest possible answers.
+          Still radios underneath, so `required` bites, arrow keys work, and a screen
+          reader gets "1 of 2" rather than a pile of clickable divs. */}
+      <fieldset>
+        <legend className={legend}>Which hostel are you in?</legend>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {HOSTELS.map((h, i) => (
+            <label
+              key={h.value}
+              className="flex cursor-pointer items-center gap-3 rounded-tile border border-seam bg-sunk px-4 py-3.5 transition hover:border-accent/50 has-[:checked]:border-accent has-[:checked]:bg-raise"
+            >
+              <input
+                // The id stays on the first radio: it is what the smoke test looks for
+                // when asserting the form is not rendered to a signed-out reader.
+                id={i === 0 ? "pf-hostel" : undefined}
+                type="radio"
+                name="hostel"
+                value={h.value}
+                required
+                defaultChecked={profile?.hostel === h.value}
+                className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
+              />
+              <span className="text-[17px] text-ink">{h.label}</span>
+            </label>
+          ))}
+        </div>
+        <p className="mt-2.5 text-[13px] leading-relaxed text-dust">
+          Build days and evening sessions get planned around which building people have to
+          walk back to. That is the only thing this is used for.
+        </p>
       </fieldset>
+
+      {/* The carried-in path, stated rather than hidden. It is not an input — there is
+          nothing to decide here — but a value being saved that the member cannot see is
+          the thing this line exists to avoid. It is changeable on the dashboard. */}
+      {effectivePath && (
+        <p className="rounded-tile border border-dashed border-seam px-4 py-3 text-[15px] leading-relaxed text-dust">
+          You arrived from{" "}
+          <strong className="font-semibold text-haze">
+            {PATHS.find((p) => p.id === effectivePath)?.name ?? effectivePath}
+          </strong>
+          , so that is recorded as how you found us. You can change it later.
+        </p>
+      )}
 
       <button
         type="submit"

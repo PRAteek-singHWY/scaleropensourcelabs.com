@@ -145,11 +145,11 @@ export const LEVEL_LABEL: Record<Level, string> = {
 // options are DERIVED from PATHS above, which is the only way a fifth path can be
 // added without silently missing from the form.
 
-export const LEVELS = [
-  { value: "none", label: "Never contributed to open source" },
-  { value: "some-git", label: "Some Git experience, no merged PRs" },
-  { value: "merged", label: "I have merged pull requests already" },
-] as const;
+// LEVELS WAS HERE — three radio buttons asking whether somebody had merged a pull request
+// before. It is gone with the `level` field it fed. It was a self-assessment made by
+// somebody who had not yet met the club, nothing acted on it, and it stopped being true a
+// fortnight after they answered. LEVEL_LABEL above is a different thing and stays: it
+// labels the two groups the four PATHS are sorted into on /how-to-join.
 
 // The hostels. Two, because there are two.
 //

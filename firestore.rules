@@ -7,14 +7,33 @@ rules_version = '2';
 // static export with no server — so there is no back end doing checks. Everything that
 // protects members' data is in this file.
 //
-// The site now has sign-in. Three collections:
+// The site now has sign-in. Five collections:
 //
 //   users/{uid}        one profile per member. Readable and writable ONLY by that
-//                      member, plus readable by admins. Contains names, college
-//                      addresses, year, branch and hostel.
+//                      member, plus readable by admins. Contains their name, college
+//                      address and hostel.
 //   admins/{email}     membership = adminship. Nobody can write it from any client.
+//   mentors/{id}       the mentor list an organiser publishes. Readable by every member,
+//                      WRITABLE BY ADMINS — see below.
+//   enrollments/{uid}  one per member: which mentors they want, in order. Theirs to
+//                      write and to withdraw; admins may list them all.
 //   applications/{id}  legacy, from before sign-in. Create-only and unreadable, kept
 //                      so the rows already there stay protected.
+//
+// `mentors` IS THE FIRST COLLECTION A CLIENT MAY WRITE THAT IS NOT ITS OWN ROW, and that
+// widening was deliberate rather than incidental. It is acceptable because a mentor entry
+// is published, organiser-authored, non-personal copy — the same kind of thing that lives
+// in web/content/ — so the worst a stolen admin session can do here is deface a list. It
+// cannot read a member's details it could not already read, and it cannot grant itself
+// anything. Note that the same argument does NOT hold for `admins`, which is why every
+// client write to that collection stays denied: appointing an admin is the one privilege
+// escalation this model would otherwise allow.
+//
+// WHAT IS NOT A FIELD HERE, ON PURPOSE. Batch, branch and year are not stored anywhere.
+// They are read out of the address — `abhinav.23bcs10045@sst.scaler.com` — by
+// web/lib/batch.ts, and the address is pinned to `request.auth.token.email` below. A
+// derived value cannot disagree with the document it describes, so there is nothing here
+// to validate and nothing that can drift.
 //
 // ONLY @sst.scaler.com MAY REGISTER, and this is where that is enforced. web/lib/auth.tsx
 // also passes the domain to Google and signs out anyone off-domain, but both of those
@@ -74,11 +93,11 @@ service cloud.firestore {
 
     /** The profile shape. Mirrors web/lib/profile.ts and web/content/join.ts.
      *
-     *  FOUR FIELDS WERE REMOVED from this list — why, heard_from, interests and updates —
-     *  because each cost a member time at sign-up and nothing read it back. `hasOnly` is
-     *  strict, so a document still carrying one of them is now REJECTED rather than
-     *  tolerated. That is safe here only because the site had never been deployed with
-     *  sign-in, so no member profile exists in production yet. If that changes, removing a
+     *  EIGHT FIELDS HAVE BEEN REMOVED from this list over time — why, heard_from,
+     *  interests, updates, year_branch, level, programs and programs_other — because each
+     *  cost a member time at sign-up and nothing read it back. `hasOnly` is strict, so a
+     *  document still carrying one of them is REJECTED rather than tolerated. That is safe
+     *  only because no member profile exists in production yet. Once one does, removing a
      *  field means either leaving it in `hasOnly` or migrating the documents first — a
      *  strict list turns an old field into a member who can no longer edit their profile. */
     function isWellFormedProfile(d, uid) {
@@ -87,17 +106,18 @@ service cloud.firestore {
         // alone would let somebody append a hundred keys of their own — including, say,
         // an `isAdmin` field that a future careless rule might read.
         d.keys().hasOnly([
-          'uid', 'email', 'name', 'year_branch', 'hostel', 'level', 'path',
-          'programs', 'programs_other', 'github', 'created_at', 'updated_at'
+          'uid', 'email', 'name', 'hostel', 'github', 'path',
+          'created_at', 'updated_at'
         ])
-        && d.keys().hasAll([
-          'uid', 'email', 'name', 'year_branch', 'hostel', 'level', 'path',
-          'programs', 'updated_at'
-        ])
+        && d.keys().hasAll(['uid', 'email', 'name', 'hostel', 'updated_at'])
 
         // Identity cannot be forged. The document id, the uid inside it and the signed-in
         // token must all agree, and the stored address must be the one that signed in —
         // so a member cannot file a profile under somebody else's name or address.
+        //
+        // This is also what makes the DERIVED batch trustworthy: web/lib/batch.ts reads
+        // the year and branch out of this address, so pinning the address is what stops
+        // somebody claiming a batch they are not in.
         && d.uid == uid
         && d.uid == request.auth.uid
         && d.email == request.auth.token.email
@@ -105,39 +125,104 @@ service cloud.firestore {
         // Required strings, bounded. The form's maxlength is a courtesy to the reader;
         // these are the real limits, because a direct SDK call never sees the form.
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
-        && d.year_branch is string && d.year_branch.size() > 0 && d.year_branch.size() <= 120
 
         // Optional strings. Present-or-absent rather than nullable, so an absent github
-        // unambiguously means "not given".
-        && (!('github' in d) || (d.github is string && d.github.size() <= 100))
+        // unambiguously means "not given" — and a cleared one is sent as deleteField()
+        // rather than as "", which these size checks would refuse.
+        && (!('github' in d) || (d.github is string && d.github.size() > 0 && d.github.size() <= 100))
 
         // Closed sets — see the drift warning in the header.
         && d.hostel in ['uniworld-1', 'uniworld-2']
-        && d.level in ['none', 'some-git', 'merged']
-        && d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track']
-
-        // Programmes: required and non-empty, which is the form's rule too.
-        && d.programs is list
-        && d.programs.size() > 0
-        && d.programs.size() <= 10
-        && d.programs.hasOnly([
-             'gsoc', 'lfx', 'outreachy', 'sok', 'hacktoberfest', 'sob',
-             'gssoc', 'ssoc', 'esoc', 'other'
-           ])
-        // 'other' and its free text are a pair, checked in BOTH directions: no bare
-        // 'other' with nothing explaining it, and no stray text without the tick that
-        // is supposed to have produced it.
-        && (!d.programs.hasAny(['other'])
-            || ('programs_other' in d
-                && d.programs_other is string
-                && d.programs_other.size() > 0))
-        && (!('programs_other' in d)
-            || (d.programs_other is string
-                && d.programs_other.size() <= 120
-                && d.programs.hasAny(['other'])))
+        // `path` is optional: it is carried in from a ?path= link rather than asked for,
+        // and most members arrive without one.
+        && (!('path' in d)
+            || d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track'])
 
         // The server's clock, never the client's, so "member since" and "last edited"
         // cannot be backdated.
+        && d.updated_at == request.time
+        && (!('created_at' in d) || d.created_at == request.time || d.created_at == resource.data.created_at);
+    }
+
+    /** A mentor entry, as an organiser writes it. Admin-only, but validated anyway: the
+     *  shape is what the members' picker renders, and an admin fat-fingering a direct SDK
+     *  call should not be able to put an unbounded string in front of every member. */
+    function isWellFormedMentor(d) {
+      return
+        d.keys().hasOnly([
+          'name', 'description', 'programme', 'org', 'github', 'email',
+          'active', 'created_at', 'updated_at'
+        ])
+        && d.keys().hasAll(['name', 'description', 'programme', 'active', 'updated_at'])
+
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
+        // The long one. 600 rather than 120 because this is the paragraph a student reads
+        // before choosing, and a mentor boundary worth stating does not fit in a tweet.
+        && d.description is string && d.description.size() > 0 && d.description.size() <= 600
+        && d.active is bool
+
+        && (!('org' in d) || (d.org is string && d.org.size() > 0 && d.org.size() <= 120))
+        && (!('github' in d) || (d.github is string && d.github.size() > 0 && d.github.size() <= 100))
+        && (!('email' in d) || (d.email is string && d.email.size() > 0 && d.email.size() <= 160))
+
+        // The same closed set the profile used to carry for `programs`, kept because a
+        // mentor belongs to a named programme and `npm run rules` diffs it against
+        // PROGRAMS in web/content/join.ts.
+        && d.programme in [
+             'gsoc', 'lfx', 'outreachy', 'sok', 'hacktoberfest', 'sob',
+             'gssoc', 'ssoc', 'esoc', 'other'
+           ]
+
+        && d.updated_at == request.time
+        && (!('created_at' in d) || d.created_at == request.time || d.created_at == resource.data.created_at);
+    }
+
+    /** A member's mentor preferences.
+     *
+     *  THE PAIRING IS THE INTERESTING PART, and it is checked in both directions for the
+     *  same reason the old programs/programs_other pair was: a document carrying both a
+     *  second choice and "first preference only" is contradictory, and one carrying
+     *  neither is an unanswered question stored as though it were an answer. Exactly one
+     *  of them, always.
+     *
+     *  Both mentor ids must name a document that EXISTS. That costs one extra read per
+     *  write and it is what stops the organisers' interest list from displaying a raw id
+     *  where a name should be. */
+    function isWellFormedEnrollment(d, uid) {
+      return
+        d.keys().hasOnly([
+          'uid', 'email', 'programme', 'mentor_1', 'mentor_2', 'first_only',
+          'created_at', 'updated_at'
+        ])
+        && d.keys().hasAll(['uid', 'email', 'programme', 'mentor_1', 'first_only', 'updated_at'])
+
+        && d.uid == uid
+        && d.uid == request.auth.uid
+        && d.email == request.auth.token.email
+
+        && d.programme in [
+             'gsoc', 'lfx', 'outreachy', 'sok', 'hacktoberfest', 'sob',
+             'gssoc', 'ssoc', 'esoc', 'other'
+           ]
+
+        && d.first_only is bool
+        && d.mentor_1 is string
+        && d.mentor_1.size() > 0
+        && d.mentor_1.size() <= 64
+        && exists(/databases/$(database)/documents/mentors/$(d.mentor_1))
+
+        // "First preference only" means there is no second one.
+        && (!d.first_only || !('mentor_2' in d))
+        // And not saying so means there must be.
+        && (d.first_only || 'mentor_2' in d)
+        && (!('mentor_2' in d)
+            || (d.mentor_2 is string
+                && d.mentor_2.size() > 0
+                && d.mentor_2.size() <= 64
+                // The same mentor twice is not two preferences.
+                && d.mentor_2 != d.mentor_1
+                && exists(/databases/$(database)/documents/mentors/$(d.mentor_2))))
+
         && d.updated_at == request.time
         && (!('created_at' in d) || d.created_at == request.time || d.created_at == resource.data.created_at);
     }
@@ -182,6 +267,63 @@ service cloud.firestore {
       // compromised admin session cannot appoint further admins — the one privilege
       // escalation this model would otherwise allow.
       allow write: if false;
+    }
+
+    // ---------------------------------------------------------------- mentors
+
+    match /mentors/{id} {
+      // Every signed-in member may read the whole list — it is what the picker on the
+      // dashboard renders, and the list itself is not a secret. `list` is allowed here
+      // where it is admin-only on users/, because the difference is what the documents
+      // contain: published copy about a volunteer, versus a roster of students.
+      //
+      // Hidden mentors (active: false) come back too, deliberately. The client filters
+      // them out of the picker, but a member who picked somebody before they were hidden
+      // still needs to see a name rather than an id.
+      allow get, list: if isMember();
+
+      // ADMIN WRITE. See the note in the header for why this widening is acceptable and
+      // where the same argument stops applying.
+      allow create, update: if isAdmin() && isWellFormedMentor(request.resource.data);
+
+      // Deleting is allowed, and the guard against orphaning a preference lives in the
+      // client — see web/lib/mentorship.ts. Rules cannot express "no document in another
+      // collection points at this one", because that needs a query and rules cannot
+      // query. The consequence of getting it wrong is cosmetic (an id shows where a name
+      // should) rather than a disclosure, which is why it is acceptable to enforce it
+      // one level up rather than here.
+      allow delete: if isAdmin();
+    }
+
+    // ------------------------------------------------------------ enrollments
+
+    match /enrollments/{uid} {
+      // Same get/list split, and for the same reason as users/: a single `read` rule
+      // naming the owner cannot express "and admins may query the collection", because
+      // Firestore evaluates a list without knowing the documents.
+      allow get: if isMember() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isMember()
+        && request.auth.uid == uid
+        && isWellFormedEnrollment(request.resource.data, uid);
+
+      allow update: if isMember()
+        && request.auth.uid == uid
+        && isWellFormedEnrollment(request.resource.data, uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.created_at == resource.data.created_at;
+
+      // A MEMBER MAY WITHDRAW, which users/{uid} deliberately forbids. The two documents
+      // mean different things: a profile is the club's roster and deleting one loses a
+      // member, whereas this is an expression of interest and taking it back is the
+      // member's own decision — putting that behind an email to an organiser would be
+      // the site making somebody ask permission to change their mind.
+      //
+      // Owner only. An admin cannot delete somebody's enrollment, for the same reason
+      // they cannot delete a profile.
+      allow delete: if isMember() && request.auth.uid == uid;
     }
 
     // ---------------------------------------------------- legacy applications
