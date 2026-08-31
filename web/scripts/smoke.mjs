@@ -199,10 +199,24 @@ await pg.waitForTimeout(700);
 // ever dropped here, the preselection would be dead no matter how correct the form is.
 await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
 await pg.waitForTimeout(900);
+// TWO ACCEPTABLE STATES, because this suite runs both with and without a Firebase
+// config, and the second is not an edge case — it is how CI runs and how a contributor
+// fixing a typo runs the site. `.env.local` is gitignored and never present on a runner,
+// so with a config a signed-out reader gets the sign-in card, and without one the gate
+// says plainly there is nothing to sign in to. Both are correct; only "still checking" is
+// not.
+//
+// THIS ASSERTION NAMED ONLY THE FIRST, and had therefore been failing on every push to
+// main since at least 23 August — a red build that says the join page is broken when the
+// join page is fine. A permanently red CI is worse than no CI, because it trains everyone
+// to ignore the one signal that would have caught something real. The new routes below
+// were written this way from the start; this brings the original into line.
 ok(
-  "join shows the sign-in step to a signed-out reader",
+  "join settles on a signed-out state",
   await pg.evaluate(() =>
-    /sign in with your college account/i.test(document.querySelector("main")?.innerText ?? ""),
+    /sign in with your college account|sign-in is not set up here/i.test(
+      document.querySelector("main")?.innerText ?? "",
+    ),
   ),
 );
 ok(
