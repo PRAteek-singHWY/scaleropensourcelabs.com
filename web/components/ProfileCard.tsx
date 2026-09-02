@@ -40,7 +40,7 @@ import Link from "next/link";
 import Panel from "@/components/dashboard/Panel";
 import { useAuth } from "@/lib/auth";
 import { fmtDate, toDate, type Profile } from "@/lib/profile";
-import { HOSTELS, LEVELS, PATHS, PROGRAMS } from "@/content/join";
+import { HOSTELS, PATHS } from "@/content/join";
 
 /** Code -> label, so a stored profile reads back in human words. Built from the same
  *  content arrays the form renders, so a new option cannot appear in the form and read
@@ -85,18 +85,21 @@ export default function ProfileCard({
   // actually comes back to check. The profile answers are kept underneath them rather
   // than dropped: they are the only place a member can see what the club recorded, and a
   // panel called "your details" that omits most of them is misnamed.
+  // THE LIST SHRANK IN THE UPSTREAM MERGE, and this is what survived rather than what was
+  // cut for design reasons. Upstream's Profile dropped `year_branch`, `level`, `programs`
+  // and `programs_other` — the programmes a member is chasing moved into the mentorship
+  // model, and the other two stopped being asked for at all. A row for a field that no
+  // longer exists prints "undefined" at a member, so they are gone from here too.
+  //
+  // `path` is optional now, so its row appears only when there is one.
   const rows: [string, string][] = [
     ["GitHub", p.github ? `@${p.github}` : "not given"],
     ["Role", isAdmin ? "Organiser" : "Member"],
     ["Joined", joined ? fmtDate(p.created_at) : "—"],
     ["Name", p.name],
-    ["Year and branch", p.year_branch],
     ["Hostel", labelOf(HOSTELS, p.hostel)],
-    ["Experience", labelOf(LEVELS, p.level)],
-    ["Route in", PATHS.find((x) => x.id === p.path)?.name ?? p.path],
-    ["Programmes", labelsOf(PROGRAMS, p.programs)],
-    ...(p.programs_other
-      ? ([["Other programme", p.programs_other]] as [string, string][])
+    ...(p.path
+      ? ([["Route in", PATHS.find((x) => x.id === p.path)?.name ?? p.path]] as [string, string][])
       : []),
   ];
 

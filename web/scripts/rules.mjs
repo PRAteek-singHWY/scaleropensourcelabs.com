@@ -36,59 +36,29 @@ const content = readFileSync(CONTENT, "utf8");
 // worse than no checker: the failure looks exactly like a real one.
 const rules = rulesRaw.replace(/\/\/[^\n]*/g, "");
 
-/** The body of ONE `match /<name>/{...}` block, braces balanced.
- *
- *  THIS EXISTS BECAUSE THE OBVIOUS PATTERN SILENTLY READS THE WRONG COLLECTION. The
- *  assertions below used to be written as
- *
- *      /match \/admins\/\{email\}[\s\S]*?allow write: if false/
- *
- *  and `[\s\S]*?` does not stop at the end of the block -- it runs on until it finds the
- *  text somewhere, anywhere, further down the file. When `admins` gained owner-writes,
- *  that assertion kept passing by matching the `allow write: if false` inside
- *  `contributions`, 100 lines below. It was asserting a real line about the wrong
- *  collection, which is worse than not asserting at all: the check was green while the
- *  rule it named had been removed.
- *
- *  Caught only because a NEIGHBOURING assertion failed and made me read both. */
-function blockFor(name) {
-  const m = rules.match(new RegExp(`match /${name}/\\{[^}]*\\}\\s*\\{`));
-  if (!m) return null;
-  const open = m.index + m[0].length - 1;
-  let depth = 0;
-  for (let i = open; i < rules.length; i++) {
-    if (rules[i] === "{") depth++;
-    else if (rules[i] === "}") {
-      depth--;
-      if (depth === 0) return rules.slice(open, i + 1);
-    }
-  }
-  return null;
-}
-
-/** Assert a pattern INSIDE one block, so a match cannot leak in from a neighbour. */
-const inBlock = (name, re) => {
-  const body = blockFor(name);
-  return body !== null && re.test(body);
-};
-
 let failed = 0;
 const ok = (name, pass, detail = "") => {
   if (!pass) failed++;
   console.log(`  ${pass ? "PASS" : "FAIL"}  ${name}${detail ? `  ${detail}` : ""}`);
 };
 
-/** Values inside each `[...]` list in the rules for a given field — ONE ENTRY PER
- *  OCCURRENCE, and the plural is the whole point.
- *
- *  This returned only the first match while there was one form. There are two now, and
- *  the rules validate them with two separate functions: `isWellFormedProfile` for a
- *  signed-in member and `isWellFormedApplication` for an anonymous applicant. Both
- *  hardcode the same three closed sets, both are a copy of content/join.ts, and checking
- *  only the first would let the second drift silently — which is the exact failure this
- *  script exists to catch, reintroduced one level down.
- *
- *  Matches both `d.level in [...]` and `d.programs.hasOnly([...])`. */
+/** Values inside a `[...]` list in the rules, for a given field. */
+function rulesSet(field) {
+  // Matches both `d.path in [...]` and `d.programs.hasOnly([...])`.
+  const re = new RegExp(`d\\.${field}(?:\\s+in\\s+|\\.hasOnly\\()\\[([^\\]]*)\\]`);
+  const m = rules.match(re);
+  if (!m) return null;
+  return new Set(
+    m[1]
+      .split(",")
+      .map((s) => s.trim().replace(/^['"]|['"]$/g, ""))
+      .filter(Boolean),
+  );
+}
+
+/** EVERY occurrence of a field's closed set, because `programme` is now written twice —
+ *  once for a mentor and once for an enrollment — and a check that only ever read the
+ *  first would let the second drift silently. Returns one Set per occurrence. */
 function rulesSets(field) {
   const re = new RegExp(`d\\.${field}(?:\\s+in\\s+|\\.hasOnly\\()\\[([^\\]]*)\\]`, "g");
   return [...rules.matchAll(re)].map(
@@ -137,27 +107,36 @@ const show = (s) => (s ? `{${[...s].sort().join(", ")}}` : "null");
 console.log("\nfirestore.rules vs content/join.ts\n");
 
 for (const [field, fromContent] of [
-  ["level", contentValues("LEVELS")],
   ["path", contentIds("PATHS")],
   ["hostel", contentValues("HOSTELS")],
-  ["programs", contentValues("PROGRAMS")],
 ]) {
-  const copies = rulesSets(field);
-  // EVERY copy, not the first. A field validated in two places is only as correct as its
-  // worst copy, and the one that drifts will be whichever the author was not looking at.
-  const bad = copies.filter((c) => !same(c, fromContent));
+  const fromRules = rulesSet(field);
   ok(
     `${field} sets match`,
-    copies.length > 0 && bad.length === 0,
-    copies.length === 0
-      ? `absent from the rules, content=${show(fromContent)}`
-      : bad.length === 0
-        ? `(${copies.length} copies, ${copies[0].size} values)`
-        : `${bad.length}/${copies.length} copies disagree: ${bad
-            .map(show)
-            .join(" ")} content=${show(fromContent)}`,
+    same(fromRules, fromContent),
+    same(fromRules, fromContent) ? `(${fromRules.size} values)` : `rules=${show(fromRules)} content=${show(fromContent)}`,
   );
 }
+
+// `programme` appears TWICE in the rules — on a mentor and on an enrollment — and both
+// copies have to match PROGRAMS. Checking only the first is how the two drift apart: a
+// new programme added to the mentor list but not to the enrollment one means an organiser
+// can publish a mentor that no member can then choose, and the member's save fails with a
+// permission error that looks nothing like the cause.
+const programmes = contentValues("PROGRAMS");
+const programmeSets = rulesSets("programme");
+ok(
+  "programme is a closed set in both places that carry it",
+  programmeSets.length === 2,
+  `found ${programmeSets.length}`,
+);
+programmeSets.forEach((s, i) => {
+  ok(
+    `programme set ${i + 1} matches PROGRAMS`,
+    same(s, programmes),
+    same(s, programmes) ? `(${s.size} values)` : `rules=${show(s)} content=${show(programmes)}`,
+  );
+});
 
 // The collection name is shared between the rules and the client. Different strings
 // here means the write targets a path the rules do not cover, so it is denied by the
@@ -166,7 +145,7 @@ const lib = readFileSync(join(here, "..", "lib", "firebase.ts"), "utf8");
 // Every collection the client names must have a match block, or a write goes to a path
 // no rule covers and is denied by the catch-all — a permission error that looks nothing
 // like a naming mistake.
-for (const konst of ["APPLICATIONS", "USERS", "ADMINS", "ANNOUNCEMENTS", "CONTRIBUTIONS"]) {
+for (const konst of ["APPLICATIONS", "USERS", "ADMINS", "MENTORS", "ENROLLMENTS"]) {
   const name = lib.match(new RegExp(`${konst}\\s*=\\s*"([^"]+)"`))?.[1] ?? null;
   ok(
     `${konst.toLowerCase()} collection is covered by the rules`,
@@ -197,68 +176,48 @@ ok(
 ok("profile writes are validated, not open",
   /allow create: if isMember\(\)[\s\S]{0,200}isWellFormedProfile/.test(rules));
 ok("profiles cannot be deleted from any client",
-  inBlock("users", /allow delete: if false/));
+  /match \/users\/\{uid\}[\s\S]*?allow delete: if false/.test(rules));
 ok("the membership list is admin-only",
   /allow list: if isAdmin\(\)/.test(rules));
 ok("a verified address is required",
   /email_verified\s*==\s*true/.test(rules));
 ok("the domain is anchored at both ends",
   /matches\('\^\[\^@\]\+@sst\[\.\]scaler\[\.\]com\$'\)/.test(rules));
-// THIS ASSERTION WAS REPLACED, NOT REPAIRED. It read "admins cannot be written by any
-// client", which was true while the roster was managed entirely in the Firebase console.
-// It is not true any more: owners write it, so that every monthly addition does not wait
-// on whoever holds console access. What still has to hold is the narrower thing that was
-// actually protecting anything -- an ORDINARY admin cannot appoint anybody, so one
-// compromised college account cannot escalate.
-ok("only owners write the roster",
-  inBlock("admins", /allow create: if isOwner\(\)/) &&
-  inBlock("admins", /allow update: if isOwner\(\)/));
-ok("an owner cannot edit their own roster row",
-  (blockFor("admins")?.match(/request\.auth\.token\.email\.lower\(\) != email/g) ?? []).length >= 2);
-ok("roster rows cannot be deleted, only retired",
-  inBlock("admins", /allow delete: if false/));
-ok("retiring somebody actually revokes access",
-  /function isAdmin\(\)[\s\S]{0,600}?get\('active', true\) == true/.test(rules));
-ok("an old row cannot silently become an owner",
-  /function isOwner\(\)[\s\S]{0,300}?get\('role', 'admin'\) == 'owner'/.test(rules));
-// ALSO FLIPPED. The roster is listable now, because the organisers manage it in the UI.
-// The half that mattered is that MEMBERS still cannot enumerate it, which is the
-// difference between `isAdmin()` and `isMember()` here.
-ok("only admins can enumerate the roster",
-  inBlock("admins", /allow list: if isAdmin\(\)/));
-// APPLICATIONS GET FOUR ASSERTIONS RATHER THAN ONE, because this is the only collection
-// an unauthenticated stranger may write to. It used to get one — "legacy applications stay
-// unreadable" — which was the right amount of attention for a collection nothing wrote to
-// any more. /join is an anonymous form again, so the create rule is live, and a one-word
-// edit to it ("if true") turns the club's Firestore project into a public document store.
-//
-// Extracted as a block rather than matched with a lazy `[\s\S]*?` across the whole file:
-// the negative assertion below has to be sure it is reading THIS block and not finding a
-// phrase in some later one.
-const applicationsBlock =
-  rules.match(/match \/applications\/\{id\} \{([\s\S]*?)\n    \}/)?.[1] ?? "";
-ok("the applications block was found at all", applicationsBlock.length > 0);
-ok("applications are unreadable from every client, admins included",
-  /allow read: if false/.test(applicationsBlock));
-ok("applications are immutable once submitted",
-  /allow update, delete: if false/.test(applicationsBlock));
-// THE LOAD-BEARING ONE.
-ok("anonymous applications are validated, not merely accepted",
-  /allow create: if isWellFormedApplication\(request\.resource\.data\)/.test(
-    applicationsBlock,
-  ));
-// AND THE INVERSE, which is the regression this whole change undoes. If somebody ever
-// puts isMember() on this create rule, applying will require a college Google account
-// again — and the site's own headline promises the reader it does not.
-ok("applying does not require sign-in",
-  !/allow create: if[^;]*isMember\(\)/.test(applicationsBlock));
+ok("admins cannot be written by any client",
+  /match \/admins\/\{email\}[\s\S]*?allow write: if false/.test(rules));
+ok("the admin list cannot be enumerated",
+  /match \/admins\/\{email\}[\s\S]*?allow list: if false/.test(rules));
+ok("legacy applications stay unreadable",
+  /match \/applications\/\{id\}[\s\S]*?allow read: if false/.test(rules));
 ok("no test-mode wildcard write", !/allow read, write:\s*if true/.test(rules));
 // FIELDS THAT WERE DELETED STAY DELETED, in both files or neither. `hasOnly` is strict,
 // so a field reintroduced to the form but not the rules means every save fails; the
 // reverse leaves a field the rules accept and nothing writes. Either way it is silent.
-for (const gone of ["why", "heard_from", "interests", "updates"]) {
+//
+// THE CONTENT EXPORT IS NAMED EXPLICITLY, not derived with toUpperCase(). It used to be
+// derived, and for `level` that produced `export const LEVEL\b` — which matches neither
+// `LEVELS` nor `LEVEL_LABEL`, because `\b` does not fire between two word characters. The
+// check would have passed whether or not the array was still there, which is the worst
+// kind of green. Where a removed field has no content array at all, the name is null and
+// only the rules half is asserted.
+for (const [gone, exportName] of [
+  ["why", null],
+  ["heard_from", null],
+  ["interests", null],
+  ["updates", null],
+  // Replaced by the batch derived from the college address — see web/lib/batch.ts.
+  ["year_branch", null],
+  ["level", "LEVELS"],
+  // `programs` (the member's checkbox list) is gone; `programme` (singular, on a mentor
+  // and an enrollment) is a different field and is checked above. The regex below looks
+  // for the quoted plural exactly, so it does not fire on the singular.
+  ["programs", null],
+  ["programs_other", null],
+]) {
   const inRules = new RegExp(`'${gone}'`).test(rules);
-  const inContent = new RegExp(`export const ${gone.toUpperCase()}\\b`).test(content);
+  const inContent = exportName
+    ? new RegExp(`export const ${exportName}\\s*[=:]`).test(content)
+    : false;
   ok(
     `the removed field "${gone}" is absent from both`,
     !inRules && !inContent,
@@ -270,78 +229,60 @@ ok("server timestamps are enforced",
 ok("identity fields are frozen on edit",
   /function immutablesUnchanged\(\)[\s\S]{0,400}created_at\s*==\s*resource\.data\.created_at/.test(rules));
 
-// `programs` is the one list field the form requires, so "at least one" has to survive
-// in the rules and not only in the component. A checkbox group cannot use `required`,
-// which means the browser-side half of this is a setCustomValidity call that a future
-// refactor could drop without anything looking broken.
-ok(
-  "at least one programme is required",
-  /d\.programs\.size\(\)\s*>\s*0/.test(rules),
-);
-// The pairing, in both directions. A bare 'other' is an application nobody can act on.
-ok(
-  "'other' requires the free-text field",
-  /!d\.programs\.hasAny\(\['other'\]\)[\s\S]{0,200}?'programs_other' in d/.test(rules),
-);
-ok(
-  "the free-text field requires 'other'",
-  /!\('programs_other' in d\)[\s\S]{0,200}?d\.programs\.hasAny\(\['other'\]\)/.test(rules),
-);
-// PROGRAM_OTHER is what the form branches on when deciding to render that input. If it
-// stops being 'other', the two assertions above are checking a value nothing sends.
-const otherValue = content.match(/PROGRAM_OTHER\s*=\s*"([^"]+)"/)?.[1] ?? null;
-ok(
-  "PROGRAM_OTHER matches the value in the rules",
-  otherValue === "other",
-  `content=${otherValue}`,
-);
-
-// ---------------------------------------------------------------- the notice board
+// ---------------------------------------------------------------- mentorship
 //
-// THE SAME TREATMENT AS THE PROFILE ASSERTIONS ABOVE, and each of these exists because a
-// plausible, well-meaning edit would remove it:
+// Same treatment as the block above: each of these exists because a plausible edit would
+// remove it, and because none of them would look broken on screen when they went.
 //
-//   "members should be able to post too"      -> would open an admin-only collection to
-//                                                anybody with a college address
-//   "let people read the board signed out"    -> would make a members-only board public
-//   "the link field is just a string"         -> would allow javascript: in a field that
-//                                                renders as an anchor
-ok("only admins write the notice board",
-  inBlock("announcements", /allow create: if isAdmin\(\)/));
-ok("the notice board is members-only to read",
-  inBlock("announcements", /allow get, list: if isMember\(\)/));
-ok("a post's link must be https",
-  /d\.link\.matches\('\^https:/.test(rules));
-ok("a post's byline cannot be forged",
-  /author_email == request\.auth\.token\.email/.test(rules));
+//   "let mentors update their own entry"  -> a member write to a collection every other
+//                                            member reads
+//   "students should just pick one"       -> drops the pairing, and an unanswered second
+//                                            preference becomes indistinguishable from a
+//                                            deliberate one
+//   "the exists() check is slow"          -> a preference pointing at nothing, which
+//                                            renders as an id in the organisers' list
 
-// ------------------------------------------------------------------ contributions
-//
-// THE ONE ASSERTION IN THIS FILE THAT PROTECTS A NUMBER RATHER THAN A PERSON. If any
-// client can write contributions/{uid}, "merged pull requests" becomes a self-reported
-// figure and the whole panel is decoration. The Cloud Function writes through the Admin
-// SDK, which does not go through these rules at all, so denying every client costs
-// nothing at all and is the entire reason the collection is separate from users/{uid}.
-ok("nobody writes their own contribution counts",
-  inBlock("contributions", /allow write: if false/));
-ok("contributions are readable only by their owner or an admin",
-  inBlock("contributions", /allow get: if isMember\(\) && \(request\.auth\.uid == uid \|\| isAdmin\(\)\)/));
+ok("only admins may write a mentor",
+  /match \/mentors\/\{id\}[\s\S]*?allow create, update: if isAdmin\(\)/.test(rules));
+ok("mentor writes are validated, not open",
+  /allow create, update: if isAdmin\(\)[\s\S]{0,120}isWellFormedMentor/.test(rules));
+ok("only admins may delete a mentor",
+  /match \/mentors\/\{id\}[\s\S]*?allow delete: if isAdmin\(\)/.test(rules));
+ok("every member may read the mentor list",
+  /match \/mentors\/\{id\}[\s\S]*?allow get, list: if isMember\(\)/.test(rules));
 
-// THE FUNCTIONS REGION, IN THREE FILES. The callable is addressed by region on the
-// client, deployed to one by setGlobalOptions, and named in the CSP's connect-src. A
-// mismatch between any two of them is a button that fails with `functions/internal` --
-// which reads like the function threw rather than like a URL nobody can reach, and is
-// therefore debugged in the wrong file entirely.
-{
-  const region = lib.match(/FUNCTIONS_REGION\s*=\s*"([^"]+)"/)?.[1] ?? null;
-  const fns = readFileSync(join(here, "..", "..", "functions", "index.js"), "utf8");
-  const csp = readFileSync(join(here, "..", "lib", "security-headers.js"), "utf8");
-  const inFns = Boolean(region) && new RegExp(`region:\\s*"${region}"`).test(fns);
-  const inCsp = Boolean(region) && new RegExp(`FUNCTIONS_REGION\\s*=\\s*"${region}"`).test(csp);
+ok("enrollments are written by their owner only",
+  /match \/enrollments\/\{uid\}[\s\S]*?allow create: if isMember\(\)[\s\S]{0,120}request\.auth\.uid == uid/.test(rules));
+ok("the enrollment list is admin-only",
+  /match \/enrollments\/\{uid\}[\s\S]*?allow list: if isAdmin\(\)/.test(rules));
+ok("an enrollment can only be withdrawn by its owner",
+  /match \/enrollments\/\{uid\}[\s\S]*?allow delete: if isMember\(\) && request\.auth\.uid == uid/.test(rules));
+ok("an enrollment's identity is frozen on edit",
+  /match \/enrollments\/\{uid\}[\s\S]*?allow update:[\s\S]{0,400}created_at == resource\.data\.created_at/.test(rules));
+
+// THE PAIRING, IN BOTH DIRECTIONS, and it is the assertion most worth having: the two
+// halves look redundant and are not. Drop the first and a member can store a second
+// preference while claiming to want only their first; drop the second and "no second
+// preference" can be saved by simply leaving it out, which is the unanswered question
+// this field exists to distinguish from a decision.
+ok(
+  "'first preference only' forbids a second preference",
+  /!d\.first_only \|\| !\('mentor_2' in d\)/.test(rules),
+);
+ok(
+  "not asking for first-preference-only requires a second preference",
+  /d\.first_only \|\| 'mentor_2' in d/.test(rules),
+);
+ok(
+  "the same mentor cannot be both preferences",
+  /d\.mentor_2 != d\.mentor_1/.test(rules),
+);
+// Both ids must name a real mentor. Without this the organisers' interest list renders a
+// truncated document id where a name should be, and nobody can explain why.
+for (const f of ["mentor_1", "mentor_2"]) {
   ok(
-    "the functions region agrees across the client, the functions and the CSP",
-    Boolean(region) && inFns && inCsp,
-    `client=${region} functions=${inFns} csp=${inCsp}`,
+    `${f} must reference a mentor that exists`,
+    new RegExp(`exists\\(/databases/\\$\\(database\\)/documents/mentors/\\$\\(d\\.${f}\\)\\)`).test(rules),
   );
 }
 

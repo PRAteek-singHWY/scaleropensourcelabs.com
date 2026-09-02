@@ -65,6 +65,9 @@ for (const route of ROUTES) {
         // into an unscrollable overflow, which is exactly this failure.
         joinVisible:
           !!jr && jr.width > 0 && jr.height >= 44 && jr.right <= window.innerWidth + 1,
+        // Presence alone, for the app routes, where the assertion is that it is absent.
+        joinPresent: !!join,
+        hasSiteNav: !!document.querySelector('nav[aria-label="Main"]'),
         // Exactly one nav item may claim to be the current page.
         currentMarks: document.querySelectorAll(
           'nav[aria-label="Main"] [aria-current="page"]',
@@ -85,20 +88,25 @@ for (const route of ROUTES) {
   bad.slice(before, before + 3).forEach((l) => console.log("          " + l));
   ok(`${label} exactly one h1`, state.h1s === 1);
   ok(`${label} <main id="main"> for the skip link`, state.mainH);
-  // The app shell has no Join button by design — a member on their own dashboard is the
-  // one reader who has definitively already joined. Asserted as ABSENT there rather than
-  // skipped, so the shell losing its identity would still fail something.
-  if (route.appShell) {
-    ok(`${label} no Join button (app shell)`, !state.joinVisible);
+
+  // THE MARKETING CHROME IS ASSERTED BOTH WAYS, and that is the point of the branch.
+  // A signed-in route that grew a Join button would be the bug this whole split exists to
+  // fix — a bar arguing the case for joining, shown to somebody who joined last month —
+  // so its absence is checked rather than merely tolerated.
+  if (route.app) {
+    ok(`${label} no marketing nav on the app shell`, !state.hasSiteNav);
+    ok(`${label} no Join button on the app shell`, !state.joinPresent);
   } else {
     ok(`${label} Join button visible at >=44px`, state.joinVisible);
+    // Six pages mark themselves; /join and /privacy mark nothing. See assert-site.mjs.
+    const wantCurrent = route.inNav ? 1 : 0;
+    ok(
+      `${label} nav current marks == ${wantCurrent}`,
+      state.currentMarks === wantCurrent,
+    );
   }
-  // Five pages mark themselves; /join marks nothing. See ROUTES in assert-site.mjs.
-  const wantCurrent = route.inNav ? 1 : 0;
-  ok(
-    `${label} nav current marks == ${wantCurrent}`,
-    state.currentMarks === wantCurrent,
-  );
+
+  // Both shells carry the theme control, so this stays the hydration probe everywhere.
   ok(`${label} hydrated (theme icon painted)`, state.hydrated);
   ok(`${label} no horizontal overflow`, state.docW <= state.winW + 1);
   ok(`${label} no canvas (3D removed)`, state.canvases === 0);
@@ -174,69 +182,96 @@ for (const path of ["/projects", "/hall-of-fame", "/"]) {
 
 // ---------------------------------------------------------------------------
 // The join form's path preselect, which every page's closing action relies on.
-//
-// THESE TWO ASSERTIONS ARE BACK IN SMOKE, and that is the clearest single measure of the
-// application form being independent of sign-in again. While /join was gated they could
-// not run here at all — there was no #af-path to read until somebody had signed in with a
-// college Google account, which needs the Auth emulator and a popup — so they were moved
-// to scripts/e2e-auth.mjs and only ran when somebody stood up two emulators.
-//
-// The funnel they protect is the whole site's: every page's closing action links to
-// /join?path=<id>, and a reader who clicked "join the program track" is supposed to arrive
-// with it chosen. That is now checkable by a signed-out browser with no emulator, no
-// popup and no credentials, which means it runs on every push instead of by hand.
 
 await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
 await assertOurSite(pg);
 await pg.waitForTimeout(700);
+// /join IS BEHIND SIGN-IN NOW, so the two assertions that used to live here — that the
+// form preselects ?path and rejects a bogus one — cannot run from a signed-out browser:
+// there is no #af-path to read until somebody has signed in with a college Google
+// account, which needs the Auth emulator and a popup. That behaviour did not go away and
+// is not untested; it moved to scripts/e2e-auth.mjs, which signs in for real against the
+// Auth emulator. Run it with `npm run e2e:auth`.
+//
+// What smoke can still assert is the part that would silently break the funnel: that the
+// gate is what renders, and that the QUERY STRING SURVIVES it. Every page's closing
+// action links to /join?path=<id>, and sign-in does not navigate — so if the param were
+// ever dropped here, the preselection would be dead no matter how correct the form is.
+await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
+await pg.waitForTimeout(900);
+// TWO ACCEPTABLE STATES, because this suite runs both with and without a Firebase
+// config, and the second is not an edge case — it is how CI runs and how a contributor
+// fixing a typo runs the site. `.env.local` is gitignored and never present on a runner,
+// so with a config a signed-out reader gets the sign-in card, and without one the gate
+// says plainly there is nothing to sign in to. Both are correct; only "still checking" is
+// not.
+//
+// THIS ASSERTION NAMED ONLY THE FIRST, and had therefore been failing on every push to
+// main since at least 23 August — a red build that says the join page is broken when the
+// join page is fine. A permanently red CI is worse than no CI, because it trains everyone
+// to ignore the one signal that would have caught something real. The new routes below
+// were written this way from the start; this brings the original into line.
 ok(
-  "the application form renders to a signed-out reader",
-  (await pg.evaluate(() => document.querySelectorAll("#af-name, #af-email").length)) === 2,
+  "join settles on a signed-out state",
+  await pg.evaluate(() =>
+    /sign in with your college account|sign-in is not set up here/i.test(
+      document.querySelector("main")?.innerText ?? "",
+    ),
+  ),
 );
 ok(
-  "join preselects ?path",
-  (await pg.locator("#af-path").inputValue()) === "program-track",
+  "join keeps ?path through the sign-in gate",
+  new URL(pg.url()).searchParams.get("path") === "program-track",
 );
-// A hand-edited param must be ignored rather than submitted. The rules reject a path that
-// is not on the list, so trusting this would present as a form that fails on submit for
-// no visible reason.
-await pg.goto(`${BASE}/join?path=not-a-real-path`, { waitUntil: "networkidle" });
-await pg.waitForTimeout(700);
-ok("a hand-edited ?path is ignored", (await pg.locator("#af-path").inputValue()) === "");
-// THE TWO FORMS MUST NOT SWAP PLACES. #pf-* is the member profile, which belongs behind
-// sign-in on /dashboard; #af-* is the anonymous application. If profile fields ever
-// render here, the split has been undone — and the reverse check is below.
+// The form must NOT be reachable without signing in. This is a UI assertion, not a
+// security one — the boundary is firestore.rules — but a form rendering to a signed-out
+// visitor would mean the gate had broken open.
 ok(
-  "the profile form is not on the public application page",
-  (await pg.evaluate(() => document.querySelectorAll("#pf-path, #pf-name").length)) === 0,
+  "the profile form is not rendered before sign-in",
+  (await pg.evaluate(() => document.querySelectorAll("#pf-name, #pf-hostel").length)) === 0,
 );
 
 // ---------------------------------------------------------------------------
-// And the other door: /dashboard is where sign-in lives, and it must show a signed-out
-// reader the card rather than anybody's details. A UI assertion, not a security one — the
-// boundary is firestore.rules — but a dashboard rendering fields to a stranger would mean
-// the gate had broken open.
-
-await pg.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
-await assertOurSite(pg);
-await pg.waitForTimeout(900);
-ok(
-  "the dashboard shows a signed-out reader the sign-in card",
-  await pg.evaluate(() => {
-    const t = document.querySelector("main")?.innerText ?? "";
-    // Either the real card or the honest "not configured" one, depending on whether this
-    // deployment has a Firebase config. Both are correct answers here; a profile is not.
-    return (
-      /sign in with your college account/i.test(t) || /sign-in is not set up here/i.test(t)
-    );
-  }),
-);
-ok(
-  "and no form fields of either kind before sign-in",
-  (await pg.evaluate(
-    () => document.querySelectorAll("#pf-name, #af-name").length,
-  )) === 0,
-);
+// The two signed-in routes, seen by somebody who is not signed in.
+//
+// THE FAILURE THIS CATCHES IS A FLASH, NOT A LEAK. Both routes are static HTML on a CDN
+// and anybody can fetch them; what stops a stranger reading anybody's details is
+// firestore.rules. What these assert is that neither route paints the wrong thing while
+// it works out who you are — a static export ships before auth resolves, so a route that
+// treats "still checking" as "signed out" shows a sign-in prompt to every returning
+// member, and one that treats it as "signed in" renders an empty dashboard to a stranger.
+// Signed out, the correct end state is the members-only card and no form.
+for (const path of ["/onboarding", "/dashboard"]) {
+  await pg.goto(BASE + path, { waitUntil: "networkidle" });
+  await assertOurSite(pg);
+  // Deliberately long. The point is the SETTLED state: a shorter wait would pass while
+  // the page was still on its "checking your sign-in" card and prove nothing.
+  await pg.waitForTimeout(1200);
+  const label = path.padEnd(12);
+  const text = await pg.evaluate(
+    () => document.querySelector("main")?.innerText ?? "",
+  );
+  // TWO ACCEPTABLE END STATES, because this suite runs with and without a Firebase
+  // config. With one, a signed-out reader is asked to sign in; without one — which is
+  // how a contributor fixing a typo runs the site, and how CI runs it — the honest
+  // answer is that there is nothing to sign in to. Asserting only the first would fail
+  // on a machine with no .env.local for a reason that has nothing to do with the routes.
+  ok(
+    `${label} settles on a signed-out state`,
+    /sign in first|sign-in is not set up here/i.test(text),
+  );
+  // THE ONE THAT MATTERS. Landing on the "checking" card and staying there means the
+  // auth state never resolved, which on a static route is indistinguishable from a dead
+  // page — and it is what a botched redirect looks like.
+  ok(
+    `${label} does not settle on the checking card`,
+    !/checking your sign-in|loading your dashboard/i.test(text),
+  );
+  ok(
+    `${label} renders no form before sign-in`,
+    (await pg.evaluate(() => document.querySelectorAll("#pf-name, #pf-hostel, #am-name").length)) === 0,
+  );
+}
 
 await b.close();
 

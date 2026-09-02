@@ -18,7 +18,7 @@
 import Link from "next/link";
 import Icon from "@/components/Icon";
 import Panel from "@/components/dashboard/Panel";
-import { PATHS, PROGRAMS } from "@/content/join";
+import { PATHS } from "@/content/join";
 import { LINKS } from "@/content/site";
 import type { Profile } from "@/lib/profile";
 
@@ -55,9 +55,15 @@ export default function NextUp({ profile }: { profile: Profile }) {
   // Their ticked programmes, in human words. Capped at three in the sentence below,
   // because a member who ticked eight would otherwise get a paragraph of acronyms where
   // a sentence belongs.
-  const picked = (profile.programs ?? [])
-    .map((v) => PROGRAMS.find((p) => p.value === v)?.label ?? v)
-    .filter((l) => l.toLowerCase() !== "other");
+  // THE PROGRAMMES CLAUSE IS GONE, and it was the better half of this panel — "you have
+  // your eye on GSoC" is the club having remembered something. Upstream's merge moved
+  // "which programmes are you chasing" off the Profile and into the mentorship model, so
+  // there is nothing here to personalise against except the route they came in through.
+  //
+  // An empty list rather than a deletion: the sentence below already handles "nothing
+  // picked", because older profiles never had any — so re-attaching this to the mentorship
+  // enrolment later is one line here and nothing else.
+  const picked: string[] = [];
 
   const doors: Door[] = [
     // The programmes door only appears when they actually ticked something, which is

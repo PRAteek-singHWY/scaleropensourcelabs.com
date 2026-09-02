@@ -1,11 +1,4 @@
-// Drive the whole SIGN-IN flow in a real browser, against the Auth and Firestore
-// emulators.
-//
-// IT RUNS ON /dashboard, NOT /join, AND THAT IS THE POINT OF THE ROUTE IT DRIVES. /join is
-// the anonymous application form: no account, no session, nothing here to test. Signing in
-// and filling a profile is a separate feature living on /dashboard, and this suite follows
-// it there. The application form is covered by scripts/smoke.mjs instead, signed out and
-// with no emulator, which is the whole benefit of the two being independent.
+// Drive the whole join flow in a real browser, against the Auth and Firestore emulators.
 //
 //   Terminal 1:  npx firebase-tools emulators:start --only firestore,auth --project demo-osc
 //   Terminal 2:  cp .env.example .env.local   # then set the emulator lines, see below
@@ -24,16 +17,27 @@
 //
 // WHY THIS EXISTS AND WHAT IT COVERS THAT NOTHING ELSE DOES.
 //
-// scripts/smoke.mjs runs signed out, so it covers the application form and the sign-in
-// card's mere presence, and nothing behind either. scripts/rules-emulator.mjs executes the
-// rules with forged tokens, so it never touches the UI. Neither can answer the questions
-// that actually break this feature:
+// scripts/smoke.mjs runs signed out, so it can only assert that /join shows the sign-in
+// step and keeps its query string. scripts/rules-emulator.mjs executes the rules with
+// forged tokens, so it never touches the UI. Neither can answer the questions that
+// actually break this feature:
 //
 //   * does signInWithPopup work at all under our Content-Security-Policy?
 //   * does the profile save, and does the second save (an EDIT) still work?
-//   * does the profile form's ?path= preselect still work where the form now lives?
+//   * does ?path= survive the sign-in step AND the two redirects behind it?
+//   * does signing in actually land on /onboarding, and finishing it on /dashboard —
+//     without either route bouncing the reader back where they came from?
+//   * is the batch really read out of the address, and really not stored?
+//   * can an organiser publish a mentor from a browser, and can a member then pick one?
+//   * is a mentor somebody picked protected from being deleted?
 //   * is the dashboard refused to a member and served to an admin?
 //   * do its sort, its filters and its refresh actually change what is on screen?
+//
+// THE REDIRECT QUESTIONS ARE NEW AND ARE THE REASON THIS FILE GREW. The signed-in flow
+// used to be one component on one route, which could not be half-redirected. It is three
+// routes now, each shipping as static HTML before auth resolves, and the failure mode is
+// a loop or a dead stop on a "checking your sign-in" card — neither of which throws, logs
+// anything, or looks different from a slow network in a screenshot.
 //
 // The CSP question is the reason this is worth the machinery. Sign-in needs
 // apis.google.com in script-src and the auth domain in frame-src, and when either is
@@ -90,6 +94,39 @@ for (const [what, url] of [["Firestore", "http://127.0.0.1:8080/"], ["Auth", "ht
 // it is worse than no test, because it teaches you to re-run instead of to look.
 for (const url of [FS, AUTH]) await fetch(url, { method: "DELETE" }).catch(() => {});
 {
+  // FIRESTORE IS VERIFIED TOO, and it was not. Only the Auth clear below was checked,
+  // which left exactly the same fire-and-forget race on the other half: a profile written
+  // by an earlier run survived the DELETE, the membership table then held four rows where
+  // the suite expected three, and SIX assertions failed at once — counts, sort, filters —
+  // none of which had anything wrong with them. A suite that depends on the run before it
+  // teaches you to re-run instead of to look.
+  const countDocs = async () => {
+    let n = 0;
+    for (const c of ["users", "mentors", "enrollments", "admins"]) {
+      try {
+        const r = await fetch(`${REST}/${c}`, { headers: OWNER });
+        n += ((await r.json())?.documents ?? []).length;
+      } catch {
+        /* a collection that does not exist yet is zero documents */
+      }
+    }
+    return n;
+  };
+  let docs = await countDocs();
+  for (let i = 0; i < 20 && docs > 0; i++) {
+    await fetch(FS, { method: "DELETE" }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 250));
+    docs = await countDocs();
+  }
+  if (docs > 0) {
+    console.error(
+      `\n  The Firestore emulator still holds ${docs} document(s) after clearing. Restart it:\n` +
+        `    npx firebase-tools emulators:start --only firestore,auth --project ${PROJECT}\n`,
+    );
+    process.exit(1);
+  }
+}
+{
   const listAccounts = async () => {
     try {
       const r = await fetch(
@@ -141,38 +178,106 @@ async function signIn(pg, email, name) {
   await pop.waitForTimeout(700);
   await pop.locator("#email-input").fill(email);
   await pop.locator("#display-name-input").fill(name);
-  await pop.evaluate(() =>
-    [...document.querySelectorAll("button")]
-      .find((b) => /sign in with google/i.test(b.innerText))
-      ?.click(),
+  await settle(pop, email, () =>
+    pop.evaluate(() => {
+      const b = [...document.querySelectorAll("button")].find((n) =>
+        /sign in with google/i.test(n.innerText),
+      );
+      b?.click();
+      return Boolean(b);
+    }),
   );
-  await pop.waitForEvent("close", { timeout: 20000 }).catch(() => {});
   await pg.waitForTimeout(2500);
+}
+
+/** Press the emulator's submit until the popup actually goes away.
+ *
+ *  ONE CLICK IS NOT ENOUGH, and this is not paranoia. The emulator's form is Angular:
+ *  Playwright's fill() updates the model, but a click dispatched in the same tick can
+ *  land before the form is valid, and the button then does nothing at all — no error, no
+ *  navigation, the form simply still sitting there. It failed about one run in three, and
+ *  always on the third or later sign-in, which is what made it look like a problem with
+ *  whoever was signing in rather than with the timing.
+ *
+ *  Retrying is safe: once the popup has gone, `isClosed()` is true and the loop stops, and
+ *  a click on a form that already submitted has nothing to hit.
+ *
+ *  It throws with what the popup was SHOWING rather than "never closed", because the
+ *  latter sends you reading the wrong file — this suite's whole design principle. */
+async function settle(pop, email, press) {
+  for (let i = 0; i < 6; i++) {
+    if (pop.isClosed()) return;
+    const found = await press().catch(() => false);
+    if (i === 0 && !found) throw new Error(`emulator popup: no submit control for ${email}`);
+    const closed = await pop
+      .waitForEvent("close", { timeout: 5000 })
+      .then(() => true)
+      .catch(() => false);
+    if (closed || pop.isClosed()) return;
+  }
+  const where = pop.url();
+  const what = await pop.evaluate(() => document.body.innerText.slice(0, 200)).catch(() => "?");
+  throw new Error(
+    `emulator popup never closed for ${email}\n    at ${where}\n    showing: ${what.replace(/\n+/g, " / ")}`,
+  );
+}
+
+// THERE IS NO "SIGN IN AGAIN AS AN EXISTING ACCOUNT" HELPER, and that is a decision worth
+// recording because it looks like an omission.
+//
+// The member appears twice in this suite: once to join, and again later to enrol in
+// mentorship after an organiser has published a mentor. The obvious way to write that is
+// a second sign-in that picks the existing account out of the emulator's chooser. It does
+// not work reliably: the chooser renders each account as a nest of divs with the click
+// handler somewhere up the tree, and neither a Playwright click nor a dispatched one on
+// the leaf reliably selects a row — six attempts, still sitting on the picker.
+//
+// So the member's page is simply KEPT OPEN between the two blocks instead, which is both
+// more reliable and closer to what actually happens: a student does not sign in twice in
+// an afternoon, they come back to a tab that is still signed in.
+
+// WARM THE ROUTES UP BEFORE MEASURING ANYTHING. `next dev` compiles a route the first
+// time it is requested, and this suite is usually the first thing that has ever asked for
+// /onboarding or /dashboard — so the very first client-side redirect into one of them
+// took longer than the assertion waiting for it, and the run failed claiming sign-in had
+// not redirected. It had; the destination was still being built.
+//
+// The tell was that the same run passed on a second attempt with no code change, which is
+// the signature of a warm-up problem rather than a real one. Requesting each route once,
+// up front, moves that cost outside the measurements. It costs a second and it is the
+// difference between a suite you trust and one you re-run.
+for (const r of ["/", "/join", "/onboarding", "/dashboard", "/admin", "/privacy"]) {
+  await fetch(BASE + r).catch(() => {});
 }
 
 const browser = await chromium.launch();
 const csp = [];
 const errs = [];
 
-console.log("\nthe sign-in flow, driven in a real browser\n");
-console.log("-- a member signs in --");
+/** The member who goes through the whole flow. A REAL-SHAPED ADDRESS: the batch, branch
+ *  and roll are read out of it by web/lib/batch.ts, so `asha@sst.scaler.com` would sign in
+ *  perfectly and exercise none of that. 23 -> the 2023-27 batch. */
+const MEMBER_MAIL = "asha.23bcs10045@sst.scaler.com";
+const ADMIN_MAIL = "organiser@sst.scaler.com";
+/** Both pages outlive the block that signs them in — see the note above the sign-in
+ *  helpers. The member joins, the organiser publishes a mentor, the member comes back to
+ *  enrol, and the organiser looks at who picked whom: four blocks, two sessions. */
+let adminPg = null;
+let memberPg = null;
+
+console.log("\nthe join flow, driven in a real browser\n");
+console.log("-- a student signs up --");
 {
-  const pg = await (await browser.newContext({ viewport: { width: 1440, height: 1300 } })).newPage();
+  const pg = await (await browser.newContext({ viewport: { width: 1440, height: 1600 } })).newPage();
+  // Kept open for the mentorship block, which comes back as this same signed-in student.
+  memberPg = pg;
   pg.on("console", (m) => {
     if (/Content Security Policy|violates|Refused to/i.test(m.text())) csp.push(m.text().slice(0, 140));
   });
   pg.on("pageerror", (e) => errs.push(String(e).slice(0, 140)));
 
-  // /dashboard, NOT /join. This suite used to start at /join because the sign-in card
-  // stood in front of the application form there. It does not any more — /join takes an
-  // anonymous application and never asks who you are — so the door this drives is the
-  // members' one.
-  //
-  // ?path= IS STILL CARRIED, for the profile form further down: it is a default the form
-  // reads on a first save, and dropping it from this URL would leave that read untested.
-  // Nothing in the site links here with a path — the closing CTAs point at the
-  // application form, and smoke.mjs covers those signed out.
-  await pg.goto(`${BASE}/dashboard?path=program-track`, { waitUntil: "networkidle" });
+  // Arrive the way a closing CTA sends somebody, so preselection is genuinely exercised.
+  await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
   await pg.waitForTimeout(1200);
   ok("the sign-in step is what a signed-out reader sees",
     /sign in with your college account/i.test(await pg.locator("main").innerText()));
@@ -241,12 +346,17 @@ console.log("-- a member signs in --");
     ok("and every one lands on a section that exists", targets.every(Boolean), targets.join(","));
     ok("the page says how to get your data deleted",
       /delete your record/i.test(await pg.locator("main").innerText()));
-    await pg.goto(`${BASE}/dashboard?path=program-track`, { waitUntil: "networkidle" });
+    await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
     await pg.waitForTimeout(1500);
   }
 
   // An address off the domain must be refused, and the message must name it.
   await signIn(pg, "outsider@gmail.com", "Outsider");
+  // Waited for rather than read straight away. The refusal is not synchronous with the
+  // popup closing — the client has to get the credential back, look at the address and
+  // sign the account out again — so reading immediately is a race, and one that loses
+  // often enough to have failed a run.
+  await pg.locator('[role="alert"]').first().waitFor({ timeout: 15000 }).catch(() => {});
   const refusal = (await pg.locator('[role="alert"]').first().textContent().catch(() => "")) ?? "";
   ok("a non-college address is refused", /not an @sst\.scaler\.com address/i.test(refusal));
   ok("and it stays on the sign-in step",
@@ -262,66 +372,112 @@ console.log("-- a member signs in --");
 
   await pg.reload({ waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(2000);
-  await signIn(pg, "asha@sst.scaler.com", "Asha Verma");
+  // A REAL-SHAPED COLLEGE ADDRESS, because the batch, branch and roll are now READ OUT OF
+  // IT rather than typed. `asha@sst.scaler.com` would sign in perfectly and prove nothing
+  // about the one derivation this whole flow now depends on.
+  await signIn(pg, MEMBER_MAIL, "Asha Verma");
 
-  ok("a college address reaches the details form",
+  // THE HANDOFF. /join no longer holds the form: a signed-in reader is sent to
+  // /dashboard, which sends anybody without a profile on to /onboarding. Two redirects,
+  // both client-side, both carrying the query string.
+  await pg.waitForURL(/\/onboarding/, { timeout: 25000 }).catch(() => {});
+  ok("signing in leads out of /join", /\/onboarding/.test(pg.url()), pg.url());
+  ok("and lands on the details form",
     await pg.getByRole("button", { name: /finish joining/i }).isVisible().catch(() => false));
-  ok("the signed-in address is shown back", (await pg.locator("main").innerText()).includes("asha@sst.scaler.com"));
-  ok("the name is prefilled from Google", (await pg.locator("#pf-name").inputValue()) === "Asha Verma");
-  // THE PROFILE FORM'S OWN PRESELECT. The equivalent assertion for the APPLICATION form
-  // moved to smoke.mjs, which can now make it with no emulator and no popup — that is what
-  // separating the two features bought. This is the same logic in the other form, and it is
-  // still only reachable behind a real sign-in.
-  ok("?path= survives the sign-in step", (await pg.locator("#pf-path").inputValue()) === "program-track");
+  ok("?path= survives sign-in and both redirects",
+    new URL(pg.url()).searchParams.get("path") === "program-track", pg.url());
 
-  await pg.goto(`${BASE}/dashboard?path=not-a-real-path`, { waitUntil: "domcontentloaded" });
-  await pg.waitForTimeout(2500);
-  ok("a hand-edited ?path is ignored", (await pg.locator("#pf-path").inputValue()) === "");
-  // The four fields cut from sign-up. Asserted absent so putting one back is a visible
-  // decision rather than something that reappears with a stray merge.
-  ok("the form asks nothing it does not read",
+  const onboarding = await pg.locator("main").innerText();
+  ok("the signed-in address is shown back", onboarding.includes(MEMBER_MAIL));
+  ok("the name is prefilled from Google", (await pg.locator("#pf-name").inputValue()) === "Asha Verma");
+  // THE DERIVATION, ON SCREEN. Reading somebody's batch out of their address without
+  // showing them is the kind of quiet inference that feels like surveillance when they
+  // find out. 23bcs10045 -> 2023-27, BCS, roll 10045.
+  ok("the batch is derived from the address and shown", /2023–27/.test(onboarding), onboarding.slice(0, 200));
+  ok("so is the branch and the roll", /BCS/.test(onboarding) && /10045/.test(onboarding));
+  ok("the carried-in path is stated rather than hidden", /you arrived from/i.test(onboarding));
+
+  // THREE QUESTIONS, NOT SEVEN. Asserted as an exact set of field NAMES — deduplicated,
+  // because hostel is a two-tile radio group rather than a select, so it is two controls
+  // answering one question. Putting a field back is then a visible decision rather than
+  // something that reappears with a stray merge, and taking one away breaks a test
+  // instead of quietly shortening the form.
+  ok("the form asks exactly three things",
     (await pg.evaluate(() =>
-      ["why", "heard_from", "interests", "updates"].filter(
-        (n) => document.querySelector(`[name="${n}"]`) !== null,
-      ),
+      [...new Set(
+        [...document.querySelectorAll("form input:not([type=hidden]), form select, form textarea")]
+          .map((n) => n.getAttribute("name"))
+          .filter(Boolean),
+      )].sort().join(","),
+    )) === "github,hostel,name");
+  // The hostel question is two tiles, not a dropdown — there are two hostels and there
+  // always will be until a third building exists, so hiding a two-way choice behind a tap
+  // and a scrolling list was the most form-like control on the screen spent on the
+  // question with the fewest answers.
+  ok("hostel is a pair of tiles rather than a dropdown",
+    (await pg.locator('input[name="hostel"]').count()) === 2 &&
+      (await pg.locator("#pf-hostel").getAttribute("type")) === "radio");
+  // The eight fields cut from sign-up over time.
+  ok("and nothing it does not read",
+    (await pg.evaluate(() =>
+      ["why", "heard_from", "interests", "updates", "year_branch", "level", "programs", "programs_other"]
+        .filter((n) => document.querySelector(`[name="${n}"]`) !== null),
     )).length === 0);
 
-  await pg.fill("#pf-year", "2nd year, CSE");
-  await pg.selectOption("#pf-hostel", "uniworld-1");
-  await pg.check('input[name="level"][value="none"]');
-  await pg.selectOption("#pf-path", "build-day");
-  await pg.check('input[name="programs"][value="gsoc"]');
+  await pg.goto(`${BASE}/onboarding?path=not-a-real-path`, { waitUntil: "domcontentloaded" });
+  await pg.waitForTimeout(2500);
+  ok("a hand-edited ?path is ignored rather than saved",
+    !/you arrived from/i.test(await pg.locator("main").innerText()));
+
+  await pg.goto(`${BASE}/onboarding?path=build-day`, { waitUntil: "domcontentloaded" });
+  await pg.waitForTimeout(2500);
+  await pg.fill("#pf-name", "Asha Verma");
+  await pg.fill("#pf-github", "asha");
+  await pg.check('input[name="hostel"][value="uniworld-1"]');
   await pg.getByRole("button", { name: /finish joining/i }).click();
-  await pg.getByText(/that.s you signed up/i).waitFor({ timeout: 25000 }).catch(() => {});
-  ok("the details save", /that.s you signed up/i.test(await pg.locator("main").innerText()));
-  ok("codes are shown back as labels, not raw values",
-    (await pg.locator("main").innerText()).includes("Uniworld 1"));
+
+  await pg.waitForURL(/\/dashboard/, { timeout: 25000 }).catch(() => {});
+  ok("finishing the form leads to the dashboard", /\/dashboard/.test(pg.url()), pg.url());
+  // ARRIVING IS NOT THE SAME AS HAVING RENDERED. The route resolves the moment the URL
+  // changes, but the dashboard still has to read the profile back — so reading innerText
+  // here without waiting measures the "loading your dashboard" card and reports the save
+  // as broken.
+  await pg.getByText(/you are on the list/i).waitFor({ timeout: 25000 }).catch(() => {});
+  const dash = await pg.locator("main").innerText();
+  ok("the details save", /you are on the list/i.test(dash));
+  ok("codes are shown back as labels, not raw values", dash.includes("Uniworld 1"));
+  ok("the batch is on the dashboard too", /2023–27/.test(dash));
 
   await pg.reload({ waitUntil: "domcontentloaded" });
-  await pg.waitForTimeout(2500);
-  ok("the session survives a reload", /that.s you signed up/i.test(await pg.locator("main").innerText()));
+  await pg.waitForTimeout(3000);
+  ok("the session survives a reload", /you are on the list/i.test(await pg.locator("main").innerText()));
+  // AND IT DOES NOT BOUNCE BACK TO ONBOARDING. A member with a complete profile who is
+  // sent to the form again would be stuck in a loop between two routes, which is the
+  // specific risk of splitting this flow across pages at all.
+  ok("and does not bounce back to onboarding", /\/dashboard/.test(pg.url()), pg.url());
+
+  // Until an organiser publishes a mentor there is nothing to enrol in, and the card says
+  // so rather than offering a button that cannot work.
+  ok("mentorship is honestly closed before any mentor exists",
+    /no mentors have been published yet/i.test(await pg.locator("main").innerText()));
 
   // The second save. This is the path that only breaks the second time somebody uses the
   // page — created_at must stay put while updated_at moves, and the client must merge.
-  await pg.getByRole("button", { name: /edit my details/i }).click();
-  await pg.waitForTimeout(800);
-  await pg.fill("#pf-year", "3rd year, ECE");
+  // "Edit", not "Edit my details" — the dashboard's details section carries its own
+  // heading now, so the link does not have to repeat what it edits.
+  await pg.getByRole("link", { name: /^edit$/i }).click();
+  await pg.waitForURL(/\/onboarding/, { timeout: 15000 }).catch(() => {});
+  await pg.waitForTimeout(2000);
+  ok("editing reaches the form rather than being redirected away",
+    await pg.getByRole("button", { name: /save changes/i }).isVisible().catch(() => false));
+  await pg.fill("#pf-name", "Asha V Verma");
   await pg.getByRole("button", { name: /save changes/i }).click();
-  await pg.getByText(/that.s you signed up/i).waitFor({ timeout: 25000 }).catch(() => {});
-  ok("an edit saves", (await pg.locator("main").innerText()).includes("3rd year, ECE"));
+  await pg.waitForURL(/\/dashboard/, { timeout: 25000 }).catch(() => {});
+  await pg.waitForTimeout(1500);
+  ok("an edit saves", (await pg.locator("main").innerText()).includes("Asha V Verma"));
 
-  // THIS USED TO CHECK FOR A LINK NAMED "Dashboard" AND NOW CANNOT. Every member has a
-  // dashboard of their own since /dashboard was added, and the nav's far-end button reads
-  // exactly that word once somebody is signed in -- so the old assertion would now fail
-  // for the right reason, which is the worst kind of failing test.
-  //
-  // What it was actually protecting is unchanged and is asserted below instead: a member
-  // must not be offered the ORGANISERS' page. Matched on the specific label the profile
-  // card renders rather than on the word "dashboard", which is now ambiguous by design.
-  ok("a member is not offered the organisers' page",
-    !(await pg.getByRole("link", { name: /admin dashboard/i }).first().isVisible().catch(() => false)));
-  ok("but a member IS offered their own dashboard",
-    await pg.getByRole("link", { name: /^dashboard$/i }).first().isVisible().catch(() => false));
+  ok("a member is not offered the organisers' dashboard",
+    !(await pg.getByRole("link", { name: /organisers.* dashboard/i }).first().isVisible().catch(() => false)));
   await pg.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(3000);
   ok("/admin refuses a member", /not for you/i.test(await pg.locator("main").innerText()));
@@ -333,31 +489,47 @@ console.log("-- a member signs in --");
   ok("exactly one document was written", (stored.documents ?? []).length === 1);
   ok("its id is the auth uid", Boolean(doc) && doc.fields.uid.stringValue === doc.name.split("/").pop());
   ok("the stored address is the signed-in one",
-    doc?.fields.email.stringValue === "asha@sst.scaler.com");
+    doc?.fields.email.stringValue === MEMBER_MAIL);
+  // NOTHING DERIVED IS STORED. The batch is on screen twice and in the database nowhere,
+  // which is what makes it impossible for it to disagree with the address beside it.
+  ok("no batch, branch or year field was written",
+    Boolean(doc) &&
+      !["batch", "branch", "year", "year_branch"].some((f) => f in doc.fields),
+    Object.keys(doc?.fields ?? {}).join(","));
+  ok("the silently carried path was stored", doc?.fields.path?.stringValue === "build-day");
   ok("created_at was frozen while updated_at moved",
     Boolean(doc) &&
       new Date(doc.fields.created_at.timestampValue) < new Date(doc.fields.updated_at.timestampValue));
-  await pg.close();
+  // NOT CLOSED. The mentorship block returns as this student.
 }
 
 console.log("\n-- an organiser opens the dashboard --");
 {
   // Admins are seeded with the owner token because no client may write that collection —
   // exactly as a human does it in the Firebase console.
-  await fetch(`${REST}/admins/organiser@sst.scaler.com`, {
+  await fetch(`${REST}/admins/${ADMIN_MAIL}`, {
     method: "PATCH",
     headers: OWNER,
     body: JSON.stringify({ fields: { added_by: { stringValue: "console" } } }),
   });
 
-  const pg = await (await browser.newContext({ viewport: { width: 1440, height: 1500 } })).newPage();
+  const pg = await (await browser.newContext({ viewport: { width: 1440, height: 1800 } })).newPage();
+  // Held open: the member enrols in the next block, and this same page is then refreshed
+  // to check the interest list. Closed at the very end.
+  adminPg = pg;
   pg.on("pageerror", (e) => errs.push(String(e).slice(0, 140)));
-  await pg.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  await pg.goto(`${BASE}/join`, { waitUntil: "networkidle" });
   await pg.waitForTimeout(1000);
-  await signIn(pg, "organiser@sst.scaler.com", "Club Organiser");
+  await signIn(pg, ADMIN_MAIL, "Club Organiser");
 
-  ok("an admin with no details of their own still gets the dashboard link",
-    await pg.getByRole("link", { name: /^dashboard$/i }).first().isVisible().catch(() => false));
+  // AN ORGANISER USUALLY HAS NO PROFILE OF THEIR OWN, so signing in bounces them through
+  // /dashboard to /onboarding like anybody else. Asserted because the alternative — a
+  // redirect loop, or a dead stop on the "checking" card — is exactly what an
+  // admin-shaped edge case in a two-route flow looks like.
+  await pg.waitForURL(/\/onboarding/, { timeout: 30000 }).catch(() => {});
+  ok("an organiser with no details is sent to onboarding like anybody else",
+    /\/onboarding/.test(pg.url()), pg.url());
+  await pg.waitForTimeout(1000);
 
   await pg.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(4000);
@@ -365,10 +537,14 @@ console.log("\n-- an organiser opens the dashboard --");
   const t = (await pg.locator("main").innerText()).toLowerCase();
   ok("the dashboard renders for an admin", !t.includes("not for you"));
   ok("it counts the membership", /registered members\s*1\b/.test(t), t.match(/registered members\s*\d+/)?.[0] ?? "");
-  const heads = ["by hostel", "by year", "by branch", "by experience", "by route in", "programmes of interest"];
-  ok("all six breakdowns render", heads.every((h) => t.includes(h)));
-  ok("the member is listed", t.includes("asha@sst.scaler.com"));
-  ok("year and branch are parsed from the free-text field", /year 3/.test(t) && /\bece\b/.test(t));
+  const heads = ["by batch", "by year", "by branch", "by hostel", "by route in"];
+  ok("all five breakdowns render", heads.every((h) => t.includes(h)));
+  ok("the member is listed", t.includes(MEMBER_MAIL));
+  // THE REPLACEMENT FOR THE TWO REGEXES. Batch, branch and year used to be guessed from a
+  // free-text box, with an "Unparsed" bucket for whatever did not match. They are read
+  // from the address now, so these are facts rather than best efforts.
+  ok("the batch is derived for the table, not typed", /2023–27/.test(t));
+  ok("and so are the branch and the year", /\bbcs\b/.test(t) && /\dth year|\drd year/.test(t));
 
   await pg.getByLabel("Search members").fill("nobody");
   await pg.waitForTimeout(600);
@@ -388,20 +564,17 @@ console.log("\n-- an organiser opens the dashboard --");
   // straight through the owner token — the point here is the dashboard's behaviour, not
   // the write path, which the sign-in block above already covered end to end.
   const seeded = [
-    ["zara", "Zara Qureshi", "1st year, CSE", "uniworld-2", "none", ["other"], "Season of Docs", 0],
-    ["arun", "Arun Iyer", "2nd year, ME", "uniworld-1", "merged", ["lfx"], null, 40],
+    ["zara", "zara.25bcs10300@sst.scaler.com", "Zara Qureshi", "uniworld-2", 0],
+    ["arun", "arun.24bcs10192@sst.scaler.com", "Arun Iyer", "uniworld-1", 40],
   ];
-  for (const [uid, name, yb, hostel, level, programs, other, daysAgo] of seeded) {
+  for (const [uid, email, name, hostel, daysAgo] of seeded) {
     const ts = new Date(Date.now() - daysAgo * 86400000).toISOString();
     const fields = {
-      uid: { stringValue: uid }, email: { stringValue: `${uid}@sst.scaler.com` },
-      name: { stringValue: name }, year_branch: { stringValue: yb },
-      hostel: { stringValue: hostel }, level: { stringValue: level },
+      uid: { stringValue: uid }, email: { stringValue: email },
+      name: { stringValue: name }, hostel: { stringValue: hostel },
       path: { stringValue: "build-day" },
-      programs: { arrayValue: { values: programs.map((v) => ({ stringValue: v })) } },
       created_at: { timestampValue: ts }, updated_at: { timestampValue: ts },
     };
-    if (other) fields.programs_other = { stringValue: other };
     await fetch(`${REST}/users/${uid}`, { method: "PATCH", headers: OWNER, body: JSON.stringify({ fields }) });
   }
   await pg.getByRole("button", { name: /^refresh$/i }).click();
@@ -413,11 +586,15 @@ console.log("\n-- an organiser opens the dashboard --");
   ok("the joined date is shown, not just stored", /\d{1,2} [a-z]{3} \d{2}\b/.test(t3));
   ok("the eight-week trend renders", t3.includes("sign-ups, last eight weeks"));
   ok("this week is counted separately from the total", /joined this week\s*2\b/.test(t3));
-  // programs_other was collected, validated and exported but never displayed, so the one
-  // programme a member had to type was the one an organiser could not see.
-  ok("the free text behind 'other' is visible", t3.includes("season of docs"));
+  // Three batches from three addresses, with no member having typed any of them.
+  ok("every batch in the club shows up in the breakdown",
+    ["2023–27", "2024–28", "2025–29"].every((b) => t3.includes(b)), t3.match(/20\d\d–\d\d/g)?.join(" ") ?? "");
 
-  const names = async () => pg.locator("tbody tr td:first-child").allInnerTexts();
+  // SCOPED TO THE FIRST TABLE. There are two on this page now — members, and the
+  // mentorship interest list — and a bare `tbody tr td:first-child` picks up the second
+  // one's empty-state row as though it were a member called "Nobody has enrolled yet."
+  const names = async () =>
+    pg.locator("table").first().locator("tbody tr td:first-child").allInnerTexts();
   await pg.getByRole("button", { name: /^name/i }).click();
   await pg.waitForTimeout(500);
   const asc = await names();
@@ -427,16 +604,16 @@ console.log("\n-- an organiser opens the dashboard --");
   const desc = await names();
   ok("clicking the same header again reverses it", desc[0].trim() === "Zara Qureshi", desc.join(" | "));
 
-  await pg.getByLabel("Filter by year").selectOption("Year 1");
+  await pg.getByLabel("Filter by batch").selectOption("2025–29");
   await pg.waitForTimeout(500);
   // Lowercased for the same reason as t3: .label uppercases in CSS, and innerText
   // returns the rendered text, so "Registered members" comes back shouting.
   const t4 = (await pg.locator("main").innerText()).toLowerCase();
-  ok("the year filter narrows the table", /1 of 3 shown/.test(t4), t4.match(/\d+ of \d+ shown/)?.[0] ?? "");
+  ok("the batch filter narrows the table", /1 of 3 shown/.test(t4), t4.match(/\d+ of \d+ shown/)?.[0] ?? "");
   ok("an active filter is announced", /1 filter on/.test(t4));
   ok("the totals still count everybody", /registered members\s*3\b/.test(t4));
 
-  await pg.getByLabel("Filter by experience").selectOption("merged");
+  await pg.getByLabel("Filter by hostel").selectOption("uniworld-1");
   await pg.waitForTimeout(500);
   ok("two filters combine rather than replace",
     /no member matches/i.test(await pg.locator("main").innerText()));
@@ -444,6 +621,213 @@ console.log("\n-- an organiser opens the dashboard --");
   await pg.getByRole("button", { name: /^clear 2$/i }).click();
   await pg.waitForTimeout(500);
   ok("clear restores every row", /3 of 3 shown/.test(await pg.locator("main").innerText()));
+
+  // -- PUBLISHING A MENTOR, THROUGH THE UI ------------------------------------------
+  // The one write in this app that is not a member editing their own row, so it is
+  // driven rather than seeded: the REST owner token would prove the shape and nothing
+  // about whether an organiser can actually do it.
+  await pg.getByRole("button", { name: /add a mentor/i }).click();
+  await pg.waitForTimeout(400);
+  await pg.fill("#am-name", "Priya Nair");
+  await pg.fill("#am-description", "Kubernetes and Go. Good on proposal structure; not the person for frontend.");
+  await pg.fill("#am-org", "CNCF");
+  await pg.fill("#am-github", "priya");
+  await pg.getByRole("button", { name: /save mentor/i }).click();
+  await pg.waitForTimeout(3000);
+  const t5 = await pg.locator("main").innerText();
+  ok("an organiser can publish a mentor from the browser", t5.includes("Priya Nair"), t5.slice(-300));
+  ok("and the new mentor starts with nobody", /1st: 0 · 2nd: 0/.test(t5));
+
+  // A second one, seeded, because the picker needs two to have a second preference at all
+  // and the write path is already proven above.
+  const now = new Date().toISOString();
+  await fetch(`${REST}/mentors/mentor-arjun`, {
+    method: "PATCH",
+    headers: OWNER,
+    body: JSON.stringify({
+      fields: {
+        name: { stringValue: "Arjun Rao" },
+        description: { stringValue: "Rust, and first-time contributors. Ask about reading an unfamiliar codebase." },
+        programme: { stringValue: "gsoc" },
+        active: { booleanValue: true },
+        created_at: { timestampValue: now }, updated_at: { timestampValue: now },
+      },
+    }),
+  });
+
+  // A THIRD, HIDDEN. It must not appear in the member's picker, and it must still resolve
+  // to a name anywhere it is already referenced.
+  await fetch(`${REST}/mentors/mentor-retired`, {
+    method: "PATCH",
+    headers: OWNER,
+    body: JSON.stringify({
+      fields: {
+        name: { stringValue: "Retired Mentor" },
+        description: { stringValue: "Ran last year's cohort and is not taking students this term." },
+        programme: { stringValue: "gsoc" },
+        active: { booleanValue: false },
+        created_at: { timestampValue: now }, updated_at: { timestampValue: now },
+      },
+    }),
+  });
+}
+
+console.log("\n-- the member enrols in mentorship --");
+{
+  const pg = memberPg;
+  // The same signed-in student, coming back to a tab that never signed out. Arriving via
+  // /join rather than straight to /dashboard so the "already joined" hand-off is
+  // exercised: a member who has finished onboarding must go to the dashboard, not be sent
+  // round the onboarding form again.
+  await pg.goto(`${BASE}/join`, { waitUntil: "domcontentloaded" });
+  await pg.waitForURL(/\/dashboard/, { timeout: 25000 }).catch(() => {});
+  ok("a member who has already joined goes straight to the dashboard",
+    /\/dashboard/.test(pg.url()), pg.url());
+
+  await pg.getByRole("button", { name: /start my enrolment/i }).waitFor({ timeout: 25000 }).catch(() => {});
+  ok("mentorship is open now that a mentor exists",
+    await pg.getByRole("button", { name: /start my enrolment/i }).isVisible().catch(() => false));
+
+  await pg.getByRole("button", { name: /start my enrolment/i }).click();
+  await pg.waitForTimeout(600);
+  const picker = await pg.locator("main").innerText();
+  ok("the picker lists the published mentors", picker.includes("Priya Nair") && picker.includes("Arjun Rao"));
+  ok("and the description, which is what somebody chooses on", picker.includes("proposal structure"));
+  // HIDDEN MEANS HIDDEN FROM THE PICKER. The rules deliberately still return the
+  // document, so this is a client filter and worth asserting rather than assuming.
+  ok("a hidden mentor is not offered", !picker.includes("Retired Mentor"));
+
+  // STEP ONE: the first choice, on its own screen. The two lists used to be stacked on
+  // one page with a checkbox between them; now each step asks one question.
+  ok("step one cannot be left without a first choice",
+    await pg.getByRole("button", { name: /^next$/i }).isDisabled());
+  // CLICK THE LABEL, NOT THE INPUT. The radios are `sr-only` — the card is the control —
+  // so a click aimed at the input is intercepted by the label wrapping it. Playwright
+  // reports "label intercepts pointer events" and retries for thirty seconds.
+  await pg.locator('label:has(input[name="mentor_1"])').first().click();
+  await pg.waitForTimeout(300);
+  // WHICH MENTOR WAS PICKED IS READ BACK, NOT ASSUMED. readMentors() orders by name, so
+  // "the first card" is whoever sorts first — and hard-coding a name here made the
+  // assertions depend on an ordering nothing promises. The id is what the document
+  // stores, so it is what the checks below compare against.
+  const pickedFirst = await pg.locator('input[name="mentor_1"]:checked').inputValue();
+  // The card's first line is the mentor's name — the org and the description are their
+  // own blocks below it. Read off the card rather than from a `p`, because the card is
+  // built out of spans: a label wrapping an sr-only radio cannot contain block elements
+  // and still be valid.
+  const pickedFirstName = (
+    await pg.locator('label:has(input[name="mentor_1"]:checked)').first().innerText()
+  ).split("\n")[0].trim();
+  await pg.getByRole("button", { name: /^next$/i }).click();
+  await pg.waitForTimeout(500);
+
+  // STEP TWO. The mentor picked on step one is NOT offered again — the single-screen
+  // version had to render them disabled with a line explaining why, and not offering them
+  // says the same thing in no words. Two published mentors, so exactly one remains, plus
+  // the "just my first preference" card.
+  ok("step two drops the mentor already chosen",
+    (await pg.locator('input[name="mentor_2"]').count()) === 2,
+    `${await pg.locator('input[name="mentor_2"]').count()} options`);
+  ok("and names the first choice back rather than making you remember it",
+    /your first choice is/i.test(await pg.locator("main").innerText()));
+  ok("enrol is off until step two is answered",
+    await pg.getByRole("button", { name: /^enrol$/i }).isDisabled());
+  ok("with the reason stated rather than left to guess at",
+    /choose a backup, or say you only want your first choice/i.test(
+      await pg.locator("main").innerText(),
+    ));
+
+  // THE ESCAPE HATCH IS A CARD IN THE SAME GROUP, not a checkbox beside the list. That is
+  // what makes "I only want my first choice" a decision the data can hold rather than an
+  // absence it has to infer.
+  await pg.locator('label:has(input[name="mentor_2"][value="__none__"])').click();
+  await pg.waitForTimeout(400);
+  ok("choosing 'just my first preference' completes the answer",
+    !(await pg.getByRole("button", { name: /^enrol$/i }).isDisabled()));
+
+  await pg.getByRole("button", { name: /^enrol$/i }).click();
+  await pg.waitForTimeout(3500);
+  const enrolled = await pg.locator("main").innerText();
+  ok("the enrolment saves", /enrolled/i.test(enrolled) && enrolled.includes(pickedFirstName),
+    pickedFirstName);
+  ok("and says plainly that it is not an allocation", /not a confirmed mentor yet/i.test(enrolled));
+  ok("a first-preference-only choice reads as a decision, not a blank",
+    /you asked for your first preference only/i.test(enrolled));
+
+  // CHANGING YOUR MIND. This is the edit path, and it is the one that would break on a
+  // stale mentor_2: switching to two preferences and back has to leave the document
+  // valid both times, which the rules refuse if the client forgets to delete the field.
+  await pg.getByRole("button", { name: /change my preferences/i }).click();
+  await pg.waitForTimeout(600);
+  // Re-opening starts at step one with the stored answers, so the first choice is already
+  // made and Next is live. Asserted, because "edit" resuming at a blank step one would
+  // silently make every change a re-entry of both answers.
+  ok("editing reopens at step one with the stored first choice",
+    (await pg.locator('input[name="mentor_1"]:checked').count()) === 1 &&
+      !(await pg.getByRole("button", { name: /^next$/i }).isDisabled()));
+  await pg.getByRole("button", { name: /^next$/i }).click();
+  await pg.waitForTimeout(500);
+  // The first real mentor on step two — necessarily somebody other than the first choice,
+  // since that one is not in this list at all.
+  await pg.locator('label:has(input[name="mentor_2"]:not([value="__none__"]))').first().click();
+  const pickedSecond = await pg.locator('input[name="mentor_2"]:checked').inputValue();
+  await pg.getByRole("button", { name: /save my preferences/i }).click();
+  await pg.waitForTimeout(3500);
+  const both = await pg.locator("main").innerText();
+  ok("switching to two preferences saves",
+    both.includes("Priya Nair") && both.includes("Arjun Rao"), both.slice(0, 120));
+  ok("and the first-preference-only line is gone", !/you asked for your first preference only/i.test(both));
+
+  const stored = await (await fetch(`${REST}/enrollments`, { headers: OWNER })).json();
+  const en = (stored.documents ?? [])[0];
+  ok("exactly one enrollment was written", (stored.documents ?? []).length === 1);
+  ok("keyed by the member's uid", Boolean(en) && en.fields.uid.stringValue === en.name.split("/").pop());
+  ok("holding exactly the two mentors that were picked",
+    en?.fields.mentor_1?.stringValue === pickedFirst &&
+      en?.fields.mentor_2?.stringValue === pickedSecond &&
+      en?.fields.first_only?.booleanValue === false,
+    `${en?.fields.mentor_1?.stringValue} / ${en?.fields.mentor_2?.stringValue}`);
+  await pg.close();
+}
+
+console.log("\n-- the organiser sees who picked whom --");
+{
+  const pg = adminPg;
+  await pg.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
+  await pg.waitForTimeout(4500);
+  const t = await pg.locator("main").innerText();
+  const lower = t.toLowerCase();
+
+  ok("the interest list names the student", t.includes("Asha V Verma"));
+  ok("with the batch read from their address", /2023–27/.test(t));
+  ok("and both preferences", /priya nair/.test(lower) && /arjun rao/.test(lower));
+  ok("the enrolled count is stated", /students enrolled\s*1\b/.test(lower), lower.match(/students enrolled\s*\d+/)?.[0] ?? "");
+  ok("the published mentor count is stated", /mentors published\s*3\b/.test(lower), lower.match(/mentors published\s*\d+/)?.[0] ?? "");
+  ok("first preferences are counted", lower.includes("first preferences"));
+  ok("total demand is counted separately", lower.includes("total demand"));
+  // The mentor nobody picked is NAMED, not drawn as a bar at zero — a zero-height bar is
+  // a row that disappears, and "who has nobody" is a question with an action attached.
+  ok("a mentor nobody picked is named rather than shown as an empty bar",
+    lower.includes("mentors nobody has picked") && t.includes("Retired Mentor"));
+
+  // THE DELETE GUARD. Firestore rules cannot express "nothing references this document",
+  // so the guard is in the client — and this is the only thing that checks it holds.
+  ok("a picked mentor cannot be deleted, and says why instead",
+    /students? picked this mentor — hide instead/i.test(t));
+  const deletes = await pg.getByRole("button", { name: /^delete$/i }).count();
+  ok("delete is only offered for a mentor nobody picked", deletes === 1, `${deletes} delete buttons`);
+
+  await pg.getByLabel("Filter by mentor").selectOption({ label: "Arjun Rao" });
+  await pg.waitForTimeout(600);
+  // Arjun is the SECOND preference, so a filter that only matched first preferences would
+  // return nothing here — which is precisely the person an organiser reassigns.
+  ok("filtering by mentor matches a second preference too",
+    /1 of 1 shown/.test(await pg.locator("main").innerText()));
+
+  await pg.getByLabel("Filter by mentor").selectOption("");
+  await pg.waitForTimeout(400);
+  ok("no horizontal page overflow with both tables on the page",
+    !(await pg.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1)));
 
   await pg.close();
 }
@@ -454,7 +838,7 @@ ok("no uncaught page errors", errs.length === 0, errs.slice(0, 2).join(" | "));
 await browser.close();
 console.log(
   fail === 0
-    ? `\n  ${pass} passed. Sign-in, the details form, the edit, and the dashboard all work.\n`
+    ? `\n  ${pass} passed. Sign-in, onboarding, the dashboard, mentor publishing and enrolment all work.\n`
     : `\n  ${pass} passed, ${fail} FAILED.\n`,
 );
 process.exit(fail === 0 ? 0 : 1);

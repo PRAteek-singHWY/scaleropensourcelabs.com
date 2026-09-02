@@ -38,6 +38,31 @@ if (project.startsWith("demo-")) {
       "refuse to reach real Google services, by design — it is for local testing only.",
   );
 }
+// THE CROSS-ORIGIN AUTH DOMAIN. This one shipped, and it broke sign-in for every real
+// user while every test passed.
+//
+// Firebase hands you `<project>.firebaseapp.com` as authDomain and it is the obvious
+// value to paste in. It is also wrong for any site served from its own domain: the
+// sign-in handler then runs on a THIRD-PARTY origin, Chrome partitions third-party
+// storage, and the credential Google issues cannot be written back to the app's origin.
+// The account IS created in Firebase Auth, the reader IS returned to the site, and the
+// page renders signed-out. Nothing errors. Two real students signed in and were bounced
+// this way before anybody noticed, because the failure has no error message.
+//
+// Firebase Hosting serves /__/auth/handler on every domain attached to the site, so the
+// correct value is simply the domain the site is served from. If you are genuinely
+// serving from *.firebaseapp.com or *.web.app, set AUTH_DOMAIN_IS_DELIBERATE=1.
+const authDomain = get("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN");
+if (/\.(firebaseapp\.com|web\.app)$/.test(authDomain) && !process.env.AUTH_DOMAIN_IS_DELIBERATE) {
+  problems.push(
+    `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN is "${authDomain}". Unless the site is served from ` +
+      "that exact host, sign-in will appear to succeed and then silently drop the session, " +
+      "because the auth handler runs cross-origin and the browser partitions its storage. " +
+      "Set it to the domain the site is served from — Hosting serves /__/auth/handler there " +
+      "too — and add that domain under Authentication -> Settings -> Authorized domains.",
+  );
+}
+
 if (!existsSync(ENV) || !project) {
   problems.push(
     "No Firebase project id. The site will build, but the join form will tell every " +

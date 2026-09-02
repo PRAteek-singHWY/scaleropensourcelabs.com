@@ -12,7 +12,13 @@
 export const SITE = process.env.SITE_URL ?? "http://localhost:3000";
 
 /** Every route on the site. Checks sweep all of them, not just the home page.
-    Ordered as a reader would meet them, with the form last. */
+    Ordered as a reader would meet them, with the form last.
+
+    `app: true` marks the SIGNED-IN routes, which carry a different shell: no marketing
+    nav, no four-column footer, no Join button. That is not an omission to be tolerated —
+    it is the point of app/(app)/layout.tsx — so the checks branch on this flag rather
+    than being loosened for everybody. A marketing route that lost its nav must still
+    fail. */
 export const ROUTES = [
   { path: "/", name: "essence", inNav: true },
   { path: "/projects", name: "projects", inNav: true },
@@ -32,41 +38,43 @@ export const ROUTES = [
   // anyway so smoke and the QA sweep cover it: a page nothing links from the nav is
   // exactly the page that rots unnoticed.
   { path: "/privacy", name: "privacy", inNav: false },
-  // inNav: false, and for the same reason as /join -- it is the OTHER half of the nav's
-  // far-end button, which reads "Join" signed out and "Dashboard" signed in. Neither is a
-  // stop on the tour, and neither is ever marked aria-current.
+  // THE TWO SIGNED-IN ROUTES, swept SIGNED OUT. Every check in this directory runs
+  // without a session, so what they measure here is the "sign in first" card — which is
+  // exactly what a stranger who guesses the URL sees, and therefore exactly what has to
+  // meet the same contrast, tap-target and overflow bar as everything else.
   //
-  // LISTED HERE ANYWAY, and the reason is worth stating: signed out this route renders a
-  // "sign in first" card and nothing else, which is exactly the kind of page that rots
-  // unnoticed -- no contributor visits it, and every sweep that skips it would keep
-  // passing while its contrast, tap targets or layout quietly broke. The signed-in view
-  // is covered by scripts/e2e-auth.mjs instead, because it needs a session.
-  // `appShell: true` — the ONE route that is an app rather than a page. It replaces the
-  // site's nav and footer with its own bar (see components/ChromeGate.tsx), so every check
-  // that assumes the marketing chrome has to know to look elsewhere here. Without this
-  // flag the sweeps do not fail loudly, they fail CONFUSINGLY: `assertOurSite` reports
-  // "something else is probably on that port" for a page that is entirely correct.
-  { path: "/dashboard", name: "dashboard", inNav: false, appShell: true },
+  // What they cannot cover is the signed-in half. That is scripts/e2e-auth.mjs, which
+  // drives a real browser against the Auth emulator. Do not read a green run here as
+  // "the dashboard works"; it means the door to it is not broken.
+  { path: "/onboarding", name: "onboarding", inNav: false, app: true },
+  { path: "/dashboard", name: "dashboard", inNav: false, app: true },
 ];
 
 const MARKER = "Scaler Open Source Club";
 
+/** Confirm the thing answering is this site, on either shell.
+ *
+ *  It used to require `nav[aria-label="Main"]` on every page, which was a sound identity
+ *  marker while every route carried the same nav. The signed-in routes do not carry it any
+ *  more — that is the whole point of the app shell — so the check now accepts either that
+ *  nav or the app header's wordmark link home.
+ *
+ *  IT IS NOT WEAKER FOR IT. The failure this guards against is measuring somebody else's
+ *  application on a port we assumed was ours, and an unrelated app on :3000 has neither
+ *  marker and does not have our title. Callers that know which shell to expect assert the
+ *  specific one — see the per-route branch in smoke.mjs. */
 export async function assertOurSite(page) {
   const found = await page.evaluate(() => ({
     title: document.title,
     hasNav: !!document.querySelector('nav[aria-label="Main"]'),
-    // THE APP SHELL COUNTS AS OUR CHROME TOO. /dashboard suppresses the marketing nav and
-    // renders its own bar instead, so requiring nav[aria-label="Main"] everywhere made a
-    // perfectly correct page report as "something else is probably on that port" — which
-    // sends whoever sees it looking at ports rather than at the page.
-    hasAppBar: !!document.querySelector('header[data-app-bar]'),
+    hasAppHeader: !!document.querySelector('header a[href="/"]'),
   }));
-  const hasChrome = found.hasNav || found.hasAppBar;
-  if (!found.title.includes(MARKER) || !hasChrome) {
+  if (!found.title.includes(MARKER) || !(found.hasNav || found.hasAppHeader)) {
     throw new Error(
       `${SITE} is not this site.\n` +
-        `  expected a title containing "${MARKER}" and either nav[aria-label="Main"] or header[data-app-bar]\n` +
-        `  got title: ${JSON.stringify(found.title)}, nav: ${found.hasNav}, appBar: ${found.hasAppBar}\n` +
+        `  expected a title containing "${MARKER}", and either nav[aria-label="Main"]\n` +
+        `  (marketing routes) or the app header (signed-in routes)\n` +
+        `  got title: ${JSON.stringify(found.title)}, nav: ${found.hasNav}, app header: ${found.hasAppHeader}\n` +
         `  Something else is probably on that port. Set SITE_URL to the right one.`,
     );
   }

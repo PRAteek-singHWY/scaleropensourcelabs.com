@@ -1,6 +1,6 @@
 "use client";
 
-// The organisers' view of the membership.
+// The organisers' view. Three panels: the membership, the mentor list, the mentorship.
 //
 // WHAT THIS IS FOR, in the club's words: "these are the number of core members, from
 // this hostel and from this hostel, from this batch". So it is a counting tool first and
@@ -9,34 +9,40 @@
 //
 // IT IS NOT A PRIVILEGE GATE. The link to this page is hidden from non-admins as a
 // convenience, and this component refuses to render data without an admin flag — but
-// neither is what protects anything. The `list` rule on users/{uid} is admin-only, so a
-// non-admin who navigates straight here gets an empty list from Firestore no matter what
-// the client does. If you ever move the membership check out of the rules and into this
-// file, you have removed the security.
+// neither is what protects anything. The `list` rules on users/ and enrollments/ are
+// admin-only, so a non-admin who navigates straight here gets empty lists from Firestore
+// no matter what the client does. If you ever move the membership check out of the rules
+// and into this file, you have removed the security.
 //
-// ONE READ PER MEMBER PER LOAD, unpaginated. At a few hundred members that is a few
-// hundred of a 50,000-a-day free quota, and pagination would be machinery with no user.
-// The header states the count so that if the club ever reaches a scale where this
-// matters, it is visible rather than quietly slow.
+// ONE READ PER DOCUMENT PER LOAD, unpaginated, across three collections. At a few hundred
+// members that is a few hundred of a 50,000-a-day free quota, and pagination would be
+// machinery with no user. The header states the count so that if the club ever reaches a
+// scale where this matters, it is visible rather than quietly slow.
 //
-// YEAR AND BRANCH ARE FREE TEXT, which the batch breakdown has to be honest about. It is
-// one field a member types ("1st year, CSE"), so grouping it means pattern-matching, and
-// anything that does not match lands in an explicit "unparsed" bucket rather than being
-// forced into the nearest guess. A stat that quietly mis-buckets is worse than one that
-// admits what it could not read.
+// BATCH, BRANCH AND YEAR ARE NOT FIELDS. They used to be one free-text box a member typed
+// ("1st year, CSE"), which meant this file carried two regexes, a word-number map and an
+// "Unparsed" bucket for everything they could not read. All of it is gone: the address is
+// `abhinav.23bcs10045@sst.scaler.com` and lib/batch.ts reads it. What is left of that
+// honesty is the "Unknown" bucket, which now means "this address does not follow the
+// pattern" — a much smaller and much more actionable claim than "we could not parse what
+// somebody typed".
+//
+// THE THREE COLLECTIONS ARE LOADED HERE, not in the panels that use them. AdminMentors
+// needs the enrollments to know whether a mentor is safe to delete, and AdminMentorship
+// needs the profiles to put a name against an enrollment — so a panel owning its own read
+// would mean two panels disagreeing about the data a moment after a write. One load, one
+// Refresh button, one truth.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AdminMentors from "@/components/AdminMentors";
+import AdminMentorship from "@/components/AdminMentorship";
+import { Bars, Counts, ctl, labelOf, tally } from "@/components/admin/ui";
 import { useAuth } from "@/lib/auth";
+import { batchBucket, branchBucket, yearBucket } from "@/lib/batch";
 import { fmtDate, readAllProfiles, toDate, type Profile } from "@/lib/profile";
-import { HOSTELS, LEVELS, PATHS, PROGRAMS } from "@/content/join";
+import { readAllEnrollments, readMentors, type Enrollment, type Mentor } from "@/lib/mentorship";
+import { HOSTELS, PATHS } from "@/content/join";
 
-const label = (list: readonly { value: string; label: string }[], v?: string) =>
-  (v && list.find((x) => x.value === v)?.label) || v || "—";
-
-/** Firestore hands timestamps back as its own Timestamp object, a Date, or an ISO
- *  string depending on how the document was written — the emulator's REST seeding and the
- *  SDK do not agree. All three are coerced here so nothing downstream has to care, and an
- *  unreadable value becomes null rather than an Invalid Date that formats as "NaN". */
 /** Monday of the week a date falls in, so weekly buckets line up. */
 function weekStart(d: Date): Date {
   const x = new Date(d);
@@ -45,88 +51,19 @@ function weekStart(d: Date): Date {
   return x;
 }
 
-/** Count occurrences, returned largest-first. */
-function tally(values: (string | undefined)[]): [string, number][] {
-  const m = new Map<string, number>();
-  for (const v of values) {
-    const k = v ?? "—";
-    m.set(k, (m.get(k) ?? 0) + 1);
-  }
-  return [...m].sort((a, b) => b[1] - a[1]);
-}
-
-/** Pull a year out of free text. Deliberately conservative: it matches the shapes people
- *  actually type and gives up otherwise, so the caller can show an honest "unparsed"
- *  count instead of a wrong one. */
-function yearOf(yearBranch?: string): string {
-  if (!yearBranch) return "Unparsed";
-  const s = yearBranch.toLowerCase();
-  const m = s.match(/\b([1-5])\s*(?:st|nd|rd|th)?\b/) ?? s.match(/\b(first|second|third|fourth|fifth)\b/);
-  if (!m) return "Unparsed";
-  const words: Record<string, string> = { first: "1", second: "2", third: "3", fourth: "4", fifth: "5" };
-  const n = words[m[1]] ?? m[1];
-  return `Year ${n}`;
-}
-
-/** Branch is whatever follows a comma or dash, uppercased. Same conservatism. */
-function branchOf(yearBranch?: string): string {
-  if (!yearBranch) return "Unparsed";
-  const parts = yearBranch.split(/[,\-–|]/).map((s) => s.trim()).filter(Boolean);
-  const tail = parts.length > 1 ? parts[parts.length - 1] : "";
-  if (!tail || /year/i.test(tail)) return "Unparsed";
-  return tail.toUpperCase();
-}
-
-/** One string for every filter control in the row below, so five selects and an input
- *  cannot drift apart a class at a time. */
-const ctl =
-  "rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
-
-function Bars({ title, rows, total }: { title: string; rows: [string, number][]; total: number }) {
-  return (
-    <div className="card rounded-panel bg-raise p-6">
-      <h3 className="label">{title}</h3>
-      <ul className="mt-4 space-y-3">
-        {rows.length === 0 && <li className="text-sm text-dust">No data yet.</li>}
-        {rows.map(([k, n]) => (
-          <li key={k}>
-            <div className="flex items-baseline justify-between gap-3">
-              <span className="text-sm text-ink">{k}</span>
-              <span className="font-mono text-sm text-haze">
-                {n}
-                <span className="text-dust">
-                  {" "}
-                  · {total > 0 ? Math.round((n / total) * 100) : 0}%
-                </span>
-              </span>
-            </div>
-            {/* A bar rather than a chart library: one dimension, ten rows, and the
-                token colours already carry the meaning. */}
-            <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-sunk">
-              <div
-                className="h-full rounded-full bg-accent"
-                style={{ width: `${total > 0 ? (n / total) * 100 : 0}%` }}
-              />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 export default function AdminDashboard() {
   const { user, isAdmin } = useAuth();
   const [rows, setRows] = useState<Profile[] | null>(null);
+  const [mentors, setMentors] = useState<Mentor[] | null>(null);
+  const [enrollments, setEnrollments] = useState<Enrollment[] | null>(null);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [hostel, setHostel] = useState("");
+  const [batch, setBatch] = useState("");
   const [year, setYear] = useState("");
-  const [programme, setProgramme] = useState("");
-  const [level, setLevel] = useState("");
   // Newest first by default, because the question an organiser opens this page with is
   // usually "who is new".
-  const [sort, setSort] = useState<{ key: "joined" | "name" | "year" | "hostel"; dir: 1 | -1 }>(
+  const [sort, setSort] = useState<{ key: "joined" | "name" | "batch" | "hostel"; dir: 1 | -1 }>(
     { key: "joined", dir: -1 },
   );
   const [reloading, setReloading] = useState(false);
@@ -138,9 +75,19 @@ export default function AdminDashboard() {
     setError("");
     setReloading(true);
     try {
-      setRows(await readAllProfiles());
+      // In parallel, and not settled individually: all three are refused by the same
+      // rules for the same reason, so one failing means the session is not an admin
+      // rather than that one collection is unavailable.
+      const [ps, ms, es] = await Promise.all([
+        readAllProfiles(),
+        readMentors(),
+        readAllEnrollments(),
+      ]);
+      setRows(ps);
+      setMentors(ms);
+      setEnrollments(es);
     } catch (e) {
-      console.error("[osc] could not list members", e);
+      console.error("[osc] could not load the dashboard", e);
       setError(
         "Firestore refused the query. Either your address is not in the admins collection, or the rules are not deployed.",
       );
@@ -161,11 +108,10 @@ export default function AdminDashboard() {
     const needle = q.trim().toLowerCase();
     const out = rows.filter((r) => {
       if (hostel && r.hostel !== hostel) return false;
-      if (level && r.level !== level) return false;
-      if (programme && !(r.programs ?? []).includes(programme)) return false;
-      if (year && yearOf(r.year_branch) !== year) return false;
+      if (batch && batchBucket(r.email) !== batch) return false;
+      if (year && yearBucket(r.email) !== year) return false;
       if (!needle) return true;
-      return [r.name, r.email, r.year_branch, r.github]
+      return [r.name, r.email, r.github, batchBucket(r.email), branchBucket(r.email)]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(needle));
     });
@@ -174,13 +120,13 @@ export default function AdminDashboard() {
       let d = 0;
       if (key === "joined") d = (+(toDate(a.created_at) ?? 0)) - (+(toDate(b.created_at) ?? 0));
       else if (key === "name") d = (a.name ?? "").localeCompare(b.name ?? "");
-      else if (key === "year") d = yearOf(a.year_branch).localeCompare(yearOf(b.year_branch));
+      else if (key === "batch") d = batchBucket(a.email).localeCompare(batchBucket(b.email));
       else d = (a.hostel ?? "").localeCompare(b.hostel ?? "");
       return d * sort.dir;
     });
-  }, [rows, q, hostel, level, programme, year, sort]);
+  }, [rows, q, hostel, batch, year, sort]);
 
-  const activeFilters = [q, hostel, level, programme, year].filter(Boolean).length;
+  const activeFilters = [q, hostel, batch, year].filter(Boolean).length;
 
   // Stats are computed over EVERYTHING, not the filtered view. A breakdown that moves
   // when you type in a search box is a breakdown you cannot quote in a meeting.
@@ -188,18 +134,23 @@ export default function AdminDashboard() {
     const all = rows ?? [];
     return {
       total: all.length,
-      hostel: tally(all.map((r) => label(HOSTELS, r.hostel))),
-      year: tally(all.map((r) => yearOf(r.year_branch))),
-      branch: tally(all.map((r) => branchOf(r.year_branch))),
-      level: tally(all.map((r) => label(LEVELS, r.level))),
-      path: tally(all.map((r) => PATHS.find((p) => p.id === r.path)?.name ?? r.path)),
-      // One member can pick several programmes, so this counts INTERESTS not members —
-      // the percentages therefore sum past 100, which is correct and stated on screen.
-      programs: tally(all.flatMap((r) => (r.programs ?? []).map((v) => label(PROGRAMS, v)))),
+      hostel: tally(all.map((r) => labelOf(HOSTELS, r.hostel))),
+      // Sorted by batch rather than by size: a year breakdown is a sequence, and putting
+      // the biggest cohort first hides whether the club is getting younger.
+      batch: tally(all.map((r) => batchBucket(r.email))).sort((a, b) => a[0].localeCompare(b[0])),
+      year: tally(all.map((r) => yearBucket(r.email))).sort((a, b) => a[0].localeCompare(b[0])),
+      branch: tally(all.map((r) => branchBucket(r.email))),
+      // `path` is optional and most members arrive without one, so the members who have
+      // none are dropped rather than counted as a bucket — "not recorded" as the biggest
+      // slice of a chart tells nobody anything.
+      path: tally(
+        all
+          .filter((r) => r.path)
+          .map((r) => PATHS.find((p) => p.id === r.path)?.name ?? r.path),
+      ),
       withGithub: all.filter((r) => r.github?.trim()).length,
-      // "How many joined recently" is the other question this page gets asked, and it
-      // could not be answered at all before: created_at was stored on every profile and
-      // shown nowhere.
+      withPath: all.filter((r) => r.path).length,
+      // "How many joined recently" is the other question this page gets asked.
       thisWeek: all.filter((r) => {
         const d = toDate(r.created_at);
         return d ? d >= weekStart(new Date()) : false;
@@ -255,19 +206,29 @@ export default function AdminDashboard() {
   }
 
   function exportCsv() {
-    const cols = [
-      "name", "email", "year_branch", "hostel", "level", "path",
-      "programs", "programs_other", "github",
-    ] as const;
+    const cols = ["name", "email", "batch", "branch", "year", "hostel", "path", "github"];
     const esc = (v: unknown) => {
-      const s = Array.isArray(v) ? v.join("; ") : v === undefined ? "" : String(v);
+      const s = v === undefined ? "" : String(v);
       // Quote always, and double any inner quote. Names contain commas more often than
       // people expect, and one unquoted comma shifts every later column by one.
       return `"${s.replace(/"/g, '""')}"`;
     };
     const csv = [
       cols.join(","),
-      ...filtered.map((r) => cols.map((c) => esc((r as Record<string, unknown>)[c])).join(",")),
+      ...filtered.map((r) =>
+        [
+          r.name,
+          r.email,
+          batchBucket(r.email),
+          branchBucket(r.email),
+          yearBucket(r.email),
+          r.hostel,
+          r.path ?? "",
+          r.github ?? "",
+        ]
+          .map(esc)
+          .join(","),
+      ),
     ].join("\n");
 
     // A BOM, so Excel opens UTF-8 names correctly instead of mangling them.
@@ -314,27 +275,14 @@ export default function AdminDashboard() {
       )}
 
       {/* The headline count, and the two facts most often asked for beside it. */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        {[
+      <Counts
+        loading={rows === null}
+        rows={[
           ["Registered members", stats.total],
           ["Joined this week", stats.thisWeek],
           ["With a GitHub account", stats.withGithub],
-        ].map(([k, v]) => (
-          <div key={String(k)} className="card rounded-panel bg-raise p-6">
-            <p className="label">{k}</p>
-            {/* NOT `.num`. That class is the small blue step badge used in numbered
-                lists — applying it here rendered each headline count as a pill the size
-                of a chip, which is the opposite of a headline. Caught by looking at the
-                page rather than at the passing test.
-
-                `tabular-nums` so the three cards stay aligned as counts grow, and the
-                number does not jitter between renders. */}
-            <p className="mt-2 font-display text-display-lg font-bold tabular-nums tracking-tight">
-              {rows === null ? "…" : (v as number)}
-            </p>
-          </div>
-        ))}
-      </div>
+        ]}
+      />
 
       {rows === null && !error && (
         <p className="text-body text-haze" aria-busy="true">
@@ -385,19 +333,24 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Bars title="By hostel" rows={stats.hostel} total={stats.total} />
+        <Bars title="By batch" rows={stats.batch} total={stats.total} />
         <Bars title="By year" rows={stats.year} total={stats.total} />
         <Bars title="By branch" rows={stats.branch} total={stats.total} />
-        <Bars title="By experience" rows={stats.level} total={stats.total} />
-        <Bars title="By route in" rows={stats.path} total={stats.total} />
-        <Bars title="Programmes of interest" rows={stats.programs} total={stats.total} />
+        <Bars title="By hostel" rows={stats.hostel} total={stats.total} />
+        <Bars
+          title="By route in"
+          rows={stats.path}
+          total={stats.withPath}
+          empty="Nobody arrived through a path link yet."
+          footnote={`Of the ${stats.withPath} member${stats.withPath === 1 ? "" : "s"} who arrived through a link that named a path. It is not asked for, so most members have none.`}
+        />
       </div>
 
       <p className="text-[15px] leading-relaxed text-dust">
-        Programme percentages are of members, and members pick more than one — so those
-        add up past 100%. Year and branch are parsed from the single free-text field a
-        member types, so anything unrecognised is counted as{" "}
-        <strong className="text-haze">Unparsed</strong> rather than guessed at.
+        Batch, branch and year are read from each member&apos;s college address rather than
+        asked for — <span className="font-mono text-haze">23bcs10045</span> is the 2023–27
+        batch, branch BCS. An address that does not follow that pattern is counted as{" "}
+        <strong className="text-haze">Unknown</strong> rather than guessed at.
       </p>
 
       {/* The list. Filtering is local — the whole membership is already in memory, so a
@@ -420,7 +373,7 @@ export default function AdminDashboard() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search name, email, branch, GitHub"
+              placeholder="Search name, email, batch, GitHub"
               className={ctl + " w-60"}
               aria-label="Search members"
             />
@@ -437,10 +390,21 @@ export default function AdminDashboard() {
                 </option>
               ))}
             </select>
-            {/* Built from the data rather than a fixed list: year is parsed out of a free
-                text field, so the only honest set of options is the one that actually
-                appears — including "Unparsed", which an organiser needs to be able to
-                isolate and go fix. */}
+            {/* Built from the data rather than a fixed list: the club gains a batch every
+                year, and a hardcoded set would silently stop offering the newest one. */}
+            <select
+              value={batch}
+              onChange={(e) => setBatch(e.target.value)}
+              className={ctl}
+              aria-label="Filter by batch"
+            >
+              <option value="">All batches</option>
+              {stats.batch.map(([b]) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
             <select
               value={year}
               onChange={(e) => setYear(e.target.value)}
@@ -454,41 +418,14 @@ export default function AdminDashboard() {
                 </option>
               ))}
             </select>
-            <select
-              value={programme}
-              onChange={(e) => setProgramme(e.target.value)}
-              className={ctl}
-              aria-label="Filter by programme"
-            >
-              <option value="">All programmes</option>
-              {PROGRAMS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-            <select
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              className={ctl}
-              aria-label="Filter by experience"
-            >
-              <option value="">Any experience</option>
-              {LEVELS.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
             {activeFilters > 0 && (
               <button
                 type="button"
                 onClick={() => {
                   setQ("");
                   setHostel("");
+                  setBatch("");
                   setYear("");
-                  setProgramme("");
-                  setLevel("");
                 }}
                 className="tap font-mono text-label uppercase text-haze underline transition-colors hover:text-ink"
               >
@@ -546,13 +483,13 @@ export default function AdminDashboard() {
                 {([
                   ["Name", "name"],
                   ["College email", null],
-                  ["Year and branch", "year"],
+                  ["Batch and branch", "batch"],
+                  ["Year", null],
                   ["Hostel", "hostel"],
-                  ["Experience", null],
-                  ["Programmes", null],
+                  ["Route in", null],
                   ["GitHub", null],
                   ["Joined", "joined"],
-                ] as [string, "name" | "year" | "hostel" | "joined" | null][]).map(([h, key]) => (
+                ] as [string, "name" | "batch" | "hostel" | "joined" | null][]).map(([h, key]) => (
                   <th key={h} className="label whitespace-nowrap py-2 pr-4 font-normal">
                     {/* Only the four columns that sort meaningfully are buttons. Making
                         every header clickable and having half of them do nothing is worse
@@ -571,7 +508,7 @@ export default function AdminDashboard() {
                       >
                         {h}
                         <span aria-hidden className={sort.key === key ? "text-accent" : "text-dust/40"}>
-                          {sort.key === key ? (sort.dir === 1 ? "\u2191" : "\u2193") : "\u2195"}
+                          {sort.key === key ? (sort.dir === 1 ? "↑" : "↓") : "↕"}
                         </span>
                       </button>
                     ) : (
@@ -586,19 +523,16 @@ export default function AdminDashboard() {
                 <tr key={r.uid} className="border-b border-seam/60 align-top">
                   <td className="py-3 pr-4 text-sm text-ink">{r.name}</td>
                   <td className="py-3 pr-4 font-mono text-[13px] text-haze">{r.email}</td>
-                  <td className="py-3 pr-4 text-sm text-haze">{r.year_branch}</td>
-                  <td className="py-3 pr-4 text-sm text-haze">{label(HOSTELS, r.hostel)}</td>
-                  <td className="py-3 pr-4 text-sm text-haze">{label(LEVELS, r.level)}</td>
+                  <td className="whitespace-nowrap py-3 pr-4 text-sm text-haze">
+                    {batchBucket(r.email)}
+                    <span className="block text-[13px] text-dust">{branchBucket(r.email)}</span>
+                  </td>
+                  <td className="whitespace-nowrap py-3 pr-4 text-sm text-haze">
+                    {yearBucket(r.email)}
+                  </td>
+                  <td className="py-3 pr-4 text-sm text-haze">{labelOf(HOSTELS, r.hostel)}</td>
                   <td className="py-3 pr-4 text-sm text-haze">
-                    {(r.programs ?? []).map((v) => label(PROGRAMS, v)).join(", ") || "—"}
-                    {/* The free text behind "Other". It was collected, validated and
-                        exported to CSV but never shown on screen, so the one programme a
-                        member had to type was the one an organiser could not see. */}
-                    {r.programs_other && (
-                      <span className="block text-[13px] text-dust">
-                        Other: {r.programs_other}
-                      </span>
-                    )}
+                    {r.path ? PATHS.find((p) => p.id === r.path)?.name ?? r.path : "—"}
                   </td>
                   <td className="py-3 pr-4 font-mono text-[13px] text-haze">
                     {r.github ? (
@@ -638,6 +572,21 @@ export default function AdminDashboard() {
         address. Treat the export the way you would a class list: it does not go in a
         group chat, and it is not published on the site.
       </p>
+
+      {/* --------------------------------------------------------- mentorship */}
+      <div className="border-t border-seam pt-8">
+        <h2 className="font-display text-display-md font-bold tracking-tight">
+          Mentorship
+        </h2>
+        <p className="measure mt-3 text-body text-haze">
+          The mentors members can choose from, and who has chosen whom. Adding a mentor
+          here is what opens enrolment on every member&apos;s dashboard.
+        </p>
+      </div>
+
+      <AdminMentors mentors={mentors} enrollments={enrollments} onChanged={() => void load()} />
+
+      <AdminMentorship profiles={rows} mentors={mentors} enrollments={enrollments} />
     </div>
   );
 }

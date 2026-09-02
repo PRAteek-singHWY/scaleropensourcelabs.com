@@ -60,7 +60,6 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   HOSTELS,
-  LEVELS,
   LEVEL_LABEL,
   PATHS,
   PROGRAMS,
@@ -223,9 +222,12 @@ function Fields() {
       <fieldset>
         <legend className="label mb-3">Where you are right now</legend>
         <div className="space-y-2">
-          {LEVELS.map((l) => (
+          {/* UPSTREAM REPLACED THE `LEVELS` ARRAY WITH `LEVEL_LABEL`, a Record keyed by the
+              stored value. Object.entries gives back the same [value, label] pairs the
+              array used to hold, so the markup below is unchanged apart from the names. */}
+          {Object.entries(LEVEL_LABEL).map(([value, label]) => (
             <label
-              key={l.value}
+              key={value}
               className="flex cursor-pointer items-center gap-3 rounded-md border border-seam bg-sunk px-3.5 py-3 transition hover:border-accent/50"
             >
               {/* NOT pre-checked. A pre-checked first option makes `required` toothless
@@ -233,11 +235,11 @@ function Fields() {
               <input
                 type="radio"
                 name="level"
-                value={l.value}
+                value={value}
                 required
                 className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
               />
-              <span className="text-sm text-ink">{l.label}</span>
+              <span className="text-sm text-ink">{label}</span>
             </label>
           ))}
         </div>

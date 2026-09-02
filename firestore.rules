@@ -7,47 +7,33 @@ rules_version = '2';
 // static export with no server — so there is no back end doing checks. Everything that
 // protects members' data is in this file.
 //
-// THE SITE HAS TWO INDEPENDENT FRONT DOORS, and that split matters here more than
-// anywhere else in this file:
+// The site now has sign-in. Five collections:
 //
-//   APPLYING is anonymous. /join takes a form from anybody, with no account and no token,
-//   and that write is the single most exposed operation in this project — it is the one
-//   thing an unauthenticated stranger is allowed to do. Everything standing behind it is
-//   `isWellFormedApplication` below, plus App Check.
+//   users/{uid}        one profile per member. Readable and writable ONLY by that
+//                      member, plus readable by admins. Contains their name, college
+//                      address and hostel.
+//   admins/{email}     membership = adminship. Nobody can write it from any client.
+//   mentors/{id}       the mentor list an organiser publishes. Readable by every member,
+//                      WRITABLE BY ADMINS — see below.
+//   enrollments/{uid}  one per member: which mentors they want, in order. Theirs to
+//                      write and to withdraw; admins may list them all.
+//   applications/{id}  legacy, from before sign-in. Create-only and unreadable, kept
+//                      so the rows already there stay protected.
 //
-//   MEMBERSHIP is authenticated and restricted to one email domain. Everything else in
-//   this file requires `isMember()`.
+// `mentors` IS THE FIRST COLLECTION A CLIENT MAY WRITE THAT IS NOT ITS OWN ROW, and that
+// widening was deliberate rather than incidental. It is acceptable because a mentor entry
+// is published, organiser-authored, non-personal copy — the same kind of thing that lives
+// in web/content/ — so the worst a stolen admin session can do here is deface a list. It
+// cannot read a member's details it could not already read, and it cannot grant itself
+// anything. Note that the same argument does NOT hold for `admins`, which is why every
+// client write to that collection stays denied: appointing an admin is the one privilege
+// escalation this model would otherwise allow.
 //
-// Those two used to be one flow, with sign-in standing in front of the application form,
-// which meant this file had no anonymous write surface at all. It has one again. If you
-// are reviewing one thing here, review the create rule on applications/{id}.
-//
-// Five collections:
-//
-//   users/{uid}          one profile per member. Readable and writable ONLY by that
-//                        member, plus readable by admins. Contains names, college
-//                        addresses, year, branch and hostel.
-//   admins/{email}       the core-team roster: the access grant AND the person's
-//                        public billing, in one row so the two cannot drift. Owners
-//                        write it; admins read it; members see only their own row.
-//   announcements/{id}   the members-only notice board. EVERY member may list it;
-//                        only admins write. The one collection here that is readable
-//                        in bulk, because nothing personal goes in one.
-//   sessions/{id}        when the club actually meets. Every member reads them; admins
-//                        write them. Ordered by `starts_at`, which is why it is a real
-//                        timestamp and not typed text.
-//   forms/{id}           forms AND polls; a poll is a form with `show_tally` on. Every
-//                        member reads them; admins write them. The `tally` field is
-//                        function-written and refused to every client.
-//   forms/{id}/responses/{uid}
-//                        one answer per member, keyed by uid so a second is impossible.
-//                        Attributed: admins list them, members read only their own.
-//   contributions/{uid}  GitHub counts for one member, written ONLY by the Cloud
-//                        Function that fetches them. No client writes it, including
-//                        its owner — see the note on the match block.
-//   applications/{id}    anonymous applications from people who are NOT members yet.
-//                        Create-only, validated on the way in, and readable by nobody
-//                        through any client — see the match block.
+// WHAT IS NOT A FIELD HERE, ON PURPOSE. Batch, branch and year are not stored anywhere.
+// They are read out of the address — `abhinav.23bcs10045@sst.scaler.com` — by
+// web/lib/batch.ts, and the address is pinned to `request.auth.token.email` below. A
+// derived value cannot disagree with the document it describes, so there is nothing here
+// to validate and nothing that can drift.
 //
 // ONLY @sst.scaler.com MAY REGISTER, and this is where that is enforced. web/lib/auth.tsx
 // also passes the domain to Google and signs out anyone off-domain, but both of those
@@ -86,54 +72,14 @@ service cloud.firestore {
         && request.auth.token.email.lower().matches('^[^@]+@sst[.]scaler[.]com$');
     }
 
-    /** The caller's own row in `admins`, or an error if they have none — so it is only
-     *  ever reached after an exists() guard. Factored out because three helpers below
-     *  need it and Firestore caps a single evaluation at ten document lookups. */
-    function adminDoc() {
-      return get(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
-    }
-
-    /** An admin is a member whose address has a row in `admins` that has not been
-     *  retired. Looked up by email rather than uid so organisers can be added before
-     *  they first sign in — with uid keys you would have to make somebody sign in, read
-     *  their uid out of the Auth tab, and only then grant access, which is a poor first
-     *  day for a club that adds people monthly.
+    /** An admin is a member whose address has a document in `admins`. Looked up by
+     *  email rather than uid so organisers can be added before they first sign in.
      *
      *  Lowercased on lookup because Google returns the address as the person typed it;
-     *  the document id in `admins` must therefore always be lowercase.
-     *
-     *  `active` DEFAULTS TO TRUE WHEN ABSENT, and that is a compatibility decision
-     *  rather than a lax one. Rows seeded by hand before this field existed carry only
-     *  `added_by`, and a strict test would have silently locked out every organiser the
-     *  club already had at the moment these rules deployed. New rows are written with
-     *  the field by isWellFormedAdmin() below, so the default only ever applies to the
-     *  old ones.
-     *
-     *  RETIRING SOMEBODY IS `active: false`, NOT A DELETE. Deleting revokes just as
-     *  fast but erases who ran the club last year, which is exactly what a handover
-     *  needs. `allow delete` is therefore false on this collection. */
+     *  the document id in `admins` must therefore always be lowercase. */
     function isAdmin() {
       return isMember()
-        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()))
-        && adminDoc().data.get('active', true) == true;
-    }
-
-    /** An owner is an admin who may also change the roster. THE ONLY PRIVILEGE THAT
-     *  GRANTS PRIVILEGES, kept to two or three people who are seeded by hand in the
-     *  Firebase console.
-     *
-     *  The tier exists because the alternatives were both bad: console-only appointment
-     *  means every monthly addition waits on whoever holds console access, and that
-     *  person eventually graduates; letting any admin appoint any admin means one
-     *  compromised college account can appoint accomplices and demote everybody else.
-     *  This bounds the blast radius — a compromised admin cannot escalate at all, and
-     *  there are few owners, chosen deliberately.
-     *
-     *  `role` defaults to 'admin' for the same compatibility reason as `active`: an
-     *  existing hand-seeded row must not silently become an owner. Nobody is an owner
-     *  until somebody is explicitly made one in the console. */
-    function isOwner() {
-      return isAdmin() && adminDoc().data.get('role', 'admin') == 'owner';
+        && exists(/databases/$(database)/documents/admins/$(request.auth.token.email.lower()));
     }
 
     /** Fields a member may never change after the first save. `created_at` is what
@@ -147,11 +93,11 @@ service cloud.firestore {
 
     /** The profile shape. Mirrors web/lib/profile.ts and web/content/join.ts.
      *
-     *  FOUR FIELDS WERE REMOVED from this list — why, heard_from, interests and updates —
-     *  because each cost a member time at sign-up and nothing read it back. `hasOnly` is
-     *  strict, so a document still carrying one of them is now REJECTED rather than
-     *  tolerated. That is safe here only because the site had never been deployed with
-     *  sign-in, so no member profile exists in production yet. If that changes, removing a
+     *  EIGHT FIELDS HAVE BEEN REMOVED from this list over time — why, heard_from,
+     *  interests, updates, year_branch, level, programs and programs_other — because each
+     *  cost a member time at sign-up and nothing read it back. `hasOnly` is strict, so a
+     *  document still carrying one of them is REJECTED rather than tolerated. That is safe
+     *  only because no member profile exists in production yet. Once one does, removing a
      *  field means either leaving it in `hasOnly` or migrating the documents first — a
      *  strict list turns an old field into a member who can no longer edit their profile. */
     function isWellFormedProfile(d, uid) {
@@ -160,17 +106,18 @@ service cloud.firestore {
         // alone would let somebody append a hundred keys of their own — including, say,
         // an `isAdmin` field that a future careless rule might read.
         d.keys().hasOnly([
-          'uid', 'email', 'name', 'year_branch', 'hostel', 'level', 'path',
-          'programs', 'programs_other', 'github', 'created_at', 'updated_at'
+          'uid', 'email', 'name', 'hostel', 'github', 'path',
+          'created_at', 'updated_at'
         ])
-        && d.keys().hasAll([
-          'uid', 'email', 'name', 'year_branch', 'hostel', 'level', 'path',
-          'programs', 'updated_at'
-        ])
+        && d.keys().hasAll(['uid', 'email', 'name', 'hostel', 'updated_at'])
 
         // Identity cannot be forged. The document id, the uid inside it and the signed-in
         // token must all agree, and the stored address must be the one that signed in —
         // so a member cannot file a profile under somebody else's name or address.
+        //
+        // This is also what makes the DERIVED batch trustworthy: web/lib/batch.ts reads
+        // the year and branch out of this address, so pinning the address is what stops
+        // somebody claiming a batch they are not in.
         && d.uid == uid
         && d.uid == request.auth.uid
         && d.email == request.auth.token.email
@@ -178,36 +125,18 @@ service cloud.firestore {
         // Required strings, bounded. The form's maxlength is a courtesy to the reader;
         // these are the real limits, because a direct SDK call never sees the form.
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
-        && d.year_branch is string && d.year_branch.size() > 0 && d.year_branch.size() <= 120
 
         // Optional strings. Present-or-absent rather than nullable, so an absent github
-        // unambiguously means "not given".
-        && (!('github' in d) || (d.github is string && d.github.size() <= 100))
+        // unambiguously means "not given" — and a cleared one is sent as deleteField()
+        // rather than as "", which these size checks would refuse.
+        && (!('github' in d) || (d.github is string && d.github.size() > 0 && d.github.size() <= 100))
 
         // Closed sets — see the drift warning in the header.
         && d.hostel in ['uniworld-1', 'uniworld-2']
-        && d.level in ['none', 'some-git', 'merged']
-        && d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track']
-
-        // Programmes: required and non-empty, which is the form's rule too.
-        && d.programs is list
-        && d.programs.size() > 0
-        && d.programs.size() <= 10
-        && d.programs.hasOnly([
-             'gsoc', 'lfx', 'outreachy', 'sok', 'hacktoberfest', 'sob',
-             'gssoc', 'ssoc', 'esoc', 'other'
-           ])
-        // 'other' and its free text are a pair, checked in BOTH directions: no bare
-        // 'other' with nothing explaining it, and no stray text without the tick that
-        // is supposed to have produced it.
-        && (!d.programs.hasAny(['other'])
-            || ('programs_other' in d
-                && d.programs_other is string
-                && d.programs_other.size() > 0))
-        && (!('programs_other' in d)
-            || (d.programs_other is string
-                && d.programs_other.size() <= 120
-                && d.programs.hasAny(['other'])))
+        // `path` is optional: it is carried in from a ?path= link rather than asked for,
+        // and most members arrive without one.
+        && (!('path' in d)
+            || d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track'])
 
         // The server's clock, never the client's, so "member since" and "last edited"
         // cannot be backdated.
@@ -215,89 +144,87 @@ service cloud.firestore {
         && (!('created_at' in d) || d.created_at == request.time || d.created_at == resource.data.created_at);
     }
 
-    /** The application shape. Mirrors web/lib/applications.ts and web/content/join.ts.
-     *
-     *  THIS BACKS THE ONLY UNAUTHENTICATED WRITE IN THIS FILE, which changes what the
-     *  validation is for. On a profile the rules are a backstop behind a signed-in member
-     *  who has no reason to send anything strange. Here there is no identity at all, so
-     *  this function IS the whole check: `allow create` with anything less is a public
-     *  document store with the club's quota behind it.
-     *
-     *  Three things follow from that, and none of them are optional:
-     *
-     *    * `hasOnly` bounds the KEYS, so a submitter cannot append fields of their own —
-     *      including, say, an `approved` or `isAdmin` field that a future careless rule,
-     *      or an organiser's eye, might read as meaningful.
-     *    * every string is length-bounded, because the form's `maxLength` is a courtesy to
-     *      the reader and a direct SDK call never sees the form. Without these, one request
-     *      can park a megabyte in a single field.
-     *    * `submitted_at == request.time` pins the clock to the server, so submission order
-     *      cannot be forged even though every other value here comes from a stranger.
-     *
-     *  IT DOES NOT REQUIRE AN @sst.scaler.com ADDRESS, and that is deliberate rather than
-     *  forgotten. Applying is asking; somebody who applies from a personal address is a
-     *  person to email back, not a forgery to reject. The domain rule belongs on
-     *  membership — `isMember()` — which is what actually grants anything.
-     *
-     *  THE FIELD LIST IS THE PROFILE'S MINUS THE MEMBER-ONLY PARTS, and the four fields cut
-     *  from sign-up — why, heard_from, interests, updates — are absent here too.
-     *  `npm run rules` fails if any of them reappear in one file and not the other. */
-    function isWellFormedApplication(d) {
+    /** A mentor entry, as an organiser writes it. Admin-only, but validated anyway: the
+     *  shape is what the members' picker renders, and an admin fat-fingering a direct SDK
+     *  call should not be able to put an unbounded string in front of every member. */
+    function isWellFormedMentor(d) {
       return
         d.keys().hasOnly([
-          'name', 'email', 'year_branch', 'hostel', 'github',
-          'level', 'path', 'programs', 'programs_other', 'submitted_at'
+          'name', 'description', 'programme', 'org', 'github', 'email',
+          'active', 'created_at', 'updated_at'
         ])
-        && d.keys().hasAll([
-          'name', 'email', 'year_branch', 'hostel',
-          'level', 'path', 'programs', 'submitted_at'
-        ])
+        && d.keys().hasAll(['name', 'description', 'programme', 'active', 'updated_at'])
 
-        // Required strings, bounded.
         && d.name is string && d.name.size() > 0 && d.name.size() <= 120
-        && d.email is string && d.email.size() > 3 && d.email.size() <= 200
-        // Shape only, never deliverability — no rule can check that. This rejects the
-        // obviously-not-an-address, which is all the form's type="email" claims either.
-        && d.email.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
-        && d.year_branch is string && d.year_branch.size() > 0 && d.year_branch.size() <= 120
+        // The long one. 600 rather than 120 because this is the paragraph a student reads
+        // before choosing, and a mentor boundary worth stating does not fit in a tweet.
+        && d.description is string && d.description.size() > 0 && d.description.size() <= 600
+        && d.active is bool
 
-        // Optional. Present-or-absent rather than nullable, so an absent github
-        // unambiguously means "not given" and the stored shape stays predictable.
-        && (!('github' in d) || (d.github is string && d.github.size() <= 100))
+        && (!('org' in d) || (d.org is string && d.org.size() > 0 && d.org.size() <= 120))
+        && (!('github' in d) || (d.github is string && d.github.size() > 0 && d.github.size() <= 100))
+        && (!('email' in d) || (d.email is string && d.email.size() > 0 && d.email.size() <= 160))
 
-        // Closed sets — see the drift warning in the header. These are the same three lists
-        // isWellFormedProfile checks and they have to stay identical: both forms render
-        // from one content file, so a value accepted on one screen and refused on the other
-        // is a bug invisible in either file alone.
-        && d.hostel in ['uniworld-1', 'uniworld-2']
-        && d.level in ['none', 'some-git', 'merged']
-        && d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track']
-
-        // Programmes: required and non-empty, which is the form's rule too. Enforced here
-        // as well because a direct SDK call never sees the form, and an application with an
-        // empty programmes list would read as a UI bug to whoever opens it rather than as
-        // the forgery it is.
-        && d.programs is list
-        && d.programs.size() > 0
-        && d.programs.size() <= 10
-        && d.programs.hasOnly([
+        // The same closed set the profile used to carry for `programs`, kept because a
+        // mentor belongs to a named programme and `npm run rules` diffs it against
+        // PROGRAMS in web/content/join.ts.
+        && d.programme in [
              'gsoc', 'lfx', 'outreachy', 'sok', 'hacktoberfest', 'sob',
              'gssoc', 'ssoc', 'esoc', 'other'
-           ])
-        // 'other' and its free text are a pair, checked in BOTH directions: no bare 'other'
-        // with nothing explaining it, and no stray text without the tick that is supposed
-        // to have produced it.
-        && (!d.programs.hasAny(['other'])
-            || ('programs_other' in d
-                && d.programs_other is string
-                && d.programs_other.size() > 0))
-        && (!('programs_other' in d)
-            || (d.programs_other is string
-                && d.programs_other.size() <= 120
-                && d.programs.hasAny(['other'])))
+           ]
 
-        // The server's clock, not the submitter's.
-        && d.submitted_at == request.time;
+        && d.updated_at == request.time
+        && (!('created_at' in d) || d.created_at == request.time || d.created_at == resource.data.created_at);
+    }
+
+    /** A member's mentor preferences.
+     *
+     *  THE PAIRING IS THE INTERESTING PART, and it is checked in both directions for the
+     *  same reason the old programs/programs_other pair was: a document carrying both a
+     *  second choice and "first preference only" is contradictory, and one carrying
+     *  neither is an unanswered question stored as though it were an answer. Exactly one
+     *  of them, always.
+     *
+     *  Both mentor ids must name a document that EXISTS. That costs one extra read per
+     *  write and it is what stops the organisers' interest list from displaying a raw id
+     *  where a name should be. */
+    function isWellFormedEnrollment(d, uid) {
+      return
+        d.keys().hasOnly([
+          'uid', 'email', 'programme', 'mentor_1', 'mentor_2', 'first_only',
+          'created_at', 'updated_at'
+        ])
+        && d.keys().hasAll(['uid', 'email', 'programme', 'mentor_1', 'first_only', 'updated_at'])
+
+        && d.uid == uid
+        && d.uid == request.auth.uid
+        && d.email == request.auth.token.email
+
+        && d.programme in [
+             'gsoc', 'lfx', 'outreachy', 'sok', 'hacktoberfest', 'sob',
+             'gssoc', 'ssoc', 'esoc', 'other'
+           ]
+
+        && d.first_only is bool
+        && d.mentor_1 is string
+        && d.mentor_1.size() > 0
+        && d.mentor_1.size() <= 64
+        && exists(/databases/$(database)/documents/mentors/$(d.mentor_1))
+
+        // "First preference only" means there is no second one.
+        && (!d.first_only || !('mentor_2' in d))
+        // And not saying so means there must be.
+        && (d.first_only || 'mentor_2' in d)
+        && (!('mentor_2' in d)
+            || (d.mentor_2 is string
+                && d.mentor_2.size() > 0
+                && d.mentor_2.size() <= 64
+                // The same mentor twice is not two preferences.
+                && d.mentor_2 != d.mentor_1
+                && exists(/databases/$(database)/documents/mentors/$(d.mentor_2))))
+
+        && d.updated_at == request.time
+        && (!('created_at' in d) || d.created_at == request.time || d.created_at == resource.data.created_at);
     }
 
     // ---------------------------------------------------------------- members
@@ -330,358 +257,84 @@ service cloud.firestore {
 
     // ----------------------------------------------------------------- admins
 
-    /** A roster row. Holds the access grant AND the membership half of the person's public
-     *  billing, because
-     *  the club was otherwise maintaining the same humans in two places — this collection
-     *  and the hardcoded team list in web/content/club.ts — which drift silently: somebody
-     *  who left still has access, or somebody new cannot get in but appears on the site.
-     *
-     *  WHAT IS DELIBERATELY NOT HERE is the editorial: `remit` and `highlights` on the
-     *  team page are reviewed prose with rules of their own ("a remit rather than a bio",
-     *  "no pronouns"), and a field somebody types into an admin form at 11pm is not
-     *  reviewed prose. Those stay in web/content/team-editorial.ts, keyed by the same
-     *  address, and the two are merged at build time.
-     *
-     *  The public half of this row reaches /team through that BUILD-TIME projection, never
-     *  a public read. Firestore rules are per-document, not per-field, so a page reading
-     *  this collection directly would publish every organiser's address along with their
-     *  name — the document id IS an email. */
-    function isWellFormedAdmin(d, email) {
-      return d.keys().hasOnly([
-          'email', 'name', 'title', 'photo', 'role', 'active', 'group', 'batch',
-          'github', 'shadow_of', 'added_at', 'added_by', 'updated_at'
-        ])
-        && d.keys().hasAll(['email', 'name', 'role', 'active', 'added_by', 'updated_at'])
-        // The id and the field must agree, so a row cannot grant access to one address
-        // while claiming to be about another.
-        && d.email == email
-        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
-        // `title` is the OFFICE, not a description of the person -- "President", "Repo
-        // Lead". It is what the team page prints above the name.
-        && (!('title' in d) || (d.title is string && d.title.size() <= 120))
-        && (!('photo' in d) || (d.photo is string && d.photo.size() <= 300))
-        // Which tier of the chart they belong to. A closed set, because the team page
-        // renders one section per value and an unknown one would silently drop somebody
-        // off the page entirely.
-        && (!('group' in d) || d.group in ['officer', 'lead', 'shadow'])
-        // Graduating batch, written as it is said out loud: "'28".
-        && (!('batch' in d) || (d.batch is string && d.batch.size() <= 8))
-        && (!('github' in d) || (d.github is string && d.github.size() <= 100))
-        // The office a shadow shadows. Free text rather than a reference, because it
-        // names a DESIGNATION ("Repo Lead") and not a person -- the whole point of a
-        // shadow is that the office outlives whoever currently holds it.
-        && (!('shadow_of' in d) || (d.shadow_of is string && d.shadow_of.size() <= 120))
-        && d.role in ['owner', 'admin']
-        && d.active is bool
-        && d.updated_at == request.time;
-    }
-
     match /admins/{email} {
-      // Your OWN row, which is how the client discovers whether to show the organisers'
-      // page. Admins may also read any single row, because the roster UI needs it.
-      allow get: if isMember() && (request.auth.token.email.lower() == email || isAdmin());
-
-      // LISTABLE BY ADMINS, where it was listable by nobody. That was the right default
-      // while this collection was a bare access marker and the only question anyone could
-      // ask of it was "am I in it" — enumeration would have leaked who the organisers
-      // are to any member. It now carries the roster the organisers manage, so they have
-      // to be able to see it. Members still cannot: the clause is isAdmin(), not
-      // isMember().
-      allow list: if isAdmin();
-
-      // OWNERS ONLY, and never your own row.
-      //
-      // The self-edit block is not about trust, it is about lockout: an owner who
-      // demotes or retires themselves cannot undo it, because the undo needs the
-      // privilege they just gave up. Making the roster the one thing you cannot use on
-      // yourself removes the whole class of accident.
-      //
-      // WHAT THIS STILL CANNOT PREVENT is the last owner being retired by another owner,
-      // because rules cannot count documents — there is no way to ask "how many owners
-      // remain". The Firebase console is the documented recovery path, and it is why
-      // owners are seeded there rather than here.
-      allow create: if isOwner()
-        && request.auth.token.email.lower() != email
-        && isWellFormedAdmin(request.resource.data, email)
-        // The byline is pinned to whoever is actually signed in, exactly as a notice's
-        // author_email is, so a grant cannot be attributed to somebody else.
-        && request.resource.data.added_by == request.auth.token.email
-        && (!('added_at' in request.resource.data)
-            || request.resource.data.added_at == request.time);
-
-      allow update: if isOwner()
-        && request.auth.token.email.lower() != email
-        && isWellFormedAdmin(request.resource.data, email)
-        // Who granted access, and when, are history rather than fields — frozen on the
-        // first write for the same reason a profile's created_at is.
-        && request.resource.data.added_by == resource.data.added_by
-        && (!('added_at' in request.resource.data)
-            || request.resource.data.added_at == resource.data.added_at);
-
-      // Nobody deletes a roster row from any client, including an owner. Retiring
-      // somebody is `active: false`, which revokes just as fast and keeps the record of
-      // who ran the club when. See the note on isAdmin().
-      allow delete: if false;
-    }
-
-    // ---------------------------------------------------------- announcements
-
-    /** The shape of a post. Bounded for the same reason the profile is: the composer's
-     *  maxlength is a courtesy to whoever is typing, and a direct SDK call never sees a
-     *  form at all. */
-    function isWellFormedPost(d) {
-      return d.keys().hasOnly([
-          'title', 'body', 'link', 'pinned', 'category', 'archived',
-          'author_email', 'created_at', 'updated_at'
-        ])
-        && d.keys().hasAll(['title', 'body', 'pinned', 'author_email', 'updated_at'])
-        // OPTIONAL WITH A DEFAULT, NOT REQUIRED, because notices posted before these two
-        // fields existed must keep working: a strict `hasAll` would make every one of
-        // them uneditable the moment these rules deployed, and the failure would present
-        // as "the board is broken" rather than as a migration nobody ran.
-        && (!('category' in d) || d.category in ['general', 'event', 'deadline'])
-        // ARCHIVED IS A HIDE, NOT A DELETE. `allow delete` stays open below for a notice
-        // posted by mistake, but the ordinary way to take one down is this — it keeps
-        // what the club said last term, which is the only record of it there is.
-        && (!('archived' in d) || d.archived is bool)
-        && d.title is string && d.title.size() > 0 && d.title.size() <= 120
-        && d.body is string && d.body.size() > 0 && d.body.size() <= 2000
-        && (!('link' in d) || (d.link is string && d.link.size() <= 300 && d.link.matches('^https://.*')))
-        && d.pinned is bool
-        // The byline is pinned to the signed-in organiser, exactly as the profile's
-        // email is. An admin cannot post under a colleague's name.
-        && d.author_email == request.auth.token.email
-        && d.updated_at == request.time
-        && (!('created_at' in d) || d.created_at == request.time || d.created_at == resource.data.created_at);
-    }
-
-    match /announcements/{id} {
-      // EVERY MEMBER READS, ONLY ORGANISERS WRITE. This is the first collection in this
-      // file that any member may list, and it is deliberate: a notice board that only
-      // its authors can read is a notice board with no readers. Nothing personal goes in
-      // one — no addresses, no names beyond the organiser's own byline — so a member
-      // reading the whole collection reveals nothing a member should not see.
-      allow get, list: if isMember();
-
-      // ADMINS WRITE FROM THE CLIENT, which is a departure from `admins` below and worth
-      // stating rather than leaving as an inconsistency. Adminship is still console-only,
-      // because that is the privilege that grants privileges. Posting a notice is not:
-      // it is ordinary organiser work that happens weekly, and routing it through the
-      // Firebase console would mean nobody ever posts.
-      allow create: if isAdmin() && isWellFormedPost(request.resource.data);
-      allow update: if isAdmin()
-        && isWellFormedPost(request.resource.data)
-        && request.resource.data.created_at == resource.data.created_at;
-      // Deletable, unlike a profile. A notice posted with the wrong date is a mistake
-      // somebody has to be able to take back, and there is no roster to wipe here.
-      allow delete: if isAdmin();
-    }
-
-    // ---------------------------------------------------------- contributions
-
-    match /contributions/{uid} {
-      // Same get/list split, and the same reason, as users/{uid}: a member reads their
-      // own row, an organiser may query the collection.
-      allow get: if isMember() && (request.auth.uid == uid || isAdmin());
-      allow list: if isAdmin();
-
-      // NO CLIENT WRITES THIS, INCLUDING ITS OWNER. That is the whole point of the
-      // collection: these counts come from GitHub via a Cloud Function using the Admin
-      // SDK, which bypasses these rules. If a member could write here, "merged pull
-      // requests" would be a self-reported number and the panel would be worthless —
-      // which is exactly what it would become the first time somebody edited it.
+      // You may read exactly your OWN row, which is how the client discovers whether to
+      // show the dashboard link. Scoped to the caller's address so this cannot be used
+      // to enumerate who the admins are.
+      allow get: if isMember() && request.auth.token.email.lower() == email;
+      allow list: if false;
+      // Managed by hand in the Firebase console. Denied to every client so that a
+      // compromised admin session cannot appoint further admins — the one privilege
+      // escalation this model would otherwise allow.
       allow write: if false;
     }
 
-    // ------------------------------------------------------------------- forms
-    //
-    // ONE COLLECTION FOR FORMS AND POLLS, because a poll IS a form: one question, a
-    // closed set of answers, and a count shown back. Building them separately would mean
-    // two schemas, two sets of rules, two admin screens and two places to fix the same
-    // bug — so `show_tally` is the whole difference between them.
-    //
-    // WHAT THE RULES CAN AND CANNOT CHECK HERE, stated plainly because the asymmetry
-    // looks like an oversight otherwise. Firestore rules cannot iterate a list of maps,
-    // so the SHAPE of `fields` is not validated element by element — an admin defining a
-    // form is trusted with its own structure, exactly as they are trusted with the text
-    // of a notice. What IS enforced is everything a member could otherwise forge:
-    // whose response it is, that there is at most one per person, that it answers this
-    // form's questions and no invented ones, and that it arrives while the form is open.
-    //
-    // `field_ids` IS A FLAT LIST ALONGSIDE `fields`, AND IT IS LOAD-BEARING. It is the
-    // only way a response rule can check the answer keys without iterating the nested
-    // field definitions — `answers.keys().hasOnly(field_ids)` is one cheap comparison.
-    // The admin client writes both from one source, so they cannot disagree.
+    // ---------------------------------------------------------------- mentors
 
-    function isWellFormedForm(d) {
-      return d.keys().hasOnly([
-          'title', 'description', 'fields', 'field_ids', 'open', 'show_tally',
-          'tally', 'closes_at', 'author_email', 'created_at', 'updated_at'
-        ])
-        && d.keys().hasAll(['title', 'fields', 'field_ids', 'open', 'show_tally',
-                            'author_email', 'updated_at'])
-        && d.title is string && d.title.size() > 0 && d.title.size() <= 120
-        && (!('description' in d) || (d.description is string && d.description.size() <= 1000))
-        && d.fields is list && d.fields.size() > 0 && d.fields.size() <= 20
-        && d.field_ids is list && d.field_ids.size() == d.fields.size()
-        && d.open is bool
-        && d.show_tally is bool
-        // The byline is pinned to the signed-in organiser, as a notice's is.
-        && d.author_email == request.auth.token.email
-        && d.updated_at == request.time;
-    }
-
-    match /forms/{formId} {
-      // Every member reads the forms; that is the point of them.
+    match /mentors/{id} {
+      // Every signed-in member may read the whole list — it is what the picker on the
+      // dashboard renders, and the list itself is not a secret. `list` is allowed here
+      // where it is admin-only on users/, because the difference is what the documents
+      // contain: published copy about a volunteer, versus a roster of students.
+      //
+      // Hidden mentors (active: false) come back too, deliberately. The client filters
+      // them out of the picker, but a member who picked somebody before they were hidden
+      // still needs to see a name rather than an id.
       allow get, list: if isMember();
 
-      // THE TALLY IS NOT WRITABLE BY ANY CLIENT, INCLUDING THE ADMIN WHO MADE THE FORM.
-      // It is recomputed by a Cloud Function from the responses themselves, for the same
-      // reason contribution counts are: a number the client supplies is a number the
-      // client invented, and "42 people voted for Saturday" would then be worth nothing.
-      // On create it must be absent; on update it must come back exactly as stored.
-      allow create: if isAdmin()
-        && isWellFormedForm(request.resource.data)
-        && !('tally' in request.resource.data)
-        && (!('created_at' in request.resource.data)
-            || request.resource.data.created_at == request.time);
+      // ADMIN WRITE. See the note in the header for why this widening is acceptable and
+      // where the same argument stops applying.
+      allow create, update: if isAdmin() && isWellFormedMentor(request.resource.data);
 
-      allow update: if isAdmin()
-        && isWellFormedForm(request.resource.data)
-        && (!('tally' in request.resource.data)
-            || request.resource.data.tally == resource.data.tally)
-        && request.resource.data.author_email == resource.data.author_email
-        && (!('created_at' in request.resource.data)
-            || request.resource.data.created_at == resource.data.created_at);
-
-      // Deleting a form would orphan its responses, which is somebody's answer to a
-      // question they were asked. Closing it (`open: false`) is the reversible thing, and
-      // it is what the UI offers.
-      allow delete: if false;
-
-      match /responses/{uid} {
-        // KEYED BY uid, which is what makes "one response per member" a structural
-        // guarantee rather than a check somebody forgets to write. A second response is
-        // not refused — it is impossible to express.
-        allow get: if isMember() && (request.auth.uid == uid || isAdmin());
-        // Attributed, so organisers can see who answered and chase who has not. Members
-        // cannot list, so nobody can read anybody else's answers.
-        allow list: if isAdmin();
-
-        allow create, update: if isMember()
-          && request.auth.uid == uid
-          && request.resource.data.keys().hasOnly(['uid', 'email', 'name', 'answers', 'submitted_at', 'updated_at'])
-          && request.resource.data.keys().hasAll(['uid', 'email', 'answers', 'updated_at'])
-          && request.resource.data.uid == uid
-          // Pinned to the signed-in address, exactly as a profile's is, so a response
-          // cannot be filed under somebody else's name.
-          && request.resource.data.email == request.auth.token.email
-          && request.resource.data.answers is map
-          // Only this form's questions. Without it a member could append arbitrary keys
-          // to a document the organisers read and export.
-          && request.resource.data.answers.keys()
-               .hasOnly(get(/databases/$(database)/documents/forms/$(formId)).data.field_ids)
-          // CLOSED MEANS CLOSED. Checked here rather than only in the UI, because a
-          // disabled button is a rendering decision and a deadline that only the browser
-          // enforces is not a deadline.
-          && get(/databases/$(database)/documents/forms/$(formId)).data.open == true
-          && request.resource.data.updated_at == request.time;
-
-        // A member may change their answer while the form is open, but not withdraw it —
-        // the organisers have already counted it, and a disappearing response reads as a
-        // bug rather than as a decision.
-        allow delete: if false;
-      }
-    }
-
-    // ---------------------------------------------------------------- sessions
-    //
-    // WHAT THE NOTICE BOARD COULD NOT DO. A session is not a notice: it has a time, it
-    // stops being upcoming, and the question a member asks of it is "what is next" rather
-    // than "what was said". Posted as notices, the next session sank down the board as
-    // soon as anything else was posted, and nothing could sort by when it actually is.
-    //
-    // `starts_at` IS THE WHOLE POINT, so it is required and it is a real timestamp rather
-    // than a typed string. A club that writes "Saturday 4pm" into a text field cannot ask
-    // for the next three sessions, and that is the only query this collection exists to
-    // answer.
-    //
-    // NOT SERVER-STAMPED, unlike every other date in this file. `created_at` is
-    // `request.time` because a client must not be able to backdate a record; `starts_at`
-    // is chosen by the organiser and is frequently in the future, so the same rule would
-    // make it impossible to schedule anything.
-
-    function isWellFormedSession(d) {
-      return d.keys().hasOnly([
-          'title', 'speaker', 'location', 'notes', 'starts_at',
-          'created_by', 'created_at', 'updated_at'
-        ])
-        && d.keys().hasAll(['title', 'starts_at', 'created_by', 'updated_at'])
-        && d.title is string && d.title.size() > 0 && d.title.size() <= 120
-        && (!('speaker' in d) || (d.speaker is string && d.speaker.size() <= 120))
-        && (!('location' in d) || (d.location is string && d.location.size() <= 120))
-        && (!('notes' in d) || (d.notes is string && d.notes.size() <= 1000))
-        && d.starts_at is timestamp
-        && d.created_by == request.auth.token.email
-        && d.updated_at == request.time;
-    }
-
-    match /sessions/{id} {
-      // Every member reads them; knowing when the club meets is the point.
-      allow get, list: if isMember();
-
-      allow create: if isAdmin()
-        && isWellFormedSession(request.resource.data)
-        && (!('created_at' in request.resource.data)
-            || request.resource.data.created_at == request.time);
-
-      allow update: if isAdmin()
-        && isWellFormedSession(request.resource.data)
-        && request.resource.data.created_by == resource.data.created_by
-        && (!('created_at' in request.resource.data)
-            || request.resource.data.created_at == resource.data.created_at);
-
-      // DELETABLE, unlike a form. A session carries no member's answer — nothing is lost
-      // by removing one, and a cancelled session that cannot be taken off the list is a
-      // club telling its members to turn up to a room nobody booked.
+      // Deleting is allowed, and the guard against orphaning a preference lives in the
+      // client — see web/lib/mentorship.ts. Rules cannot express "no document in another
+      // collection points at this one", because that needs a query and rules cannot
+      // query. The consequence of getting it wrong is cosmetic (an id shows where a name
+      // should) rather than a disclosure, which is why it is acceptable to enforce it
+      // one level up rather than here.
       allow delete: if isAdmin();
     }
 
-    // ------------------------------------------------------------ applications
+    // ------------------------------------------------------------ enrollments
+
+    match /enrollments/{uid} {
+      // Same get/list split, and for the same reason as users/: a single `read` rule
+      // naming the owner cannot express "and admins may query the collection", because
+      // Firestore evaluates a list without knowing the documents.
+      allow get: if isMember() && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isMember()
+        && request.auth.uid == uid
+        && isWellFormedEnrollment(request.resource.data, uid);
+
+      allow update: if isMember()
+        && request.auth.uid == uid
+        && isWellFormedEnrollment(request.resource.data, uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.created_at == resource.data.created_at;
+
+      // A MEMBER MAY WITHDRAW, which users/{uid} deliberately forbids. The two documents
+      // mean different things: a profile is the club's roster and deleting one loses a
+      // member, whereas this is an expression of interest and taking it back is the
+      // member's own decision — putting that behind an email to an organiser would be
+      // the site making somebody ask permission to change their mind.
+      //
+      // Owner only. An admin cannot delete somebody's enrollment, for the same reason
+      // they cannot delete a profile.
+      allow delete: if isMember() && request.auth.uid == uid;
+    }
+
+    // ---------------------------------------------------- legacy applications
 
     match /applications/{id} {
-      // NOBODY READS THIS FROM A CLIENT, INCLUDING ADMINS, and that is a decision rather
-      // than an omission. Every other collection here belongs to somebody who signed in and
-      // chose to be a member. These rows belong to people who are not members yet, who have
-      // no account to manage them with and no way to ask for them back — so the surface is
-      // the smallest one that still lets the club act on them: organisers read applications
-      // in the Firebase console, where access is governed by IAM and every read is logged.
-      //
-      // Stated outright rather than left to deny-by-default, so anybody loosening it has to
-      // delete a line that says false rather than add one that was never there. An
-      // organisers' view inside the site would need its own admin-only get/list AND a
-      // decision about how long these are kept — not a quiet edit to this line.
+      // Nothing writes here any more; the profile replaced it. Reads stay denied
+      // because these rows hold the same personal details as a profile, and the rows
+      // stay immutable so the history is intact.
       allow read: if false;
-
-      // IMMUTABLE ONCE SUBMITTED. An applicant has no identity to prove ownership with, so
-      // any rule permitting edits could only ever be "anyone may edit anyone's" — which
-      // would let a stranger rewrite or delete somebody else's application.
+      allow create: if false;
       allow update, delete: if false;
-
-      // ANYONE MAY SUBMIT EXACTLY ONE WELL-FORMED APPLICATION, WITH NO ACCOUNT. This is the
-      // club's front door and the only unauthenticated write in this file.
-      //
-      // VALIDATED, NOT ACCEPTED: an unvalidated create-only collection is a free document
-      // store on somebody else's quota. The key and size limits in the helper above are the
-      // only thing between this rule and a script filling the project overnight.
-      //
-      // THE OTHER HALF OF PROTECTING THIS IS NOT IN THIS FILE. Rules can say what a
-      // document must look like; they cannot say the request came from this site rather than
-      // from a loop. App Check attests that — it is wired up in web/lib/firebase.ts, and
-      // ENFORCEMENT IS A SWITCH IN THE FIREBASE CONSOLE, which is the one part of defending
-      // this endpoint that reviewing this repo cannot verify. If junk applications ever
-      // start arriving, check that switch before changing anything here.
-      allow create: if isWellFormedApplication(request.resource.data);
     }
 
     // Everything else is closed. Deny-by-default would already do this; the explicit

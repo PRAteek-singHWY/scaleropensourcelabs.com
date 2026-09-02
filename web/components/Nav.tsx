@@ -50,30 +50,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { isAppRoute } from "@/components/ChromeGate";
 import Outline from "@/components/Outline";
 import ThemeToggle from "@/components/ThemeToggle";
-import { DASHBOARD_HREF, JOIN_HREF, LINKS, PAGES } from "@/content/site";
+import { JOIN_HREF, LINKS, PAGES } from "@/content/site";
 import { useAuth } from "@/lib/auth";
 
 export default function Nav() {
   const pathname = usePathname();
-
-  // Only for the Join/Dashboard label at the far end of the bar. The nav does no access
-  // control — see the note on that button below.
+  // Only for the Join/Profile label at the far end of the bar. The nav does no
+  // access control — see the note on that button below.
   const { user } = useAuth();
-
-  // THE APP ROUTES GET THEIR OWN CHROME AND NOT THIS ONE. /dashboard is for somebody who
-  // has already joined; six links back into the brochure and a yellow "Join" button are
-  // for somebody deciding whether to. Rendering both made the dashboard read as another
-  // page of the website, which is exactly what opening it in a new tab was meant to stop.
-  // See components/ChromeGate.tsx, which does the same for the footer.
-  //
-  // AFTER THE HOOKS, NOT BEFORE THEM. This started life above useAuth() and broke the
-  // rules of hooks outright: a component that returns early on some renders and calls a
-  // hook on others changes its hook order between renders, which React cannot reconcile.
-  // Caught by the linter rather than by a crash, which is the good outcome.
-  if (isAppRoute(pathname)) return null;
 
   return (
     <header className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-6">
@@ -147,25 +133,13 @@ export default function Nav() {
         </ul>
 
         <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-          {/* xl+ ONLY, PROMOTED FROM lg+, AND THIS IS A MEASURED CHANGE RATHER THAN A
-              PREFERENCE. It was sm+ when the bar held six links and no button, then lg+
-              on the reasoning that the button is worth more than a link repeated in the
-              footer. The Sign in control makes that same trade again and one step
-              further: at exactly lg the links strip switches to `flex-none` and stops
-              absorbing pressure, while this link and the Outline toggle BOTH appear — so
-              the right-hand cluster grew by two items at the one width where nothing can
-              give, and the Join button was pushed 36px past the edge of the plate across
-              the whole 1024-1280 band.
-
-              It was invisible because `body { overflow-x: hidden }` clips the overflow
-              instead of producing a scrollbar, which is the same silent failure the
-              scroll-strip note above describes. Caught by measuring the button's right
-              edge against the plate's, not by looking. */}
+          {/* lg+ only. It was sm+ when the bar held six links and no button; the
+              button is worth more than a link that is repeated in the footer. */}
           <a
             href={LINKS.github}
             target="_blank"
             rel="noreferrer"
-            className="nav-link -my-3 hidden py-3 xl:inline-block"
+            className="nav-link -my-3 hidden py-3 lg:inline-block"
           >
             GitHub ↗
           </a>
@@ -173,49 +147,6 @@ export default function Nav() {
               appears at lg+ — there is no room for a side rail on a phone. */}
           <Outline />
           <ThemeToggle />
-          {/* SIGN IN. Signed out only, and it exists because there was previously no way
-              into an account from the chrome at all: /join stopped being the sign-in gate
-              when it went back to being the anonymous application form, and the only
-              remaining door was a grey "already joined?" line in that page's body copy.
-              A member returning on a phone had to read past a headline and a form to find
-              it, or type /dashboard by hand.
-
-              SECONDARY, NOT A SECOND YELLOW BUTTON. The bar gets exactly one loudest
-              thing — the note below says why the Join button is the site's only yellow
-              control — and two filled buttons side by side would make the reader choose
-              between them instead of reading one as the offer and one as the way back.
-              So this is the quiet one, and applying stays the shout.
-
-              IT DISAPPEARS ONCE SIGNED IN rather than becoming an account menu. At that
-              point the yellow button already reads "Dashboard" and goes to the same
-              place, and two controls pointing at one destination is the bar spending its
-              scarcest space saying the same thing twice.
-
-              `user === undefined` renders it, matching the Join button's reasoning: the
-              session is usually absent, showing it and letting it vanish a moment later
-              is correct far more often than the reverse, and it cannot reflow the strip
-              because the cluster is shrink-0. */}
-          {/* OPENS IN A NEW TAB, so whatever the reader was doing on this one survives.
-              `target="_blank"` on a real anchor click is NOT the thing popup blockers
-              stop — that is script-driven window.open, which browsers refuse unless it is
-              a direct response to a click, and which the Google sign-in popup has usually
-              spent already. An anchor is always honoured.
-
-              `rel="noopener"` even though this is same-origin: without it the opened tab
-              gets a live `window.opener` handle back to this one, and it costs nothing to
-              deny. The sr-only text is how a screen reader learns the same thing sighted
-              readers learn from the tab appearing. */}
-          {!user && (
-            <Link
-              href={DASHBOARD_HREF}
-              target="_blank"
-              rel="noopener"
-              className="btn btn-secondary btn-compact shrink-0"
-            >
-              Sign in
-              <span className="sr-only"> (opens in a new tab)</span>
-            </Link>
-          )}
           {/* Never marked as the current page, even on /join — it is an action, and
               an action that greys itself out at the moment it becomes relevant is a
               bug. It stays filled and clickable throughout.
@@ -229,36 +160,21 @@ export default function Nav() {
               thing they have already done, which is how a site teaches people to ignore
               its one persistent control.
 
-              THE DESTINATION USED TO STAY AT /join, and that was right only while the
-              member's own screen lived there — the gate would show their details instead
-              of a sign-in card. It does not any more: /join is the anonymous application
-              form and /dashboard is the place a member comes back to. Sending a
-              signed-in member to /join now hands them a blank application, which is the
-              wrong screen for somebody who joined in March.
-
-              THE SIGNED-OUT LABEL STAYS "JOIN" rather than becoming "Sign in", and the
-              returning member is answered by the SEPARATE control above instead. That
-              split is the point: making one button mean both things forces every
-              first-time reader to work out which of the two they are, and they are
-              overwhelmingly the first kind.
+              The destination used to stay /join, back when the gate on that page held
+              every signed-in state itself. It does not any more — /join is the door and
+              the dashboard is the room — so sending a member there would make the one
+              control that is on screen at every scroll position take them to a page that
+              immediately redirects. It points at the room.
 
               `user === undefined` — the session is still being restored — deliberately
               renders "Join" rather than a spinner or an empty button: it is the correct
               label for the majority of readers, it never shifts the bar's width enough
               to reflow, and a member sees it settle to "Dashboard" a moment later. */}
-          {/* THE NEW TAB IS FOR THE DASHBOARD ONLY. Signed out this button goes to /join,
-              which is an ordinary page of this site and should navigate in place — opening
-              the application form in a second tab would be the site losing the reader's
-              place for no reason. So the target is conditional on the destination, not on
-              the button. */}
           <Link
-            href={user ? DASHBOARD_HREF : JOIN_HREF}
-            target={user ? "_blank" : undefined}
-            rel={user ? "noopener" : undefined}
+            href={user ? "/dashboard" : JOIN_HREF}
             className="btn btn-pop btn-compact shrink-0"
           >
             {user ? "Dashboard" : "Join"}
-            {user && <span className="sr-only"> (opens in a new tab)</span>}
           </Link>
         </div>
       </nav>
