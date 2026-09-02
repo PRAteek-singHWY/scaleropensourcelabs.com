@@ -128,7 +128,7 @@ export default function Portrait({
         <span
           aria-hidden
           className="relative select-none font-extrabold tracking-tightest"
-          style={{ fontSize: "clamp(2.625rem, calc(26cqw + 0.125rem), 7.125rem)", color: INITIAL_INK }}
+          style={{ fontSize: "clamp(2.5rem, 26cqw, 7rem)", color: INITIAL_INK }}
         >
           {initials(name)}
         </span>

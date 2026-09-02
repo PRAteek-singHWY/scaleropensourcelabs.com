@@ -105,7 +105,7 @@ export default function NumbersStrip() {
               digits change width as they cycle, so an uncounted 3 growing to 24
               visibly breathes and nudges its own label. CountUp sets it for
               exactly this reason. */}
-          <dd className="text-[clamp(2.375rem,calc(4.5vw_+_0.125rem),3.375rem)] font-semibold leading-none tracking-tightest text-accent">
+          <dd className="text-[clamp(2.25rem,4.5vw,3.25rem)] font-semibold leading-none tracking-tightest text-accent">
             <CountUp className="stat-figure" value={String(m.value)} />
           </dd>
           <dt className="mt-4 text-body font-medium text-ink">{m.label}</dt>

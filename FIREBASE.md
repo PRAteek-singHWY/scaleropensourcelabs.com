@@ -38,17 +38,29 @@ npm run dev                 # then open http://localhost:3000/join
 
 # 5. before you change any form option later
 npm run rules               # asserts the rules still match the form
+
+# 6. OPTIONAL, and only for the dashboard's GitHub panel. Needs the Blaze plan,
+#    because outbound network from Cloud Functions does. Everything else works
+#    without this.
+cd ..
+firebase functions:secrets:set GITHUB_TOKEN    # a token with NO scopes is enough
+firebase deploy --only functions
 ```
 
 In the Firebase console you need, in this order: a project → a **web app** (for the
 config values) → **Firestore in production mode** → rules deployed → **App Check**
 before launch. Each is a numbered step below.
 
+Sign-in, the profile, the organisers' page, the member dashboard and the notice board all
+work with steps 1–5 alone. Step 6 is only the GitHub panel on the dashboard, and the panel
+says plainly that it has not counted yet rather than showing zeroes if you skip it.
+
 ---
 
 ## What it does
 
-Members sign in, fill a profile once, and organisers read the roster.
+Members sign in, fill a profile once, and then have a dashboard of their own. Organisers
+read the roster and post to the notice board.
 
 ```
 /join  ──Google sign-in (@sst.scaler.com only)──▶  Firebase Auth
@@ -56,12 +68,21 @@ Members sign in, fill a profile once, and organisers read the roster.
                     ▼
           profile form ──setDoc()──▶  users/{uid}      one doc per member
                                           │             owner-only read/write
-                                          ▼
-/admin  ──list, admins only──────────▶  breakdowns + table + CSV export
+            ┌───────────────────────────┴───────────────┐
+            ▼                                          ▼
+/dashboard  the member's own page              /admin   breakdowns + table + CSV
+   │                                              │
+   ├─ announcements/{id}   read by every member    └─ writes announcements/{id}
+   └─ contributions/{uid}  read by its owner
+            ▲
+            └─ written ONLY by a Cloud Function, from the GitHub API
 ```
 
-No server, no admin SDK, no API route. The site stays a static build; everything is the
-client talking to Firestore under the rules.
+The site is still a static build with no API route: everything above the dotted line is
+the client talking to Firestore under the rules. The one exception is
+`contributions/{uid}`, which no client may write — a Cloud Function fetches those numbers
+from GitHub with the Admin SDK, because a count the browser writes is a count the browser
+can invent.
 
 | File | Role |
 |---|---|
@@ -73,17 +94,40 @@ client talking to Firestore under the rules.
 | `web/components/JoinGate.tsx` | The four states of `/join`. |
 | `web/components/ProfileForm.tsx` | The form itself. |
 | `web/components/AdminDashboard.tsx` | The organisers' view. |
+| `web/components/MemberDashboard.tsx` | The four states of `/dashboard`. |
+| `web/components/ProfileCard.tsx` | The saved profile, shared by `/join` and `/dashboard`. |
+| `web/components/Composer.tsx` | Where organisers write to the notice board. |
+| `web/lib/announcements.ts` | The notice board's shape and its four operations. |
+| `web/lib/contributions.ts` | Reads GitHub counts; never writes them. |
+| `functions/github.js` | Talks to the GitHub API. Pure, and tested without a network. |
 | `web/scripts/rules.mjs` | Text check: rules vs the form. Runs in CI. |
 | `web/scripts/rules-emulator.mjs` | Executes the rules as several different users. |
 | `web/.env.example` | The variables, with notes. |
 
-Three collections:
+Five collections:
 
 | Collection | Who can read | Who can write |
 |---|---|---|
 | `users/{uid}` | that member, and admins | that member only, validated |
 | `admins/{email}` | your own row only | **nobody, from any client** |
+| `announcements/{id}` | **every member** | admins only, validated |
+| `contributions/{uid}` | that member, and admins | **nobody — a Cloud Function only** |
 | `applications/{id}` | nobody | nobody — legacy, kept sealed |
+
+Two of those rows are worth pausing on, because they are the exceptions to the pattern
+the other three follow:
+
+* **`announcements` is the only collection a member may list in bulk.** That is safe
+  because a notice holds nothing personal beyond the organiser's own byline — unlike
+  `users`, where every row is somebody's address and the list rule is therefore
+  admin-only. If a field is ever added to a notice that names a member, revisit
+  `allow list` in `firestore.rules` before writing the field.
+* **`contributions` is write-denied to everybody, including the member it describes.**
+  It is a separate collection rather than a field on the profile for exactly this reason:
+  the profile is member-written and validated with a strict `hasOnly` list, so a function
+  writing merged-PR counts into it would either have to be allowed in that list — at
+  which point members could type their own contribution numbers — or fail validation on
+  every sync.
 
 ---
 
@@ -201,8 +245,12 @@ cd web && npm run dev
 
 Open `/join`. You should get **"Sign in with your college account"**. Sign in with an
 `@sst.scaler.com` Google account, fill the profile, and save — you should land on
-**"You're in the club."** with your details listed, and a new document under
+**"That's you signed up."** with your details listed, and a new document under
 **Firestore → Data → users**, whose id is your Auth uid.
+
+Follow **"Open my dashboard"** from there. `/dashboard` should greet you by first name
+and show three panels: the notice board (empty until an organiser posts), your GitHub
+activity (see below), and your saved details.
 
 Then try it with a personal Gmail account: sign-in should refuse it and say so.
 
@@ -368,6 +416,97 @@ signed in. They see a **Dashboard** link on `/join` and can open `/admin`.
 
 To remove an organiser, delete their document. Do not add a `write` rule to this
 collection: denying it is what stops a compromised admin session appointing more admins.
+
+---
+
+## The member dashboard
+
+`/dashboard` is what a signed-in member sees and a visitor never does. It needs nothing
+beyond the sign-in setup above to work — the notice board and the profile panel run on
+Firestore alone. **Only the GitHub panel needs anything extra**, and that is the rest of
+this section.
+
+Like `/admin`, this route is **not a privilege gate**. The site is a static export, so the
+HTML ships to anybody who asks for it; what refuses a stranger is `firestore.rules`. A
+signed-out visitor who loads the URL gets a "sign in first" card, because every read
+behind it is denied.
+
+### The notice board
+
+Nothing to configure. Deploy the rules and it works: organisers get a composer at the
+foot of `/admin`, and what they post appears on every member's dashboard.
+
+The one thing worth knowing is that **posting is the only admin-only collection a client
+writes**. Appointing admins is still console-only and deliberately so — that is the
+privilege which grants privileges. Posting a notice happens weekly, is reversible, and is
+often done from a phone, so routing it through the Firebase console would mean nobody
+ever posts. The argument is written out in `firestore.rules` above the `announcements`
+block.
+
+### GitHub contributions
+
+Two functions fill `contributions/{uid}`:
+
+| Function | When | What |
+|---|---|---|
+| `syncContributions` | 04:00 IST daily | the 100 stalest members with a handle |
+| `refreshContributions` | a member presses the button | just that member, 10-minute cooldown |
+
+**This needs the Blaze plan.** Outbound network from Cloud Functions does, and GitHub is
+outbound. The usage sits far inside the free allowance for a student club, but a billing
+account has to exist on the project. That is Google's restriction on egress, not a choice
+made here — the same note applies to the application email function.
+
+**1. Set the token.** Optional but not really:
+
+```bash
+firebase functions:secrets:set GITHUB_TOKEN
+```
+
+A fine-grained personal access token with **no scopes at all** is enough. This only reads
+public data; the token is for the rate limit, not for access. Without it GitHub allows 10
+searches a minute and 60 user lookups an *hour* across the whole function, so the sweep
+stops after about fifteen members and the failure arrives as a 403 that reads like a
+permissions problem. With it: 30 a minute and 5,000 an hour.
+
+**2. Deploy.**
+
+```bash
+firebase deploy --only functions,firestore:rules
+```
+
+`firebase.json` gained a `functions` block for this — without one the CLI has no source
+directory and `--only functions` deploys nothing while reporting success.
+
+**3. Check it.** The scheduled function will not have run yet, so drive the callable:
+sign in, put your own GitHub handle in your details, open `/dashboard`, and press
+**"Check GitHub now"**. Your merged pull requests should appear within a few seconds, and
+a document should show up under **Firestore → Data → contributions**.
+
+If the button reports that it could not reach the sync, check in this order:
+
+| Symptom | Cause |
+|---|---|
+| `functions/internal` in the console | the CSP is missing the callable's origin — see `web/lib/security-headers.js`, and note that `firebase.json`'s copy is **generated** from it |
+| `functions/not-found` | the function is deployed to a different region than `FUNCTIONS_REGION` |
+| `permission-denied` | the signed-in address is off-domain, or unverified |
+| counts stay at zero for a real account | the handle has a typo — the panel says so explicitly when GitHub returns 404 |
+
+### What the numbers mean, and do not
+
+* **`merged`** is GitHub's own `total_count` for `type:pr is:merged author:<handle>`, so
+  it is a lifetime figure and not a page length.
+* **`repos`** is derived rather than returned, by counting distinct repositories across
+  one page of results. It is therefore **exact up to 100 merged pull requests** and an
+  undercount past that. If the club ever has such members, paginate in
+  `functions/github.js` rather than leaving the number quietly wrong.
+* **The handle is not verified.** `github` is free text a member typed, so the panel
+  reports activity for *a handle*, not for a proven identity — and the heading on screen
+  says so. Verifying it would mean OAuthing GitHub as well as Google, which is a second
+  sign-in for a panel nobody is scored on.
+* **None of it is a score.** There is no ranking, no target and no streak, and the empty
+  state reads "nothing yet" rather than "0". A club whose pitch is *you do not need to be
+  good yet* should not open with a leaderboard a first-year loses.
 
 ---
 

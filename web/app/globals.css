@@ -498,7 +498,7 @@ body::before {
    blocks would be a fairground. */
 .label {
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: 0.875rem;
   /* Stated, not inherited from the face — see the type note above. */
   font-weight: 600;
   letter-spacing: 0.07em;
@@ -642,7 +642,7 @@ body::before {
      everything beside it. The plate had room at 14px with the nav well short of its
      wrap point; 16px spends most of that margin, so the sm breakpoint is worth a look
      if a seventh link is ever added. */
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
   letter-spacing: -0.005em;
   transition: color 180ms ease-in-out;
@@ -703,7 +703,7 @@ body::before {
   background: rgb(var(--accent));
   color: rgb(var(--bg));
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1402,7 +1402,7 @@ body::before {
   background: rgb(var(--accent));
   color: rgb(var(--bg));
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
@@ -1522,7 +1522,7 @@ body::before {
   background: var(--tint-soft);
   color: var(--tint-ink);
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
@@ -1546,7 +1546,7 @@ body::before {
      beside it, it has lowercase to be short of, and at 12px Plus Jakarta Sans's
      x-height put it below anything else readable here. The caps-bearing pills stay
      at 0.75rem for the reason given in tailwind.config.ts. */
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.2;
@@ -1853,7 +1853,7 @@ body::before {
   border: 2px solid #000000;
   box-shadow: 3px 3px 0 0 #000000;
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -1965,7 +1965,7 @@ body::before {
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   line-height: 1.35;
   letter-spacing: 0;
@@ -2040,7 +2040,7 @@ body::before {
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   /* The captions above are uppercase and tracked out; this is prose, so it resets
      both — otherwise it inherits the chart's caption feel and reads as another
@@ -2273,7 +2273,7 @@ body::before {
   margin: 0.5rem 0 0;
   padding: 0;
   list-style: none;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   line-height: 1.5;
   color: rgb(var(--haze));
 }
@@ -2311,7 +2311,7 @@ body::before {
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.8125rem;
+  font-size: 0.6875rem;
   line-height: 1.4;
   opacity: 0;
   transform: translateY(6px);
@@ -2347,7 +2347,7 @@ body::before {
      and lands at 6.98 light / 5.63 dark, which is why .btn-primary uses it too. */
   color: rgb(var(--bg));
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
@@ -2375,13 +2375,13 @@ body::before {
   padding: 11px 21px;
   border-radius: 10px;
   font-family: var(--font-label), system-ui, sans-serif;
-  /* 17px/700, up from 15px/700 with the +2px pass. WATCH THE HERO PAIR AT 390px.
-     This step was 17px once before, under Staatliches, and moving to Plus Jakarta
-     Sans — which runs about a third wider at the same size — is what forced it down
-     to 15. The weight is unchanged and the labels are short, so the two hero buttons
-     should still hold one line, but this is the one control on the page where the
-     bump lands closest to a known wrap point rather than in open space. */
-  font-size: 1.0625rem;
+  /* 15px/700, back down with the rest of the page after the +2px pass took it to 17.
+     15 is where this step sat under Plus Jakarta Sans, which runs about a third wider
+     at the same size than the Staatliches it replaced — so the hero pair, the one
+     place on the page where this control comes near a wrap point rather than sitting
+     in open space, is being returned to a width that was known to hold one line at
+     390px rather than moved somewhere new. */
+  font-size: 0.9375rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2451,7 +2451,7 @@ body::before {
 .btn-compact {
   min-height: 44px;
   padding: 0 16px;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
 }
 
 /* The electric-blue indicator on the secondary CTA. A right-aligned bolt in a
@@ -2469,7 +2469,7 @@ body::before {
   border-radius: 5px;
   background: rgb(var(--accent));
   color: rgb(var(--bg));
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   line-height: 1;
 }
 
@@ -2846,10 +2846,11 @@ body::before {
   gap: 1.75rem;
   padding-right: 1.75rem;
   font-family: var(--font-label), system-ui, sans-serif;
-  /* Was exempt from the x-height bump the sans steps took, being capitals — see the
-     note in tailwind.config.ts for why that exemption does not carry over to the
-     +2px pass. Still clear of the 11px floor the QA sweep enforces. */
-  font-size: 1rem;
+  /* Was exempt from the x-height bump the sans steps took, being capitals, then not
+     exempt from the +2px pass — see the note in tailwind.config.ts for why a uniform
+     instruction overrides a per-face one. That pass is reversed and this comes back
+     with it, still clear of the 11px floor the QA sweep enforces. */
+  font-size: 0.875rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2861,7 +2862,7 @@ body::before {
   /* --sky rather than --accent: this is a decorative glyph at display weight, not
      a 13px link, so it takes the brighter step. */
   color: rgb(var(--sky));
-  font-size: 0.875rem;
+  font-size: 0.75rem;
 }
 
 /* Scrolls, but without a bar drawn through the nav's bottom hairline. */
@@ -3590,31 +3591,38 @@ button:focus-visible .icon-slide {
 
 /* THE COMMIT GRAPH'S TWO LANES, plotting themselves left to right.
 
-   NOT the [data-draw] rule the heading underlines use, and the reason is measured
-   rather than stylistic. That rule leans on `pathLength="1"` to make one dash
-   value serve paths of any length; this SVG also carries
-   `vector-effect: non-scaling-stroke`, which keeps its rails 2px at every width
-   and, as a side effect, makes dash lengths resolve in SCREEN PIXELS. The two
-   together produce a dash of "the whole path" = 304 user units read as 304px
-   against a lane rendered 1199px long, i.e. four dashes and three gaps in what is
-   supposed to be one continuous line. It rendered as a broken diagram.
+   NOT the [data-draw] rule the heading underlines use, and not a stroke dash at
+   all, for a reason that is measured rather than stylistic. Every dash technique
+   needs to know how long the path is, and this SVG carries
+   `vector-effect: non-scaling-stroke` to keep its rails 2px at every width — which
+   takes dash lengths out of the viewBox scale and leaves them resolving against
+   the rendered picture instead. Whose pixels, though, is not the same answer in
+   every browser. `pathLength="1"` gave a dash of 304 USER units read as 304px
+   against a lane 1199px long: four dashes and three gaps. Sizing the dash in
+   container-width units instead (95cqw for the rail, 57cqw for the branch) fixed
+   that at 1x and broke again on a 150%-scaled Windows display, where 1077 CSS px
+   of dash was read as 1077 DEVICE px against a rail 1701 device px long and each
+   lane stopped two thirds of the way across. Both times it rendered as a broken
+   diagram, because both times a length had to be guessed in someone else's unit.
 
-   So each lane declares its own length in container-width units instead — 95cqw
-   for the 304-unit rail, 57cqw for the 181-unit branch, both authored at the path
-   in CommitGraph.tsx. Those track the rendered width of a `w-full` svg exactly, so
-   one dash covers one lane at every viewport, and the fallback keeps a
-   never-visible lane from becoming a permanently invisible one if a future call
-   site forgets the variable.
+   So the lane is not uncovered by a dash, it is WIPED by a clip — off the path's
+   own bounding box, which the browser measures itself. Both lanes only ever
+   advance in x, so a wipe and a draw are the same picture, and there is no length
+   left in the effect to be wrong about. Nothing needs retuning when a path or a
+   breakpoint changes.
+
+   The -6px of slack on the three edges that do not animate is because a clip
+   takes the FILL box: the grey rail's bounding box is a line of zero height, and
+   without the bleed the clip would shave off its 2px stroke and its round caps.
 
    Same 0.7s and same 0.15s step behind the block as the heading rules, so the two
    drawn things on the page share one rhythm. */
 :root.reveal-on [data-reveal-group] .graph-lane {
-  stroke-dasharray: var(--lane, 100vw);
-  stroke-dashoffset: var(--lane, 100vw);
-  transition: stroke-dashoffset 0.7s ease calc(var(--reveal-delay, 0s) + 0.15s);
+  clip-path: inset(-6px 100% -6px -6px);
+  transition: clip-path 0.7s ease calc(var(--reveal-delay, 0s) + 0.15s);
 }
 :root.reveal-on [data-reveal-group].is-in .graph-lane {
-  stroke-dashoffset: 0;
+  clip-path: inset(-6px -6px -6px -6px);
 }
 
 /* The nodes on the commit graph, popping in along the lane the path has just

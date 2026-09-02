@@ -82,6 +82,7 @@ const mono = JetBrains_Mono({
 import Nav from "@/components/Nav";
 import Reveal from "@/components/Reveal";
 import Footer from "@/components/Footer";
+import ChromeGate from "@/components/ChromeGate";
 import { AuthProvider } from "@/lib/auth";
 
 const SITE_URL =
@@ -155,11 +156,16 @@ export default function RootLayout({
             imported inside the provider, so a reader who never signs in never
             downloads it, and with no Firebase config the provider resolves
             immediately to "signed out" and renders no extra markup. */}
+        {/* ChromeGate hides the FOOTER on the app routes; Nav hides itself, because it is
+            already a client component reading the pathname. Footer is a server component
+            and cannot, so it is passed through as children instead. */}
         <AuthProvider>
           <Nav />
           <Reveal />
           {children}
-          <Footer />
+          <ChromeGate>
+            <Footer />
+          </ChromeGate>
         </AuthProvider>
       </body>
     </html>

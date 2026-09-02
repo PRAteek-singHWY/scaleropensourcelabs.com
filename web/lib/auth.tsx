@@ -51,8 +51,21 @@ type AuthState = {
    *  distinction matters: rendering "sign in" during the initial check makes every
    *  page flash a sign-in card at a member who is already signed in. */
   user: User | null | undefined;
-  /** True only for an address in the ADMINS collection. undefined while unknown. */
+  /** True for an address with an ACTIVE row in the ADMINS collection. undefined while
+   *  unknown. Somebody who has left the core team has a row with `active: false`, which
+   *  is why this is not simply "the document exists". */
   isAdmin: boolean | undefined;
+  /** True only for an active row whose role is `owner` — the two or three people who may
+   *  change the roster itself. undefined while unknown.
+   *
+   *  A SEPARATE FLAG RATHER THAN A ROLE STRING, because every call site asks a yes/no
+   *  question ("may they see this button") and a string invites `role === "Owner"`
+   *  casing bugs at each one. If a third tier ever appears, that is the moment to
+   *  reconsider — not before.
+   *
+   *  It is a CONVENIENCE, never a boundary. Hiding the roster UI from an admin does not
+   *  stop them POSTing to Firestore; `isOwner()` in firestore.rules does. */
+  isOwner: boolean | undefined;
   /** Firebase is not set up at all — no .env.local. The UI says so rather than
    *  offering a button that cannot work. */
   configured: boolean;
@@ -72,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     configured ? undefined : null,
   );
   const [isAdmin, setIsAdmin] = useState<boolean | undefined>(undefined);
+  const [isOwner, setIsOwner] = useState<boolean | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   /** The off-domain address somebody just tried, so the card can offer "use a different
@@ -129,28 +143,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [configured]);
 
-  // Admin status, resolved by trying to read the caller's OWN row in `admins`. The
-  // rules allow exactly that one document and nothing else, so this cannot be used to
-  // enumerate who the admins are. A denied read means "not an admin", which is why the
-  // catch sets false rather than surfacing an error.
+  // Admin and owner status, resolved by reading the caller's OWN row in `admins`. The
+  // rules allow that one document to any member, so this cannot be used to enumerate who
+  // the organisers are. A denied read means "not an admin", which is why the catch sets
+  // false rather than surfacing an error.
+  //
+  // BOTH FLAGS COME FROM ONE READ. Asking twice would double the cost for no information
+  // — owner is a field on the same document — and would let the two answers disagree for
+  // a moment, which is exactly the window in which a roster button flickers into
+  // existence for somebody who may not use it.
+  //
+  // THE TWO DEFAULTS MIRROR firestore.rules AND MUST STAY IN STEP. A row written before
+  // the owner/admin split carries neither field: absent `active` means active, so the
+  // organisers the club already had keep working; absent `role` means plain admin, so
+  // nobody is silently promoted. The rules apply the same two defaults, and a client
+  // that disagreed would show a roster UI whose every write is then refused.
   useEffect(() => {
     let alive = true;
     if (!user) {
-      setIsAdmin(user === null ? false : undefined);
+      const known = user === null ? false : undefined;
+      setIsAdmin(known);
+      setIsOwner(known);
       return;
     }
     (async () => {
       try {
         const db = await getDb();
         if (!db || !user.email) {
-          if (alive) setIsAdmin(false);
+          if (alive) {
+            setIsAdmin(false);
+            setIsOwner(false);
+          }
           return;
         }
         const { doc, getDoc } = await import("firebase/firestore");
         const snap = await getDoc(doc(db, ADMINS, user.email.toLowerCase()));
-        if (alive) setIsAdmin(snap.exists());
+        const d = snap.exists() ? (snap.data() as { active?: boolean; role?: string }) : null;
+        const active = d !== null && d.active !== false;
+        if (alive) {
+          setIsAdmin(active);
+          setIsOwner(active && d?.role === "owner");
+        }
       } catch {
-        if (alive) setIsAdmin(false);
+        if (alive) {
+          setIsAdmin(false);
+          setIsOwner(false);
+        }
       }
     })();
     return () => {
@@ -162,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       isAdmin,
+      isOwner,
       configured,
       busy,
       error,
@@ -273,7 +312,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(false);
       },
     }),
-    [user, isAdmin, configured, busy, error, wrongAccount],
+    [user, isAdmin, isOwner, configured, busy, error, wrongAccount],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import JoinGate from "@/components/JoinGate";
+import ApplyForm from "@/components/ApplyForm";
 import Duo from "@/components/Duo";
 import Note from "@/components/fx/Note";
 
@@ -165,19 +165,54 @@ export default function Join() {
                   <p className="mt-1 text-sm text-haze">No prior experience</p>
                 </div>
               </div>
+
+              {/* THE WAY BACK IN, and it is here because separating the two features
+                  opened a hole that nothing else closes. The nav's far-end button reads
+                  "Join" for anybody without a session and points at this page — so an
+                  existing member on a new laptop, or after clearing their cookies, clicks
+                  it out of habit and arrives at an application form with no sign-in
+                  anywhere on it. Their own dashboard would be unreachable except by
+                  typing the URL.
+
+                  BEFORE THE FORM, NOT AFTER IT. Under the fields it would be found by
+                  somebody who had already filled them in, which is the one moment the
+                  sentence is no longer useful — a second application is exactly what it
+                  exists to prevent.
+
+                  Small and quiet on purpose: almost nobody reading this page is a
+                  member, and a sign-in prompt with equal weight to the form would ask
+                  every first-time reader to work out which of two things they are. */}
+              <p className="mt-6 text-[15px] leading-relaxed text-dust">
+                Already joined?{" "}
+                <Link
+                  href="/dashboard"
+                  target="_blank"
+                  rel="noopener"
+                  className="link-u text-accent"
+                >
+                  Sign in to your dashboard
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </Link>{" "}
+                — no need to apply twice.
+              </p>
             </div>
 
-            {/* WAS <ApplyForm />, THE ANONYMOUS ONE-SHOT FORM. It is now sign-in
-                first: register with a college Google account, then fill a profile
-                once that you can come back and edit. The column this sits in, the
-                copy beside it and the two tiles above are unchanged — the flow
-                changed, not the page.
+            {/* THE ANONYMOUS APPLICATION FORM, and it is back here after a spell as a
+                sign-in gate. For a while this column held <JoinGate />: register with
+                a college Google account first, then fill a profile. That put an
+                account requirement in front of the club's front door — a stranger
+                could not apply without already holding the thing that membership
+                grants — and it made the headline three inches to the left false at
+                the exact moment somebody acted on it.
 
-                Everything about the gate is client-side, because the site is a
-                static export. Route-gating is therefore cosmetic and the data is
-                protected by firestore.rules instead. See the note at the top of
-                lib/auth.tsx before assuming a hidden page is a safe one. */}
-            <JoinGate />
+                Sign-in did not go away; it stopped being this page's business. It
+                lives on /dashboard now (components/SignInCard.tsx), which is the one
+                place that genuinely needs to know who you are. This page asks, that
+                page identifies, and neither has to care about the other.
+
+                The column this sits in, the copy beside it and the two tiles above
+                are unchanged — the flow changed, not the page. */}
+            <ApplyForm />
           </div>
         </section>
     </main>

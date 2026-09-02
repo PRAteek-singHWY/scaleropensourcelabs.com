@@ -85,7 +85,14 @@ for (const route of ROUTES) {
   bad.slice(before, before + 3).forEach((l) => console.log("          " + l));
   ok(`${label} exactly one h1`, state.h1s === 1);
   ok(`${label} <main id="main"> for the skip link`, state.mainH);
-  ok(`${label} Join button visible at >=44px`, state.joinVisible);
+  // The app shell has no Join button by design — a member on their own dashboard is the
+  // one reader who has definitively already joined. Asserted as ABSENT there rather than
+  // skipped, so the shell losing its identity would still fail something.
+  if (route.appShell) {
+    ok(`${label} no Join button (app shell)`, !state.joinVisible);
+  } else {
+    ok(`${label} Join button visible at >=44px`, state.joinVisible);
+  }
   // Five pages mark themselves; /join marks nothing. See ROUTES in assert-site.mjs.
   const wantCurrent = route.inNav ? 1 : 0;
   ok(
@@ -167,39 +174,68 @@ for (const path of ["/projects", "/hall-of-fame", "/"]) {
 
 // ---------------------------------------------------------------------------
 // The join form's path preselect, which every page's closing action relies on.
+//
+// THESE TWO ASSERTIONS ARE BACK IN SMOKE, and that is the clearest single measure of the
+// application form being independent of sign-in again. While /join was gated they could
+// not run here at all — there was no #af-path to read until somebody had signed in with a
+// college Google account, which needs the Auth emulator and a popup — so they were moved
+// to scripts/e2e-auth.mjs and only ran when somebody stood up two emulators.
+//
+// The funnel they protect is the whole site's: every page's closing action links to
+// /join?path=<id>, and a reader who clicked "join the program track" is supposed to arrive
+// with it chosen. That is now checkable by a signed-out browser with no emulator, no
+// popup and no credentials, which means it runs on every push instead of by hand.
 
 await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
 await assertOurSite(pg);
 await pg.waitForTimeout(700);
-// /join IS BEHIND SIGN-IN NOW, so the two assertions that used to live here — that the
-// form preselects ?path and rejects a bogus one — cannot run from a signed-out browser:
-// there is no #af-path to read until somebody has signed in with a college Google
-// account, which needs the Auth emulator and a popup. That behaviour did not go away and
-// is not untested; it moved to scripts/e2e-auth.mjs, which signs in for real against the
-// Auth emulator. Run it with `npm run e2e:auth`.
-//
-// What smoke can still assert is the part that would silently break the funnel: that the
-// gate is what renders, and that the QUERY STRING SURVIVES it. Every page's closing
-// action links to /join?path=<id>, and sign-in does not navigate — so if the param were
-// ever dropped here, the preselection would be dead no matter how correct the form is.
-await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
+ok(
+  "the application form renders to a signed-out reader",
+  (await pg.evaluate(() => document.querySelectorAll("#af-name, #af-email").length)) === 2,
+);
+ok(
+  "join preselects ?path",
+  (await pg.locator("#af-path").inputValue()) === "program-track",
+);
+// A hand-edited param must be ignored rather than submitted. The rules reject a path that
+// is not on the list, so trusting this would present as a form that fails on submit for
+// no visible reason.
+await pg.goto(`${BASE}/join?path=not-a-real-path`, { waitUntil: "networkidle" });
+await pg.waitForTimeout(700);
+ok("a hand-edited ?path is ignored", (await pg.locator("#af-path").inputValue()) === "");
+// THE TWO FORMS MUST NOT SWAP PLACES. #pf-* is the member profile, which belongs behind
+// sign-in on /dashboard; #af-* is the anonymous application. If profile fields ever
+// render here, the split has been undone — and the reverse check is below.
+ok(
+  "the profile form is not on the public application page",
+  (await pg.evaluate(() => document.querySelectorAll("#pf-path, #pf-name").length)) === 0,
+);
+
+// ---------------------------------------------------------------------------
+// And the other door: /dashboard is where sign-in lives, and it must show a signed-out
+// reader the card rather than anybody's details. A UI assertion, not a security one — the
+// boundary is firestore.rules — but a dashboard rendering fields to a stranger would mean
+// the gate had broken open.
+
+await pg.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+await assertOurSite(pg);
 await pg.waitForTimeout(900);
 ok(
-  "join shows the sign-in step to a signed-out reader",
-  await pg.evaluate(() =>
-    /sign in with your college account/i.test(document.querySelector("main")?.innerText ?? ""),
-  ),
+  "the dashboard shows a signed-out reader the sign-in card",
+  await pg.evaluate(() => {
+    const t = document.querySelector("main")?.innerText ?? "";
+    // Either the real card or the honest "not configured" one, depending on whether this
+    // deployment has a Firebase config. Both are correct answers here; a profile is not.
+    return (
+      /sign in with your college account/i.test(t) || /sign-in is not set up here/i.test(t)
+    );
+  }),
 );
 ok(
-  "join keeps ?path through the sign-in gate",
-  new URL(pg.url()).searchParams.get("path") === "program-track",
-);
-// The form must NOT be reachable without signing in. This is a UI assertion, not a
-// security one — the boundary is firestore.rules — but a form rendering to a signed-out
-// visitor would mean the gate had broken open.
-ok(
-  "the profile form is not rendered before sign-in",
-  (await pg.evaluate(() => document.querySelectorAll("#pf-path, #pf-name").length)) === 0,
+  "and no form fields of either kind before sign-in",
+  (await pg.evaluate(
+    () => document.querySelectorAll("#pf-name, #af-name").length,
+  )) === 0,
 );
 
 await b.close();

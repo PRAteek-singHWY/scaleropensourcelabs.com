@@ -22,6 +22,13 @@ import { chromium } from "playwright";
 import { PNG } from "pngjs";
 import { ROUTES, SITE, assertOurSite } from "./assert-site.mjs";
 
+/** Routes that wear the app shell rather than the site chrome. Duplicated from
+ *  components/ChromeGate.tsx rather than imported, because this is a plain .mjs script and
+ *  that is a .tsx module — a build step to share two strings would cost more than it
+ *  saves. If they ever disagree, this check skips a route that HAS a nav, which shows up
+ *  as a route silently vanishing from the output rather than as a false pass. */
+const APP_ROUTES = ["/dashboard", "/admin"];
+
 const BASE = SITE.replace(/\/$/, "");
 const NAV_H = 56;
 
@@ -47,6 +54,19 @@ for (const theme of ["light", "dark"]) {
   ).newPage();
 
   for (const route of ROUTES) {
+    // THE APP ROUTES HAVE NO MARKETING NAV, BY DESIGN, so there is no plate here to
+    // measure. /dashboard and /admin render components/dashboard/Shell.tsx instead — a
+    // flush, full-width bar deliberately shaped unlike the site's floating plate, because
+    // the dashboard opens in its own tab and has to be distinguishable from it.
+    //
+    // This check crashed rather than skipped when that landed: it queries
+    // `nav[aria-label="Main"] a` and called .getBoundingClientRect() on the null it got
+    // back, which reads as a broken script rather than as "this route has no nav". Skipped
+    // explicitly, and named, so the next person does not re-add them.
+    if (APP_ROUTES.some((r) => route.path === r || route.path.startsWith(r + "/"))) {
+      console.log(`    skip ${String(route.name).padEnd(13)} app shell, no marketing nav`);
+      continue;
+    }
     await pg.goto(BASE + route.path, { waitUntil: "networkidle" });
     await assertOurSite(pg);
     await pg.evaluate((t) => document.documentElement.setAttribute("data-theme", t), theme);

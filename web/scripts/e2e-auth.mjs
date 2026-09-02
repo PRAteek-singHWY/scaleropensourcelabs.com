@@ -1,4 +1,11 @@
-// Drive the whole join flow in a real browser, against the Auth and Firestore emulators.
+// Drive the whole SIGN-IN flow in a real browser, against the Auth and Firestore
+// emulators.
+//
+// IT RUNS ON /dashboard, NOT /join, AND THAT IS THE POINT OF THE ROUTE IT DRIVES. /join is
+// the anonymous application form: no account, no session, nothing here to test. Signing in
+// and filling a profile is a separate feature living on /dashboard, and this suite follows
+// it there. The application form is covered by scripts/smoke.mjs instead, signed out and
+// with no emulator, which is the whole benefit of the two being independent.
 //
 //   Terminal 1:  npx firebase-tools emulators:start --only firestore,auth --project demo-osc
 //   Terminal 2:  cp .env.example .env.local   # then set the emulator lines, see below
@@ -17,14 +24,14 @@
 //
 // WHY THIS EXISTS AND WHAT IT COVERS THAT NOTHING ELSE DOES.
 //
-// scripts/smoke.mjs runs signed out, so it can only assert that /join shows the sign-in
-// step and keeps its query string. scripts/rules-emulator.mjs executes the rules with
-// forged tokens, so it never touches the UI. Neither can answer the questions that
-// actually break this feature:
+// scripts/smoke.mjs runs signed out, so it covers the application form and the sign-in
+// card's mere presence, and nothing behind either. scripts/rules-emulator.mjs executes the
+// rules with forged tokens, so it never touches the UI. Neither can answer the questions
+// that actually break this feature:
 //
 //   * does signInWithPopup work at all under our Content-Security-Policy?
 //   * does the profile save, and does the second save (an EDIT) still work?
-//   * does ?path= survive the sign-in step it was added in front of?
+//   * does the profile form's ?path= preselect still work where the form now lives?
 //   * is the dashboard refused to a member and served to an admin?
 //   * do its sort, its filters and its refresh actually change what is on screen?
 //
@@ -147,8 +154,8 @@ const browser = await chromium.launch();
 const csp = [];
 const errs = [];
 
-console.log("\nthe join flow, driven in a real browser\n");
-console.log("-- a student signs up --");
+console.log("\nthe sign-in flow, driven in a real browser\n");
+console.log("-- a member signs in --");
 {
   const pg = await (await browser.newContext({ viewport: { width: 1440, height: 1300 } })).newPage();
   pg.on("console", (m) => {
@@ -156,8 +163,16 @@ console.log("-- a student signs up --");
   });
   pg.on("pageerror", (e) => errs.push(String(e).slice(0, 140)));
 
-  // Arrive the way a closing CTA sends somebody, so preselection is genuinely exercised.
-  await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
+  // /dashboard, NOT /join. This suite used to start at /join because the sign-in card
+  // stood in front of the application form there. It does not any more — /join takes an
+  // anonymous application and never asks who you are — so the door this drives is the
+  // members' one.
+  //
+  // ?path= IS STILL CARRIED, for the profile form further down: it is a default the form
+  // reads on a first save, and dropping it from this URL would leave that read untested.
+  // Nothing in the site links here with a path — the closing CTAs point at the
+  // application form, and smoke.mjs covers those signed out.
+  await pg.goto(`${BASE}/dashboard?path=program-track`, { waitUntil: "networkidle" });
   await pg.waitForTimeout(1200);
   ok("the sign-in step is what a signed-out reader sees",
     /sign in with your college account/i.test(await pg.locator("main").innerText()));
@@ -226,7 +241,7 @@ console.log("-- a student signs up --");
     ok("and every one lands on a section that exists", targets.every(Boolean), targets.join(","));
     ok("the page says how to get your data deleted",
       /delete your record/i.test(await pg.locator("main").innerText()));
-    await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
+    await pg.goto(`${BASE}/dashboard?path=program-track`, { waitUntil: "networkidle" });
     await pg.waitForTimeout(1500);
   }
 
@@ -253,10 +268,13 @@ console.log("-- a student signs up --");
     await pg.getByRole("button", { name: /finish joining/i }).isVisible().catch(() => false));
   ok("the signed-in address is shown back", (await pg.locator("main").innerText()).includes("asha@sst.scaler.com"));
   ok("the name is prefilled from Google", (await pg.locator("#pf-name").inputValue()) === "Asha Verma");
-  // The behaviour smoke.mjs cannot reach from a signed-out browser.
+  // THE PROFILE FORM'S OWN PRESELECT. The equivalent assertion for the APPLICATION form
+  // moved to smoke.mjs, which can now make it with no emulator and no popup — that is what
+  // separating the two features bought. This is the same logic in the other form, and it is
+  // still only reachable behind a real sign-in.
   ok("?path= survives the sign-in step", (await pg.locator("#pf-path").inputValue()) === "program-track");
 
-  await pg.goto(`${BASE}/join?path=not-a-real-path`, { waitUntil: "domcontentloaded" });
+  await pg.goto(`${BASE}/dashboard?path=not-a-real-path`, { waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(2500);
   ok("a hand-edited ?path is ignored", (await pg.locator("#pf-path").inputValue()) === "");
   // The four fields cut from sign-up. Asserted absent so putting one back is a visible
@@ -292,8 +310,18 @@ console.log("-- a student signs up --");
   await pg.getByText(/that.s you signed up/i).waitFor({ timeout: 25000 }).catch(() => {});
   ok("an edit saves", (await pg.locator("main").innerText()).includes("3rd year, ECE"));
 
-  ok("a member is not offered the dashboard",
-    !(await pg.getByRole("link", { name: /^dashboard$/i }).first().isVisible().catch(() => false)));
+  // THIS USED TO CHECK FOR A LINK NAMED "Dashboard" AND NOW CANNOT. Every member has a
+  // dashboard of their own since /dashboard was added, and the nav's far-end button reads
+  // exactly that word once somebody is signed in -- so the old assertion would now fail
+  // for the right reason, which is the worst kind of failing test.
+  //
+  // What it was actually protecting is unchanged and is asserted below instead: a member
+  // must not be offered the ORGANISERS' page. Matched on the specific label the profile
+  // card renders rather than on the word "dashboard", which is now ambiguous by design.
+  ok("a member is not offered the organisers' page",
+    !(await pg.getByRole("link", { name: /admin dashboard/i }).first().isVisible().catch(() => false)));
+  ok("but a member IS offered their own dashboard",
+    await pg.getByRole("link", { name: /^dashboard$/i }).first().isVisible().catch(() => false));
   await pg.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(3000);
   ok("/admin refuses a member", /not for you/i.test(await pg.locator("main").innerText()));
@@ -324,7 +352,7 @@ console.log("\n-- an organiser opens the dashboard --");
 
   const pg = await (await browser.newContext({ viewport: { width: 1440, height: 1500 } })).newPage();
   pg.on("pageerror", (e) => errs.push(String(e).slice(0, 140)));
-  await pg.goto(`${BASE}/join`, { waitUntil: "networkidle" });
+  await pg.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   await pg.waitForTimeout(1000);
   await signIn(pg, "organiser@sst.scaler.com", "Club Organiser");
 

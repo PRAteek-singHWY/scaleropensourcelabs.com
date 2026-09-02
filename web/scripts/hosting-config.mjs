@@ -42,6 +42,12 @@ const config = JSON.parse(readFileSync(CONFIG, "utf8"));
 const headers = securityHeaders({
   dev: false,
   authDomain: fromEnvFile("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"),
+  // Same treatment as authDomain, and for the same reason: this script is plain node, so
+  // no bundler has inlined NEXT_PUBLIC_* into process.env and the value has to be read
+  // out of .env.local by hand. Without it the policy falls back to *.cloudfunctions.net,
+  // which works but is looser than it needs to be for a deployment that knows its own
+  // project id.
+  projectId: fromEnvFile("NEXT_PUBLIC_FIREBASE_PROJECT_ID"),
 });
 
 config.hosting = {

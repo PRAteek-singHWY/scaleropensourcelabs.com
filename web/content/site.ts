@@ -38,3 +38,15 @@ export const PAGES = [
 
 /** Where every Join button on every page goes. One destination, deliberately. */
 export const JOIN_HREF = "/join";
+
+/** Where the nav's far-end button goes for somebody who is already signed in.
+ *
+ *  A SECOND CONSTANT RATHER THAN A SECOND STRING IN Nav.tsx, because these two are a
+ *  pair: the bar renders one or the other from the same slot, and a route rename that
+ *  moved only one of them would leave a signed-in member with a dead button and
+ *  everybody else fine — which is the half nobody testing the site would click.
+ *
+ *  Absent from PAGES for the same reason /join is: it is one person's own destination,
+ *  it already has the filled button at the end of the bar, and listing it in the strip
+ *  would put the same word in the nav twice. */
+export const DASHBOARD_HREF = "/dashboard";

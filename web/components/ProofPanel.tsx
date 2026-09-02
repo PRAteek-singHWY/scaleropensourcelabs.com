@@ -54,7 +54,7 @@ export default function ProofPanel() {
         <div>
           <p className="label">Contributor rank</p>
           <p className="mt-4 flex items-baseline gap-3">
-            <span className="text-[clamp(3.125rem,calc(7vw_+_0.125rem),5.625rem)] font-semibold leading-[0.9] tracking-tightest text-accent">
+            <span className="text-[clamp(3rem,7vw,5.5rem)] font-semibold leading-[0.9] tracking-tightest text-accent">
               #{place}
             </span>
             <span className="text-body-lg text-haze">of {field}</span>

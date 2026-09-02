@@ -106,27 +106,31 @@ const config: Config = {
         // `font-mono`, and JetBrains Mono has a large x-height and does not have this
         // problem.
         //
-        // THE +2px PASS BELOW OVERRIDES THAT EXEMPTION, and the reasoning above is
-        // kept rather than deleted because the two passes are answering different
-        // questions. The x-height correction was per-face and therefore selective:
-        // only the steps carrying short lowercase were wrong, so only those moved.
-        // "Raise everything by 2px" is a uniform instruction about the page as a
-        // whole, and a scale where six steps grew and four held would no longer be
-        // the scale either pass designed — the caps would end up a step small
-        // relative to the sentences they sit beside, which is the reverse of the
-        // problem the first pass fixed.
-        // THE +2px PASS. Every step below is exactly 2px larger than the value it
-        // replaces, per an explicit instruction to raise the whole page by that much.
+        // THERE WAS A +2px PASS AFTER THAT ONE, AND IT HAS BEEN REVERSED. It raised
+        // every step below — the caps ones too, overriding the exemption above on the
+        // grounds that "raise the whole page by 2px" is a uniform instruction and a
+        // scale where six steps grew and four held is no longer the scale either pass
+        // designed. That reasoning was sound and the result was still too big: on a
+        // 1280px viewport it put 19px under every card row and 16px under every
+        // eyebrow, and the page read as though it were being viewed at 110% zoom.
         //
-        // On the fluid steps that means `calc(<vw> + 0.125rem)` in the middle slot as
-        // well as +2px on both ends, and the calc is the part worth not losing. Bump
-        // only the min and max and the clamp still resolves to the RAW vw value at
-        // every viewport between them — so the type would grow at the two extremes
-        // and be unchanged across the middle of the range, which is most desktop
-        // widths. The offset has to ride the interpolated term to be a real +2px
-        // everywhere rather than at the endpoints only.
-        "display-xl": ["clamp(2.875rem, calc(6.2vw + 0.125rem), 5.375rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
-        "display-lg": ["clamp(2.0625rem, calc(3.6vw + 0.125rem), 3.125rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
+        // So every step is back down by exactly 2px, which is the inverse of the
+        // instruction that raised it — not a fresh set of numbers. What that lands on
+        // is the scale the x-height pass produced and nothing earlier: 17px body,
+        // which is Apple's body size and the reference the tracking values here were
+        // measured from, 15px sm, 12px xs, 11px label. The per-face correction that
+        // put them there is untouched, because it was answering a different question
+        // and it was right.
+        //
+        // On the fluid steps the reversal is `calc(<vw> + 0.125rem)` back to a raw
+        // `<vw>`, as well as -2px on both ends, and the calc is the part worth not
+        // getting wrong in either direction. Move only the min and max and the clamp
+        // still resolves to the RAW vw value at every viewport between them — so the
+        // type would change at the two extremes and hold across the middle of the
+        // range, which is most desktop widths. The offset has to ride the interpolated
+        // term to be a real 2px everywhere rather than at the endpoints only.
+        "display-xl": ["clamp(2.75rem, 6.2vw, 5.25rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
+        "display-lg": ["clamp(1.9375rem, 3.6vw, 2.9375rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
         // Apple's tracking is POSITIVE below roughly 40px. Measured off
         // apple.com/mac: 80px/-1.2px (-0.015em), 48px/-0.144px (-0.003em), then it
         // crosses zero — 32px/+0.128px (+0.004em), 28px/+0.196px (+0.007em),
@@ -134,37 +138,35 @@ const config: Config = {
         // below the hero was being over-tightened. Optical sizing runs the other
         // way at text sizes: large type needs closing up, small type needs opening
         // out, and copying the display value downward is the usual mistake.
-        "display-md": ["clamp(1.5rem, calc(2.1vw + 0.125rem), 1.9375rem)", { lineHeight: "1.32", letterSpacing: "0.006em" }],
+        "display-md": ["clamp(1.375rem, 2.1vw, 1.8125rem)", { lineHeight: "1.32", letterSpacing: "0.006em" }],
         // Body copy gets the same treatment for a different reason: 1.5 is the WCAG
         // 1.4.8 floor for a block of text, not a comfortable value, and this page's
         // paragraphs run to a 44em measure. Long lines need more leading than short
         // ones to stop the eye returning to the line it just left.
-        "body-lg": ["clamp(1.3125rem, calc(1.6vw + 0.125rem), 1.625rem)", { lineHeight: "1.62", letterSpacing: "0.008em" }],
-        // 19px. Was 17px — Apple's body size, and the reference the tracking values
-        // above were measured from. The tracking is deliberately NOT re-derived to
-        // match the new size: optical sizing moves in fractions of an em across a 2px
+        "body-lg": ["clamp(1.1875rem, 1.6vw, 1.5rem)", { lineHeight: "1.62", letterSpacing: "0.008em" }],
+        // 17px — Apple's body size, and the reference the tracking values above were
+        // measured from. It spent a while at 19px and is back. The tracking was
+        // deliberately NOT re-derived when it went up and is not re-derived now that
+        // it has come down: optical sizing moves in fractions of an em across a 2px
         // step, and re-measuring one step of a scale that was taken from a single
         // source is how the halves of it start disagreeing.
-        "body": ["1.1875rem", { lineHeight: "1.72", letterSpacing: "0.009em" }],
-        "label": ["0.8125rem", { lineHeight: "1.3", letterSpacing: "0.18em" }],
+        "body": ["1.0625rem", { lineHeight: "1.72", letterSpacing: "0.009em" }],
+        "label": ["0.6875rem", { lineHeight: "1.3", letterSpacing: "0.18em" }],
         // Tailwind's own `sm`, overridden rather than left at its 0.875rem/1.25rem
         // default. 17 of its 22 uses here are sans — card body copy, form help text,
         // the FAQ answers — so it has the same short-lowercase problem as `body` and
         // needs the same correction. The lineHeight has to be restated: Tailwind's
         // default pairs a FIXED 1.25rem with this step, which at the new size would
         // compute to 1.33 and come out tighter than the value it replaced.
-        "sm": ["1.0625rem", { lineHeight: "1.6" }],
-        // `xs` now has to be stated too, and it did not before. It was left at
-        // Tailwind's own 0.75rem because 27 of its 28 uses are font-mono and JetBrains
-        // Mono has no x-height problem to correct — but "everything +2px" is a
-        // different instruction from the x-height correction that shaped the steps
-        // above, and an unstated step is one that would silently not move.
-        //
-        // The leading is a RATIO rather than the fixed 1rem Tailwind pairs with this
-        // step. Carrying 1rem across to a 14px size gives 1.14 — a 12px step's leading
-        // on a 14px glyph, which is the one way a font bump can make text harder to
-        // read. 1.3333 is exactly the ratio the default pair described.
-        "xs": ["0.875rem", { lineHeight: "1.3333" }],
+        "sm": ["0.9375rem", { lineHeight: "1.6" }],
+        // `xs` is back at Tailwind's own 0.75rem and stays STATED rather than deleted,
+        // which is not redundancy. The size is only half of what this step declares:
+        // the leading is a RATIO here, where Tailwind's default pairs a fixed 1rem
+        // with it. The ratio is what the default pair described at 12px, and stating
+        // it is what keeps the step from silently retightening if the size ever moves
+        // again — which is precisely what the +2px pass would have done to it, since
+        // 1rem on a 14px glyph is 1.14 and that is a 12px step's leading.
+        "xs": ["0.75rem", { lineHeight: "1.3333" }],
       },
       // -0.015em is Apple's 80px value exactly, so it belongs on display-xl only.
       letterSpacing: { tightest: "-0.015em" },
