@@ -15,7 +15,7 @@
 //
 // Idempotent: running it twice produces the same file, so it is safe in a build step.
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
@@ -24,12 +24,25 @@ const here = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const { securityHeaders, REDIRECTS } = require(join(here, "..", "lib", "security-headers.js"));
 
+// READ .env.local, NOT process.env. `next build` loads that file itself, so the values
+// baked into the bundle live there — this script runs as a plain node process and sees
+// none of them. Without this the auth domain fell back to a `https://*.firebaseapp.com`
+// wildcard in frame-src: functional, since it still covers the real domain, but broader
+// than it needs to be on a policy whose whole argument is that it is strict.
+const ENV = join(here, "..", ".env.local");
+const envFile = existsSync(ENV) ? readFileSync(ENV, "utf8") : "";
+const fromEnvFile = (k) =>
+  (envFile.match(new RegExp(`^${k}=(.*)$`, "m"))?.[1] ?? "").trim();
+
 const CONFIG = join(here, "..", "..", "firebase.json");
 const config = JSON.parse(readFileSync(CONFIG, "utf8"));
 
 // The production policy, forced: a build run with NODE_ENV=development must never ship
 // 'unsafe-eval' or localhost origins to a live host.
-const headers = securityHeaders({ dev: false });
+const headers = securityHeaders({
+  dev: false,
+  authDomain: fromEnvFile("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"),
+});
 
 config.hosting = {
   // Relative to the repo root, where firebase.json lives.
@@ -58,17 +71,30 @@ config.hosting = {
       headers: headers.map((h) => ({ key: h.key, value: h.value })),
     },
     {
-      // Next fingerprints everything under _next/static, so it is immutable and safe to
-      // cache for a year. Firebase's default for hosted assets is one hour, which throws
-      // away most of the benefit of the content hashes.
-      source: "/_next/static/**",
-      headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      // NO-CACHE ON EVERYTHING BY DEFAULT, then the static block below buys the caching
+      // back for the only files that can safely have it.
+      //
+      // THIS REPLACES A `**/*.html` RULE THAT NEVER ONCE MATCHED. Firebase matches these
+      // globs against the REQUEST PATH, not against the file it resolves to, and with
+      // trailingSlash every page is requested as `/join/` — never `/join/index.html`. So
+      // the rule looked correct in the config, was never applied to a single response,
+      // and Firebase's own default of `max-age=3600` served every page instead.
+      //
+      // The cost was not theoretical. After the authDomain fix was deployed, a signed-out
+      // reader retried two minutes later and still hit the bug: their browser held the
+      // previous HTML for an hour, and that HTML names the previous build's fingerprinted
+      // chunks — so the fix was live on the server and unreachable from the browser. A
+      // deploy that readers cannot receive for an hour is not a deploy.
+      source: "**",
+      headers: [{ key: "Cache-Control", value: "no-cache, must-revalidate" }],
     },
     {
-      // HTML must NOT be cached, or a deploy leaves readers on the previous build with
-      // no way to know. This has to come after the block above or it would override it.
-      source: "**/*.html",
-      headers: [{ key: "Cache-Control", value: "no-cache, must-revalidate" }],
+      // Next fingerprints everything under _next/static, so it is immutable and safe to
+      // cache for a year. The filename changes when the contents change, which is exactly
+      // the condition that makes a long cache safe — and is why this rule can come after
+      // the catch-all above and override it.
+      source: "/_next/static/**",
+      headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
     },
   ],
 

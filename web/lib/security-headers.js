@@ -23,7 +23,7 @@ const isDev = process.env.NODE_ENV === "development";
  *  next.config.js. Directives that only make sense in development are appended there
  *  and never reach a generated .htaccess, which is only ever produced by a production
  *  build. */
-function buildCSP({ dev = isDev } = {}) {
+function buildCSP({ dev = isDev, authDomain = "" } = {}) {
   return [
     "default-src 'self'",
     // next/font self-hosts its files at build time, so no font CDN is needed.
@@ -31,9 +31,18 @@ function buildCSP({ dev = isDev } = {}) {
     "img-src 'self' data:",
     // Next injects inline bootstrap and hydration scripts, so 'unsafe-inline' cannot be
     // dropped without nonces, and nonces need a server this site does not have.
+    //
+    // apis.google.com IS REQUIRED FOR SIGN-IN, and leaving it out is the expensive
+    // mistake rather than a theoretical one. signInWithPopup loads
+    // https://apis.google.com/js/api.js to host its auth iframe; without it the popup
+    // never opens and the SDK reports a bare `auth/internal-error`. The page renders
+    // perfectly, the button is there, the click does nothing, and the only explanation
+    // is a CSP violation in a console nobody has open. Found exactly that way.
+    //
     // google.com/gstatic.com are App Check's reCAPTCHA v3 loader.
     [
       "script-src 'self' 'unsafe-inline'",
+      "https://apis.google.com",
       "https://www.google.com/recaptcha/",
       "https://www.gstatic.com/recaptcha/",
       dev ? "'unsafe-eval'" : "",
@@ -54,8 +63,38 @@ function buildCSP({ dev = isDev } = {}) {
     ]
       .filter(Boolean)
       .join(" "),
-    // App Check's reCAPTCHA provider loads an iframe from Google.
-    "frame-src 'self' https://www.google.com",
+    // Frames, and there are three different reasons for the entries here:
+    //
+    //   www.google.com          App Check's reCAPTCHA provider iframe.
+    //   accounts.google.com     the Google account chooser.
+    //   <authDomain>            Firebase Auth hosts its sign-in handler on the
+    //                           project's own authDomain, in a hidden iframe. Derived
+    //                           from the env var so it is right per project rather than
+    //                           hardcoded to one, with a wildcard fallback for a build
+    //                           that has no config — which is every contributor's build,
+    //                           and must not produce a policy that only works for us.
+    //   127.0.0.1 / localhost   dev only. The Auth EMULATOR serves the same sign-in
+    //                           handler from http://127.0.0.1:9099, and Firebase frames
+    //                           it. Without these, sign-in cannot be tested locally at
+    //                           all: the popup opens, closes, and the page stays signed
+    //                           out with only a framing violation in the console.
+    [
+      "frame-src 'self'",
+      "https://www.google.com",
+      "https://accounts.google.com",
+      // authDomain, from the environment when a bundler has loaded it, and from an
+      // explicit override when a plain node script generates this policy — see the
+      // note in scripts/hosting-config.mjs. The wildcard is the last resort so that a
+      // contributor with no config still gets a policy that works for them.
+      authDomain
+        ? `https://${authDomain}`
+        : process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+          ? `https://${process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}`
+          : "https://*.firebaseapp.com",
+      dev ? "http://localhost:* http://127.0.0.1:*" : "",
+    ]
+      .filter(Boolean)
+      .join(" "),
     // The form writes over fetch rather than POSTing, so this stays at 'self'.
     "form-action 'self'",
     "frame-ancestors 'none'",
@@ -71,9 +110,9 @@ function buildCSP({ dev = isDev } = {}) {
 /** The full header set as {key, value} pairs, in the shape next.config.js wants.
  *  `dev` is a parameter rather than read from the environment so the .htaccess
  *  generator can force the production policy regardless of how it was invoked. */
-function securityHeaders({ dev = isDev } = {}) {
+function securityHeaders({ dev = isDev, authDomain = "" } = {}) {
   return [
-    { key: "Content-Security-Policy", value: buildCSP({ dev }) },
+    { key: "Content-Security-Policy", value: buildCSP({ dev, authDomain }) },
     // Two years, subdomains included. Safe here: the domain serves only this site and
     // there is no plaintext service to break.
     {

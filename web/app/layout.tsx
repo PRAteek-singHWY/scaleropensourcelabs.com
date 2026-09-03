@@ -79,9 +79,7 @@ const mono = JetBrains_Mono({
   display: "swap",
 });
 
-import Nav from "@/components/Nav";
-import Reveal from "@/components/Reveal";
-import Footer from "@/components/Footer";
+import { AuthProvider } from "@/lib/auth";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://scaleropensourcelabs.com";
@@ -142,16 +140,24 @@ export default function RootLayout({
           Skip to content
         </a>
 
-        {/* The chrome every route shares. Here rather than imported per page so a
-            route cannot exist without it — the single-page site mounted these inside
-            page.tsx, which is correct for one page and seven chances to forget at
-            seven. Reveal renders nothing; it opts the document in to the scroll
-            settle, and doing that once at the root is also what stops each route
-            re-registering its own observer on navigation. */}
-        <Nav />
-        <Reveal />
-        {children}
-        <Footer />
+        {/* THE ROOT LAYOUT CARRIES NO CHROME, and that is the point of it.
+            The nav, the scroll reveals and the four-column footer used to live here, so
+            every route inherited them — including /dashboard, where a member who joined
+            last month was still being shown a bar arguing the case for joining. They now
+            live in app/(site)/layout.tsx, and the signed-in routes get their own shell
+            from app/(app)/layout.tsx. Route groups, so no URL changed and the decision is
+            made at build time rather than after hydration.
+
+            What is left here is what genuinely IS shared: the document, the fonts, the
+            anti-flash script, the skip link and the auth context.
+
+            AuthProvider wraps the whole document rather than one group, because the site
+            nav reads it too — signed in, its one button changes. It costs nothing on the
+            routes that do not care: firebase/auth is dynamically imported inside the
+            provider, so a reader who never signs in never downloads it, and with no
+            Firebase config the provider resolves immediately to "signed out" and renders
+            no extra markup. */}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

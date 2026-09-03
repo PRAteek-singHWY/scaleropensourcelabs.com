@@ -26,7 +26,6 @@ import { PROJECTS, selectionStats } from "@/content/club";
 import Terminal from "@/components/hero/Terminal";
 import Icon from "@/components/Icon";
 import Term from "@/components/fx/Term";
-import Doodle from "@/components/Doodle";
 import CelebrateLink from "@/components/fx/CelebrateLink";
 import Glow from "@/components/fx/Glow";
 
@@ -124,11 +123,17 @@ function FloatingBadges() {
 export default function Hero() {
   return (
     <header
-      // Vertical rhythm in three steps rather than two. The nav floats now, so
-      // the top pad also has to clear a plate that no longer sits flush against
-      // the edge; pt-14 leaves a clear 1.5rem between the glass and the badge on
-      // a phone, and the sm/lg steps open that up as the headline grows.
-      className="section relative pb-10 pt-14 sm:pb-14 sm:pt-16 lg:pb-32 lg:pt-40"
+      // THE TOP PAD HAS TO CLEAR THE FLOATING NAV, and pt-14 did not. The plate's
+      // bottom edge sits at 4.25rem (0.75rem inset + 3.5rem plate), 4.5rem at sm+;
+      // pt-14 is 3.5rem, so the eyebrow badge rendered UNDERNEATH the glass. It stayed
+      // legible through the blur, which is exactly why it survived review for so long.
+      // pt-24 is 6rem — the same figure `.page-top` gives every other route, so the
+      // home page now starts where the rest of the site does.
+      //
+      // Deliberately the utility rather than `.page-top` itself: that class is declared
+      // after @tailwind utilities, so it would beat `lg:pt-40` at equal specificity and
+      // silently flatten the large-screen air. See the note over .page-top.
+      className="section relative pb-10 pt-24 sm:pb-14 sm:pt-28 lg:pb-32 lg:pt-40"
       aria-label="Scaler Open Source Club"
     >
       {/* The ambient lighting. Two orbs rather than one, placed off the diagonal
@@ -190,15 +195,12 @@ export default function Hero() {
           from the right margin into the right column. */}
       <div className="grid items-center gap-14 lg:grid-cols-[3fr_2fr] lg:gap-8">
         <div>
-          {/* The crown sits above the top badge, tucked left so it reads as
-              placed on the badge rather than centred over it. */}
-          <span className="relative inline-block">
-            <Doodle
-              kind="crown"
-              className="absolute -top-4 left-3 h-4 w-6 text-accent"
-            />
-            <span className="chip">Scaler School of Technology</span>
-          </span>
+          {/* Just the eyebrow. A crown doodle used to sit over it — one of several
+              small decorations stacked through this hero, which is the crowding the
+              club's own members reported next to /join. The terminal and the commit-log
+              mark stay, because those two carry the argument; the trinkets around them
+              did not. */}
+          <span className="chip">Scaler School of Technology</span>
 
           {/* Two tones mid-headline is what stops display type at this size
               reading as a wall of letters.
@@ -209,29 +211,12 @@ export default function Hero() {
               set at 104px in a 720px column and wrapped to two lines with
               SOURCE alone on the second, which reads as a break the designer
               did not choose. It now holds one line from about 1150px up. */}
-          {/* The pull-request mark sits on its own line above the headline rather
-              than inline beside it. Inline was the first attempt and it fights the
-              type at every width: at 88px the icon is either lost against the caps
-              or big enough to be a second headline, and it forces a wrap point
-              into "OPEN SOURCE" on a narrow column. Above it, at the accent
-              colour, it reads as a mark on the page — and it is what tells a
-              developer what kind of site this is before they read a word.
-
-              1.4x the stroke Lucide ships: at 2px on a 40px glyph the whole
-              drawing goes spindly next to an 800-weight headline. */}
-          <Icon
-            name="git-pull-request"
-            size="2.5rem"
-            strokeWidth={2.4}
-            className="mt-4 text-accent sm:mt-7"
-          />
-
           {/* 1.02 rather than the 0.95 this carried. Sub-1.0 leading is affordable
               only where the type never wraps — and this wraps to two lines below
               about 1150px, which is most phones. At 0.95 "OPEN" and "SOURCE" stacked
               with the O's very nearly touching. */}
           <h1 className="mt-4 font-display text-[clamp(2.875rem,calc(6.5vw_+_0.125rem),5.625rem)] font-bold uppercase leading-[1.02] tracking-[-0.03em] text-ink">
-            Open <span className="tone-grad">Source</span>
+            Open <span className="text-accent">Source</span>
           </h1>
 
           {/* Kept a shade tighter than Duo's 1.22: this paragraph carries a lozenge,
@@ -258,19 +243,18 @@ export default function Hero() {
               already held to a readable line by the grid itself, and stacking a
               44em cap on top of that would have re-created the narrow column
               this pass exists to remove. */}
+          {/* ONE LOZENGE, NOT TWO. "commit log" above keeps its pill because it is the
+              claim the club is making. A second pill on "get paid" turned a mark into a
+              pattern, and two filled highlights three lines apart fight each other for
+              the eye — which is most of why this hero read as busy.
+
+              The `<Term>` tooltips on Google and Linux are gone too. A dotted underline
+              invites a hover that answers "Yes, that Google" — a joke that costs the
+              reader a decision and tells them nothing they did not already know. */}
           <p className="mt-4 text-body-lg text-haze">
-            Members contribute to the projects the world already runs on, and{" "}
-            <span className="lozenge lozenge-mint">
-              <Icon name="dollar-sign" size="0.85em" strokeWidth={2.5} />
-              get paid
-            </span>{" "}
-            by <Term note="Yes, that Google. The one in the address bar.">Google</Term>
-            , the{" "}
-            <Term note="Penguin approved 🐧 — the thing your phone, your router and most of the internet boots.">
-              Linux
-            </Term>{" "}
-            Foundation and others to do it. Every claim on this page is a link you
-            can open.
+            Members contribute to the projects the world already runs on, and get paid by
+            Google, the Linux Foundation and others to do it. Every claim on this page is
+            a link you can open.
           </p>
 
           {/* gap-3 on a phone, gap-4 above it: at 390px these two wrap to one
@@ -293,24 +277,8 @@ export default function Hero() {
             </Link>
             <CelebrateLink href="/join" className="btn btn-secondary">
               Join the club
-              <span aria-hidden className="btn-tag">
-                ⚡
-              </span>
             </CelebrateLink>
 
-            {/* The curved arrow, pointing back at the buttons.
-                A FLEX SIBLING, not an absolute one. Absolutely positioning it
-                against the CTA row pinned it to the row's right EDGE — and that
-                row spans the whole 60% column, so the arrow ended up marooned
-                about 200px clear of the buttons, gesturing at blank page. In the
-                flow it sits one gap after the last button at every width, which
-                is the only position that means anything.
-                lg-only: below that the buttons stack and there is no room beside
-                them for it to point from. */}
-            <Doodle
-              kind="curve-arrow"
-              className="hidden h-9 w-14 shrink-0 -scale-x-100 text-accent lg:block"
-            />
           </div>
         </div>
 
