@@ -24,6 +24,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import AudiencePicker from "@/components/AudiencePicker";
+import { DEFAULT_AUDIENCE, type Audience } from "@/lib/audience";
 import {
   CATEGORIES,
   createAnnouncement,
@@ -46,6 +48,7 @@ export default function Composer() {
   const [posts, setPosts] = useState<Announcement[] | null>(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
+  const [audience, setAudience] = useState<Audience>(DEFAULT_AUDIENCE);
   const [link, setLink] = useState("");
   const [pinned, setPin] = useState(false);
   const [category, setCategory] = useState<Category>("general");
@@ -88,13 +91,23 @@ export default function Composer() {
     }
     setBusy(true);
     try {
-      await createAnnouncement(user!.email!, { title, body, link, pinned, category });
+      await createAnnouncement(user!.email!, { title, body, link, pinned, category, audience });
       setTitle("");
       setBody("");
       setLink("");
       setPin(false);
       setCategory("general");
-      setNote("Posted. Every member sees it on their dashboard now.");
+      // The audience is NOT reset. Unlike the other fields it is a habit rather than a
+      // property of the notice just posted — an organiser working through three
+      // members-only notices should not have to re-pick it three times, and the picker
+      // stays on screen showing what the next one will be.
+      setNote(
+        audience === "members"
+          ? "Posted. Club members see it on their dashboard now."
+          : audience === "students"
+            ? "Posted. Students who are not members see it; members will not."
+            : "Posted. Everyone who signs in sees it on their dashboard now.",
+      );
       await load();
     } catch (e) {
       console.error("[osc] could not post", e);
@@ -218,6 +231,14 @@ export default function Composer() {
             ))}
           </select>
         </div>
+
+        <AudiencePicker
+          id="an-audience"
+          noun="notice"
+          value={audience}
+          onChange={setAudience}
+          controlClassName={ctl}
+        />
 
         <label className="tap flex items-center gap-3 text-sm text-ink">
           <input

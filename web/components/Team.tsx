@@ -357,7 +357,6 @@ function Node({
   member,
   diameter,
   designation,
-  remit,
   tone = "quiet",
   priority = false,
   maxWidth = CARD_MAX_W,
@@ -376,8 +375,6 @@ function Node({
   };
   diameter: string;
   designation?: string;
-  /** Overrides member.remit. A desk's remit belongs to the desk, not the person. */
-  remit?: string;
   tone?: "loud" | "quiet";
   priority?: boolean;
   maxWidth?: string;
@@ -386,6 +383,15 @@ function Node({
   /** Which edge it is anchored to, so a card near the chart's edge stays on the page. */
   tipAlign?: "start" | "center" | "end";
 }) {
+  /* WHAT THE CARD HAS TO SAY, WORKED OUT BEFORE IT IS DRAWN, because it may have
+     nothing. A desk member carries no office and so no remit, and two of them
+     carry no batch and no highlights either — an unguarded card renders for them
+     as an empty bubble that appears on hover and says nothing, which reads as a
+     bug rather than as an absence. The portrait is still the hover target; it just
+     has no answer, so it gives none. */
+  const hasTip = Boolean(
+    member.remit || member.batch || member.highlights?.length,
+  );
   return (
     <div
       className="mx-auto flex flex-col items-center px-3 text-center"
@@ -424,18 +430,22 @@ function Node({
             is read out from the stacked list below, where it is plain text rather
             than a hover state — which is also what a touch device gets, since the
             chart only renders at lg+ and hover does not exist on a phone. */}
-        <div
-          aria-hidden
-          className="person-tip"
-          data-tip={tip}
-          data-align={tipAlign}
-        >
-          {member.batch && (
-            <p className="person-tip-batch">Batch {member.batch}</p>
-          )}
-          <p className="person-tip-remit">{remit ?? member.remit}</p>
-          <Highlights items={member.highlights} />
-        </div>
+        {hasTip && (
+          <div
+            aria-hidden
+            className="person-tip"
+            data-tip={tip}
+            data-align={tipAlign}
+          >
+            {member.batch && (
+              <p className="person-tip-batch">Batch {member.batch}</p>
+            )}
+            {member.remit && (
+              <p className="person-tip-remit">{member.remit}</p>
+            )}
+            <Highlights items={member.highlights} />
+          </div>
+        )}
       </div>
       <Caption designation={designation} name={member.name} tone={tone} />
       {member.github && (
@@ -714,7 +724,6 @@ export default function Team() {
                   key={m.name}
                   member={m}
                   diameter={DESK_D}
-                  remit={DESK.remit}
                   tipAlign={align(DESK_MEMBER_X[i])}
                 />
               ))}

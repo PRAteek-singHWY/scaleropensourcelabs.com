@@ -3,6 +3,7 @@ import Link from "next/link";
 import ApplyForm from "@/components/ApplyForm";
 import Duo from "@/components/Duo";
 import Note from "@/components/fx/Note";
+import { DASHBOARD_HREF } from "@/content/site";
 
 // THE APPLICATION FORM. One route, one job.
 //
@@ -166,13 +167,12 @@ export default function Join() {
                 </div>
               </div>
 
-              {/* THE WAY BACK IN, and it is here because separating the two features
-                  opened a hole that nothing else closes. The nav's far-end button reads
-                  "Join" for anybody without a session and points at this page — so an
-                  existing member on a new laptop, or after clearing their cookies, clicks
-                  it out of habit and arrives at an application form with no sign-in
-                  anywhere on it. Their own dashboard would be unreachable except by
-                  typing the URL.
+              {/* THE WAY BACK IN. The nav carries a "Sign in" link of its own now, so
+                  this is no longer the only thing between a returning member and their
+                  dashboard — but it stays, because that link is sm+ only and because
+                  this is the page somebody lands on when they press "Join" out of habit.
+                  It is the sentence that stops them filling in an application they have
+                  already sent.
 
                   BEFORE THE FORM, NOT AFTER IT. Under the fields it would be found by
                   somebody who had already filled them in, which is the one moment the
@@ -181,17 +181,19 @@ export default function Join() {
 
                   Small and quiet on purpose: almost nobody reading this page is a
                   member, and a sign-in prompt with equal weight to the form would ask
-                  every first-time reader to work out which of two things they are. */}
+                  every first-time reader to work out which of two things they are.
+
+                  SAME TAB, AND IT USED TO OPEN A NEW ONE. `target="_blank"` on an
+                  internal route left this application page open behind the reader as a
+                  stale, signed-out copy of a site they had just signed into, and left
+                  the back button — the thing somebody presses the moment they realise
+                  they are in the wrong place — doing nothing at all. Signing in is not
+                  a reference you consult beside the form; it is where you were going
+                  instead of filling it in. */}
               <p className="mt-6 text-[15px] leading-relaxed text-dust">
                 Already joined?{" "}
-                <Link
-                  href="/dashboard"
-                  target="_blank"
-                  rel="noopener"
-                  className="link-u text-accent"
-                >
+                <Link href={DASHBOARD_HREF} className="link-u text-accent">
                   Sign in to your dashboard
-                  <span className="sr-only"> (opens in a new tab)</span>
                 </Link>{" "}
                 — no need to apply twice.
               </p>

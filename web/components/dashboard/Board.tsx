@@ -20,46 +20,53 @@
 import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import Panel from "@/components/dashboard/Panel";
+import { useAuth } from "@/lib/auth";
 import { CATEGORIES, live, readAnnouncements, type Announcement } from "@/lib/announcements";
 import { fmtDate } from "@/lib/profile";
 
 export default function Board() {
+  const { isClubMember } = useAuth();
   const [posts, setPosts] = useState<Announcement[] | null>(null);
-  const [error, setError] = useState("");
 
+  // WAIT FOR A DEFINITE ANSWER BEFORE ASKING. `isClubMember` is undefined until the
+  // profile read comes back, and the query built from it decides which audiences this
+  // request may even mention — so firing it early would ask as the wrong person and
+  // either miss the members' notices or be refused outright. The panel stays in its
+  // loading state for the extra moment instead.
   useEffect(() => {
+    if (isClubMember === undefined) return;
     let alive = true;
     (async () => {
       try {
         // ARCHIVED NOTICES ARE DROPPED HERE rather than in the query: the rules cannot
         // filter, and the organisers\u2019 screen needs the same read to include them.
-        const rows = live(await readAnnouncements());
+        const rows = live(await readAnnouncements(isClubMember));
         if (alive) setPosts(rows);
       } catch (e) {
         // A refusal here means the rules are not deployed, or the collection has never
         // been written to on a fresh project. Neither is the member's problem, and
-        // neither should take the rest of the dashboard down — so this panel says so
-        // and the page carries on.
+        // neither should take the rest of the dashboard down — so this panel falls back
+        // to its empty state and the page carries on.
+        //
+        // THE EMPTY STATE IS ALSO THE FAILURE STATE, deliberately: the panel reads "No
+        // notices at the moment" whether nothing was posted or the read failed, so a
+        // member never meets an error message they cannot act on.
+        //
+        // THE COST IS REAL AND BELONGS IN WRITING. A failed read now presents as an empty
+        // board, so a deadline that WAS posted reads as nothing to catch — the panel is
+        // at its most reassuring exactly when it knows least. The console line below is
+        // the only thing that still tells the two apart, which is why it stays.
         console.error("[osc] could not read the board", e);
-        if (alive) {
-          setError("The notice board is not loading. Everything else here still works.");
-          setPosts([]);
-        }
+        if (alive) setPosts([]);
       }
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [isClubMember]);
 
   return (
     <Panel icon="megaphone" title="From the organisers">
-
-      {error && (
-        <p className="text-sm leading-relaxed text-ember" role="alert">
-          {error}
-        </p>
-      )}
 
       {posts === null && (
         <p className="text-body text-haze" aria-busy="true">
@@ -67,10 +74,10 @@ export default function Board() {
         </p>
       )}
 
-      {posts?.length === 0 && !error && (
+      {posts?.length === 0 && (
         <>
           <h3 className="font-display text-display-md font-bold tracking-tight">
-            Nothing pinned up yet.
+            No notices at the moment
           </h3>
           <p className="measure mt-3 text-body text-haze">
             When there is a session, a deadline worth catching, or a repo that suddenly

@@ -20,6 +20,7 @@
 // six of them.
 
 import { ANNOUNCEMENTS, getDb } from "@/lib/firebase";
+import { queryableAudiences, type Audience } from "@/lib/audience";
 
 /** The three kinds of notice a club actually posts. A closed set, mirrored in
  *  firestore.rules, because each renders as a differently-coloured chip and an unknown
@@ -58,6 +59,10 @@ export type Announcement = {
    *  and destroying the only record that the club ever said it. Delete still exists for a
    *  notice posted by mistake; this is the ordinary way one comes off the board. */
   archived?: boolean;
+  /** WHO THE NOTICE IS FOR. Absent means everyone — see lib/audience.ts for why that
+   *  default is the only backward-compatible one, and firestore.rules for the copy of
+   *  it that is actually enforced. */
+  audience?: Audience;
   /** The organiser who posted. Pinned by the rules to the signed-in address, so a byline
    *  cannot be forged. */
   author_email: string;
@@ -77,12 +82,37 @@ export type Announcement = {
  *  NEWEST rows rather than an arbitrary 50. */
 const LIMIT = 50;
 
-export async function readAnnouncements(): Promise<Announcement[]> {
+/** @param forClubMember  what the reader is, which decides what the QUERY may ask for —
+ *    not what gets filtered afterwards. Pass `undefined` only for an organiser reading
+ *    the board they administer; the rules let an admin see every audience, so their
+ *    query carries no audience clause at all.
+ *
+ *  THE `where` CLAUSE IS NOT AN OPTIMISATION, IT IS WHAT MAKES THE READ SUCCEED. A
+ *  Firestore list rule is judged against the QUERY rather than the rows it returns: the
+ *  read is allowed only if the query's constraints prove the rule holds for anything it
+ *  could match. Without this clause a member reading the board gets permission-denied
+ *  outright — not a shorter list, and not only once a members-only notice exists. The
+ *  rules and this clause have to describe the same set; queryableAudiences() is the
+ *  single definition of it.
+ *
+ *  THE COMPOSITE INDEX IS THE COST, and it is the thing the header note above went out
+ *  of its way to avoid for `pinned`. `where("audience", "in", …)` alongside
+ *  `orderBy("created_at")` needs one, and unlike the pinned sort it cannot be done in
+ *  memory — the filtering has to happen in the query or the read is refused. It is
+ *  declared in firestore.indexes.json so it deploys with the rules rather than being
+ *  discovered as a failed-precondition error in production. */
+export async function readAnnouncements(
+  forClubMember?: boolean,
+): Promise<Announcement[]> {
   const db = await getDb();
   if (!db) throw new Error("Firebase is not configured");
-  const { collection, getDocs, limit, orderBy, query } = await import("firebase/firestore");
+  const { collection, getDocs, limit, orderBy, query, where } = await import("firebase/firestore");
+  const scope =
+    forClubMember === undefined
+      ? []
+      : [where("audience", "in", queryableAudiences(forClubMember))];
   const snap = await getDocs(
-    query(collection(db, ANNOUNCEMENTS), orderBy("created_at", "desc"), limit(LIMIT)),
+    query(collection(db, ANNOUNCEMENTS), ...scope, orderBy("created_at", "desc"), limit(LIMIT)),
   );
   const rows = snap.docs.map((d) => ({ ...(d.data() as Omit<Announcement, "id">), id: d.id }));
   // ARCHIVED ROWS ARE RETURNED, not filtered out here. The organisers' screen has to show
@@ -108,7 +138,14 @@ export function isWellFormedPost(p: { title?: string; body?: string }): boolean 
  *  "no link" and the rules' `!('link' in d)` branch is the one that runs. */
 export async function createAnnouncement(
   authorEmail: string,
-  data: { title: string; body: string; link?: string; pinned: boolean; category?: Category },
+  data: {
+    title: string;
+    body: string;
+    link?: string;
+    pinned: boolean;
+    category?: Category;
+    audience: Audience;
+  },
 ): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Firebase is not configured");
@@ -124,6 +161,13 @@ export async function createAnnouncement(
   };
   if (data.link?.trim()) body.link = data.link.trim();
   if (data.category) body.category = data.category;
+  // ALWAYS WRITTEN, even when it is the default. Every other optional field here is
+  // omitted when empty, and this one deliberately is not: a notice with no `audience`
+  // key is invisible to the `where("audience", "in", …)` clause every reader now uses,
+  // so omitting it would publish a notice that nobody but an organiser can see. Absent
+  // still MEANS "both" for the rows written before this existed — it just must not be
+  // how new ones are written.
+  body.audience = data.audience;
 
   await addDoc(collection(db, ANNOUNCEMENTS), body);
 }

@@ -76,8 +76,27 @@ const NAV: NavItem[] = [
  *
  *  So the current page is not styled differently; it is simply not listed. The sidebar
  *  says where you can go, and the app bar above already says where you are. */
+/* NO `.tap` ON THESE ROWS, AND THAT IS THE FIX RATHER THAN A REGRESSION.
+ *
+ *  `.tap` is for a STANDALONE INLINE LINK: 14px of block padding with a matching -14px
+ *  margin, so the hit area grows to the 44px floor and nothing on screen moves. It works
+ *  because an inline link has no visible box — there is nothing to see growing.
+ *
+ *  These rows have one. They are `rounded-tile` with `hover:bg-sunk`, so the padding
+ *  `.tap` adds is PAINTED, and the negative margin then pulls the next row up into it.
+ *  Measured on /dashboard at 1440x900: "Projects" occupied y 161-213 and "My details"
+ *  y 191-243 — a 22px overlap, in which the top of one row sits inside the click target
+ *  of the row above it. A pointer near that boundary follows the wrong link, and the
+ *  hover fill lights up a row you are not on.
+ *
+ *  So the row IS the target instead: py-3 on a 24px line box is 48px, clear of the 44px
+ *  floor (WCAG 2.5.5) with no negative margin, and the fill it paints is exactly the
+ *  area you can press. The sidebar's rows are 48px tall in layout rather than 24px,
+ *  which is the honest height they were already claiming from the pointer.
+ *
+ *  `npm run qa` reports this as `tap-margin-clash`, which is what found it. */
 const NAV_CLASS =
-  "tap flex items-center gap-3 rounded-tile px-3.5 py-2.5 text-sm font-semibold text-slate transition-colors hover:bg-sunk hover:text-ink";
+  "flex items-center gap-3 rounded-tile px-3.5 py-3 text-sm font-semibold text-slate transition-colors hover:bg-sunk hover:text-ink";
 
 export default function Shell({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
@@ -217,7 +236,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
           <div className="mt-auto flex flex-col gap-1.5 border-t border-seam pt-4">
             <a
               href={`mailto:${LINKS.email}`}
-              className="tap flex items-center gap-3 rounded-tile px-3.5 py-2.5 text-sm font-semibold text-slate transition-colors hover:bg-sunk hover:text-ink"
+              className="flex items-center gap-3 rounded-tile px-3.5 py-3 text-sm font-semibold text-slate transition-colors hover:bg-sunk hover:text-ink"
             >
               <Icon name="help" size="1.0625rem" strokeWidth={1.75} />
               Help
@@ -226,7 +245,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               <button
                 type="button"
                 onClick={() => void signOut()}
-                className="tap flex items-center gap-3 rounded-tile px-3.5 py-2.5 text-left text-sm font-semibold text-slate transition-colors hover:bg-sunk hover:text-ink"
+                className="flex items-center gap-3 rounded-tile px-3.5 py-3 text-left text-sm font-semibold text-slate transition-colors hover:bg-sunk hover:text-ink"
               >
                 <Icon name="log-out" size="1.0625rem" strokeWidth={1.75} />
                 Sign out

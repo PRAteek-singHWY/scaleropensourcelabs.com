@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import AdminDashboard from "@/components/AdminDashboard";
+import AudienceBackfill from "@/components/AudienceBackfill";
 import Composer from "@/components/Composer";
 import FormBuilder from "@/components/FormBuilder";
 import Roster from "@/components/Roster";
@@ -36,6 +37,8 @@ export default function Admin() {
         </p>
       </div>
 
+      {/* Renders only while there is something to migrate — see the component. */}
+      <AudienceBackfill />
       <AdminDashboard />
       <Composer />
       <Sessions />

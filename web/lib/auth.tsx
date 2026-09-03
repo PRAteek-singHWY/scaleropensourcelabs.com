@@ -40,6 +40,7 @@ import type { User } from "firebase/auth";
 import {
   ADMINS,
   ALLOWED_EMAIL_DOMAIN,
+  USERS,
   getAuthClient,
   getDb,
   isAllowedEmail,
@@ -66,6 +67,17 @@ type AuthState = {
    *  It is a CONVENIENCE, never a boundary. Hiding the roster UI from an admin does not
    *  stop them POSTing to Firestore; `isOwner()` in firestore.rules does. */
   isOwner: boolean | undefined;
+  /** IN THE CLUB, which is a smaller set than "signed in" and is not the same question
+   *  as `user !== null`. Every student on the domain can sign in; membership is what an
+   *  organiser grants on their profile. undefined while unknown.
+   *
+   *  undefined IS LOAD-BEARING HERE, more than it is for isAdmin. This flag decides
+   *  which notices a reader is shown, and the two wrong answers are different: treating
+   *  "not yet known" as false flashes recruitment copy at a member for a moment, and
+   *  treating it as true flashes the club's private board at somebody who is not in it.
+   *  Panels wait for a definite answer rather than guessing — see visibleTo() in
+   *  lib/audience.ts, which refuses to decide while this is undefined. */
+  isClubMember: boolean | undefined;
   /** Firebase is not set up at all — no .env.local. The UI says so rather than
    *  offering a button that cannot work. */
   configured: boolean;
@@ -86,6 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [isAdmin, setIsAdmin] = useState<boolean | undefined>(undefined);
   const [isOwner, setIsOwner] = useState<boolean | undefined>(undefined);
+  const [isClubMember, setIsClubMember] = useState<boolean | undefined>(undefined);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   /** The off-domain address somebody just tried, so the card can offer "use a different
@@ -196,11 +209,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
+  // Club membership, read off the caller's OWN profile. Separate from the admin read
+  // above because it is a different document in a different collection — users/{uid}
+  // rather than admins/{email} — and merging them would mean one failure hiding the
+  // other.
+  //
+  // A MISSING PROFILE IS NOT AN ERROR, it is the ordinary state of a student who signed
+  // in and has not filled the form yet. It resolves to false: they are not a member,
+  // which is true, and the dashboard already has its own handling for an absent
+  // profile. Same for a refused read — the rules allow anybody their own row, so a
+  // refusal means something is wrong with the session rather than with membership, and
+  // the safe answer to "may they see the club's private board" is no.
+  //
+  // THE DEFAULT MIRRORS firestore.rules: absent `membership` means "student", never
+  // "member". A client that disagreed would render members-only notices that the
+  // database then refuses to hand over, which presents as a panel that is permanently
+  // empty for exactly the people it was written for.
+  useEffect(() => {
+    let alive = true;
+    if (!user) {
+      setIsClubMember(user === null ? false : undefined);
+      return;
+    }
+    (async () => {
+      try {
+        const db = await getDb();
+        if (!db) {
+          if (alive) setIsClubMember(false);
+          return;
+        }
+        const { doc, getDoc } = await import("firebase/firestore");
+        const snap = await getDoc(doc(db, USERS, user.uid));
+        const d = snap.exists() ? (snap.data() as { membership?: string }) : null;
+        if (alive) setIsClubMember(d?.membership === "member");
+      } catch {
+        if (alive) setIsClubMember(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [user]);
+
   const value = useMemo<AuthState>(
     () => ({
       user,
       isAdmin,
       isOwner,
+      isClubMember,
       configured,
       busy,
       error,
@@ -312,7 +368,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(false);
       },
     }),
-    [user, isAdmin, isOwner, configured, busy, error, wrongAccount],
+    [user, isAdmin, isOwner, isClubMember, configured, busy, error, wrongAccount],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

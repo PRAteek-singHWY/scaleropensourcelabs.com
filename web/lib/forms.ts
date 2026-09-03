@@ -23,6 +23,7 @@
 // shape, as the GitHub contribution counts.
 
 import { FORMS, RESPONSES, getDb } from "@/lib/firebase";
+import { queryableAudiences, type Audience } from "@/lib/audience";
 
 /** What a question can be.
  *
@@ -61,6 +62,10 @@ export type FormDoc = {
   show_tally: boolean;
   /** field id -> option -> count. Written ONLY by the Cloud Function. */
   tally?: Record<string, Record<string, number>>;
+  /** Who the form is for. Absent means everyone — see lib/audience.ts. It gates both
+   *  who may READ the form and who may answer it; the rules check it on the response
+   *  subcollection too, because those are separate requests. */
+  audience?: Audience;
   author_email: string;
   created_at?: unknown;
   updated_at?: unknown;
@@ -81,14 +86,21 @@ export type ResponseDoc = {
  *  handful of these a term. The member view filters to the open ones in memory rather
  *  than in the query, so an organiser looking at /admin sees the closed ones too without
  *  a second read. */
-export async function readForms(): Promise<FormDoc[]> {
+/** @param forClubMember  what the reader is; `undefined` for an organiser, who may see
+ *    every audience and therefore queries without the clause. */
+export async function readForms(forClubMember?: boolean): Promise<FormDoc[]> {
   const db = await getDb();
   if (!db) throw new Error("Firebase is not configured");
-  const { collection, getDocs } = await import("firebase/firestore");
+  const { collection, getDocs, query, where } = await import("firebase/firestore");
   // No orderBy: `created_at` is absent for the moment between a form being written and
   // the server stamping it, and an orderBy drops documents missing the field — which
-  // would make a just-created form vanish from its author's screen.
-  const snap = await getDocs(collection(db, FORMS));
+  // would make a just-created form vanish from its author's screen. It also means the
+  // audience filter below needs no composite index.
+  const snap = await getDocs(
+    forClubMember === undefined
+      ? query(collection(db, FORMS))
+      : query(collection(db, FORMS), where("audience", "in", queryableAudiences(forClubMember))),
+  );
   return snap.docs
     .map((d) => ({ ...(d.data() as Omit<FormDoc, "id">), id: d.id }))
     .sort((a, b) => ms(b.created_at) - ms(a.created_at));
@@ -124,9 +136,16 @@ export async function readResponses(formId: string): Promise<ResponseDoc[]> {
 
 /** Create or edit a form. Admins only.
  *
- *  `tally` is never sent. The rules refuse it on create and require it unchanged on
- *  update, so including it here would make every edit of a poll fail the moment it had
- *  any votes — which is exactly when somebody first tries to fix a typo in the question. */
+ *  `tally` IS NEVER COMPOSED HERE AND IS SENT STRAIGHT BACK ON AN EDIT. The rules refuse
+ *  it outright on create and require it byte-identical to the stored value on update, so
+ *  a client can carry it and cannot invent it — the counts come from the tallyResponses
+ *  Cloud Function, which writes them with the Admin SDK.
+ *
+ *  Carrying it is not optional, and this is the sharp edge. The write below is a full
+ *  `setDoc` with no merge, because that is the only way a deleted question actually
+ *  disappears — and a full write that omitted the tally would ERASE the counts of a poll
+ *  the moment somebody fixed a typo in its question. So on an edit the stored value goes
+ *  back down the wire unchanged. */
 export async function saveForm(
   id: string | null,
   authorEmail: string,
@@ -136,6 +155,7 @@ export async function saveForm(
     fields: Field[];
     open: boolean;
     show_tally: boolean;
+    audience: Audience;
   },
   existing: FormDoc | null,
 ): Promise<string> {
@@ -158,8 +178,17 @@ export async function saveForm(
     updated_at: serverTimestamp(),
   };
   if (data.description?.trim()) body.description = data.description.trim();
+  // Always written, never omitted — see the same note in lib/announcements.ts. A form
+  // with no audience key cannot be found by any reader's query, which for a form means
+  // nobody can answer it either.
+  body.audience = data.audience;
   if (!existing) body.created_at = serverTimestamp();
   else if (existing.created_at) body.created_at = existing.created_at;
+  // The counts, returned untouched. See the note above: omitting them on a full write is
+  // how a poll silently loses its votes to a typo fix. Guarded rather than assigned
+  // directly because `setDoc` rejects an explicit undefined, and a form nobody has
+  // answered yet has no tally to return.
+  if (existing?.tally) body.tally = existing.tally;
 
   if (id) {
     await setDoc(doc(db, FORMS, id), body);

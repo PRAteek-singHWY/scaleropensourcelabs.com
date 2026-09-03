@@ -260,6 +260,18 @@ export default function MentorPicker({ user }: { user: User }) {
     if (state === "saving") return;
     setState("saving");
     setMessage("");
+    // DERIVED HERE, NOT READ FROM STATE, and that is a bug fix rather than a
+    // refactor. With one mentor published there is no step two, so "first choice
+    // only" is the only honest answer — and the submit button used to say so by
+    // calling setFirstOnly(true) in its own onClick. It is a type="submit" button:
+    // React processes that click and the form's submit in the same batch, so this
+    // handler still closed over the OLD value and sent first_only: false with no
+    // mentor_2. firestore.rules refuses exactly that pair — "not first-choice-only"
+    // has to come with a second choice — so enrolment failed every time for the
+    // whole period a club has published its first mentor and not yet its second.
+    // The reader saw "That did not save. The fault is ours rather than yours",
+    // which was true and unhelpful.
+    const onlyChoice = onlyOneMentor || firstOnly;
     try {
       await saveEnrollment(
         user.uid,
@@ -267,8 +279,8 @@ export default function MentorPicker({ user }: { user: User }) {
         {
           programme: PROGRAMME,
           mentor_1: first,
-          mentor_2: firstOnly ? undefined : second,
-          first_only: firstOnly,
+          mentor_2: onlyChoice ? undefined : second,
+          first_only: onlyChoice,
         },
         enrollment === null,
       );
@@ -578,9 +590,8 @@ export default function MentorPicker({ user }: { user: User }) {
                   disabled={
                     !first || (!onlyOneMentor && !secondAnswered) || state === "saving"
                   }
-                  onClick={() => {
-                    if (onlyOneMentor) setFirstOnly(true);
-                  }}
+                  // No onClick. It used to set firstOnly here and onSubmit could not
+                  // see it in time — see the note in onSubmit, which now derives it.
                   className="btn btn-primary disabled:opacity-60"
                 >
                   {state === "saving"

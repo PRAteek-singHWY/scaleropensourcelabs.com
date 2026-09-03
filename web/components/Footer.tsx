@@ -32,7 +32,7 @@
 
 import Link from "next/link";
 import Console from "@/components/fx/Console";
-import { INSTITUTIONAL, LINKS, PAGES } from "@/content/site";
+import { DASHBOARD_HREF, INSTITUTIONAL, JOIN_HREF, LINKS, PAGES } from "@/content/site";
 
 export default function Footer() {
   return (
@@ -116,9 +116,15 @@ export default function Footer() {
         </div>
 
         {/* Every route, as one mono row, so it reads as wayfinding rather than as a
-            fifth content column. /join is here where it is absent from the nav — the
-            nav has its button, and this list is the one place that should be able to
-            reach the whole site. */}
+            fifth content column. /join is here where it is absent from the nav strip —
+            the nav has its button, and this list is the one place that should be able to
+            reach the whole site.
+
+            AND SIGN IN IS HERE FOR THE OPPOSITE REASON: the nav only offers it above
+            640px, so on a phone this row is where a returning member finds the door.
+            Both sit at the end rather than among the pages, because neither is one —
+            and side by side they read as the pair they are: ask to join, or come back
+            in. */}
         <nav aria-label="All pages" className="mt-16 border-t border-seam pt-7">
           <ul className="flex flex-wrap gap-x-7 gap-y-1" data-reveal-group>
             {PAGES.map((p) => (
@@ -131,12 +137,28 @@ export default function Footer() {
                 </Link>
               </li>
             ))}
+            {/* `link-u` like every entry above it. Without it this was the one item
+                in the row that did not underline on hover, which reads as the one item
+                that is not a link. */}
             <li>
               <Link
-                href="/join"
-                className="tap inline-block font-mono text-label uppercase text-haze transition-colors hover:text-ink"
+                href={JOIN_HREF}
+                className="tap link-u inline-block font-mono text-label uppercase text-haze transition-colors hover:text-ink"
               >
                 Join
+              </Link>
+            </li>
+            {/* NOT CONDITIONAL ON A SESSION, unlike the nav's. Reading the auth state
+                here would make a server component a client one for the sake of one word,
+                and it costs nothing to leave in place: a member who presses it lands on
+                the dashboard they were already entitled to, which is exactly where the
+                label said it would take them. */}
+            <li>
+              <Link
+                href={DASHBOARD_HREF}
+                className="tap link-u inline-block font-mono text-label uppercase text-haze transition-colors hover:text-ink"
+              >
+                Sign in
               </Link>
             </li>
           </ul>

@@ -18,6 +18,7 @@
 // future, so the same rule would make scheduling impossible.
 
 import { SESSIONS, getDb } from "@/lib/firebase";
+import { queryableAudiences, type Audience } from "@/lib/audience";
 import { toDate } from "@/lib/profile";
 
 export type SessionDoc = {
@@ -30,6 +31,8 @@ export type SessionDoc = {
   notes?: string;
   /** A Firestore Timestamp on the way back, a Date on the way in. */
   starts_at: unknown;
+  /** Who the session is for. Absent means everyone — see lib/audience.ts. */
+  audience?: Audience;
   created_by: string;
   created_at?: unknown;
   updated_at?: unknown;
@@ -43,11 +46,22 @@ export type SessionDoc = {
  *  which is exactly how the first few will appear — is the most likely one to be missing
  *  it. A club has a few dozen of these; sorting them client-side costs nothing and cannot
  *  hide one. */
-export async function readSessions(): Promise<SessionDoc[]> {
+/** @param forClubMember  what the reader is; `undefined` for an organiser, who may see
+ *    every audience and therefore queries without the clause.
+ *
+ *  NO COMPOSITE INDEX NEEDED HERE, unlike the notice board, and that falls out of the
+ *  in-memory sort this function already did for its own reasons: with no orderBy in the
+ *  query, a single `where` on one field is served by the automatic index. The sort note
+ *  above is what pays for it. */
+export async function readSessions(forClubMember?: boolean): Promise<SessionDoc[]> {
   const db = await getDb();
   if (!db) throw new Error("Firebase is not configured");
-  const { collection, getDocs } = await import("firebase/firestore");
-  const snap = await getDocs(collection(db, SESSIONS));
+  const { collection, getDocs, query, where } = await import("firebase/firestore");
+  const snap = await getDocs(
+    forClubMember === undefined
+      ? query(collection(db, SESSIONS))
+      : query(collection(db, SESSIONS), where("audience", "in", queryableAudiences(forClubMember))),
+  );
   return snap.docs
     .map((d) => ({ ...(d.data() as Omit<SessionDoc, "id">), id: d.id }))
     .sort((a, b) => (toDate(a.starts_at)?.getTime() ?? 0) - (toDate(b.starts_at)?.getTime() ?? 0));
@@ -69,7 +83,14 @@ export function upcoming(rows: SessionDoc[], now: Date = new Date()): SessionDoc
 export async function saveSession(
   id: string | null,
   authorEmail: string,
-  data: { title: string; speaker?: string; location?: string; notes?: string; starts_at: Date },
+  data: {
+    title: string;
+    speaker?: string;
+    location?: string;
+    notes?: string;
+    starts_at: Date;
+    audience: Audience;
+  },
   existing: SessionDoc | null,
 ): Promise<string> {
   const db = await getDb();
@@ -89,6 +110,9 @@ export async function saveSession(
   if (data.speaker?.trim()) body.speaker = data.speaker.trim();
   if (data.location?.trim()) body.location = data.location.trim();
   if (data.notes?.trim()) body.notes = data.notes.trim();
+  // Always written, never omitted — a session with no audience key is invisible to the
+  // members' and students' queries alike. See the same note in lib/announcements.ts.
+  body.audience = data.audience;
   if (!existing) body.created_at = serverTimestamp();
   else if (existing.created_at) body.created_at = existing.created_at;
 

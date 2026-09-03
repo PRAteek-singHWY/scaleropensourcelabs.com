@@ -1,0 +1,31 @@
+{
+  "//": [
+    "THE ONE COMPOSITE INDEX THIS APP NEEDS, and it exists because the notice board now",
+    "filters by audience and still orders by date.",
+    "",
+    "web/lib/announcements.ts goes out of its way to avoid composite indexes — it sorts",
+    "pinned notices in memory rather than adding a second orderBy, precisely so a fresh",
+    "project never meets a failed-precondition error with a console link in it. That",
+    "trick does not work here: the audience filter CANNOT be done in memory, because a",
+    "query that returns a document the rules refuse fails entirely rather than dropping",
+    "that row. The filter has to be in the query, so the index has to exist.",
+    "",
+    "Declared in the repo rather than clicked into the console so it deploys alongside",
+    "the rules that need it:  firebase deploy --only firestore",
+    "",
+    "sessions and forms need no entry here. Both read their whole collection and sort",
+    "client-side for their own reasons, so neither query carries an orderBy, and a single",
+    "where() on one field is served by the automatic single-field index."
+  ],
+  "indexes": [
+    {
+      "collectionGroup": "announcements",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "audience", "order": "ASCENDING" },
+        { "fieldPath": "created_at", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

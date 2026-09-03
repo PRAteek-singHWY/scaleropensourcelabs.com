@@ -18,6 +18,8 @@
 // can simply open on /dashboard.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import AudiencePicker from "@/components/AudiencePicker";
+import { DEFAULT_AUDIENCE, audienceOf, type Audience } from "@/lib/audience";
 import { useAuth } from "@/lib/auth";
 import {
   fieldId,
@@ -56,6 +58,7 @@ export default function FormBuilder() {
   const [fields, setFields] = useState<Draft[]>([{ ...BLANK_FIELD }]);
   const [showTally, setShowTally] = useState(false);
   const [open, setOpen] = useState(true);
+  const [audience, setAudience] = useState<Audience>(DEFAULT_AUDIENCE);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
@@ -85,6 +88,7 @@ export default function FormBuilder() {
     setFields([{ ...BLANK_FIELD }]);
     setShowTally(false);
     setOpen(true);
+    setAudience(DEFAULT_AUDIENCE);
     setError("");
   };
 
@@ -94,6 +98,7 @@ export default function FormBuilder() {
     setDescription(f.description ?? "");
     setShowTally(f.show_tally);
     setOpen(f.open);
+    setAudience(audienceOf(f.audience));
     setFields(
       f.fields.map((x) => ({
         id: x.id,
@@ -153,11 +158,17 @@ export default function FormBuilder() {
       await saveForm(
         editing?.id ?? null,
         user!.email!,
-        { title, description, fields: built, open, show_tally: showTally },
+        { title, description, fields: built, open, show_tally: showTally, audience },
         editing,
       );
       setNote(
-        editing ? "Updated." : `Posted. Every member sees it on their dashboard now.`,
+        editing
+          ? "Updated."
+          : audience === "members"
+            ? "Posted. Club members see it on their dashboard now."
+            : audience === "students"
+              ? "Posted. Students who are not members see it; members will not."
+              : "Posted. Everyone who signs in sees it on their dashboard now.",
       );
       reset();
       await load();
@@ -183,6 +194,11 @@ export default function FormBuilder() {
           fields: f.fields,
           open: !f.open,
           show_tally: f.show_tally,
+          // CARRIED THROUGH, NOT DEFAULTED. This helper writes the whole document to
+          // flip one boolean, so anything it does not pass is a field it silently
+          // rewrites — and defaulting here would quietly widen a members-only form to
+          // the entire college the first time somebody closed it.
+          audience: audienceOf(f.audience),
         },
         f,
       );
@@ -352,6 +368,14 @@ export default function FormBuilder() {
             Another question
           </button>
         </div>
+
+        <AudiencePicker
+          id="fb-audience"
+          noun="form"
+          value={audience}
+          onChange={setAudience}
+          controlClassName={ctl}
+        />
 
         <label className="tap flex items-center gap-3 text-sm text-ink">
           <input

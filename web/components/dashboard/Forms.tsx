@@ -22,6 +22,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Panel from "@/components/dashboard/Panel";
+import { useAuth } from "@/lib/auth";
 import {
   missingAnswers,
   readForms,
@@ -317,14 +318,18 @@ export default function Forms({
    *  strip can say "2 waiting on you" without repeating every read this panel just did. */
   onPending?: (n: number) => void;
 }) {
+  const { isClubMember } = useAuth();
   const [forms, setForms] = useState<FormDoc[] | null>(null);
   /** form id -> this member's answer. Undefined for a form still being looked up. */
   const [mine, setMine] = useState<Record<string, ResponseDoc | null>>({});
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
+    // See the note on the effect below: nothing is asked for until we know whether the
+    // reader is in the club, because that decides which audiences the query may name.
+    if (isClubMember === undefined) return;
     try {
-      const rows = await readForms();
+      const rows = await readForms(isClubMember);
       setForms(rows);
       // ONE READ PER FORM, IN PARALLEL. The alternative is a collection-group query over
       // every response in the club, which members are not allowed to run and should not
@@ -335,11 +340,20 @@ export default function Forms({
       setMine(Object.fromEntries(pairs));
     } catch (e) {
       console.error("[osc] could not read forms", e);
-      setError("Forms are not loading. Everything else here still works.");
+      // NOT FOLDED INTO THE EMPTY STATE, unlike the board's. That panel now reads "No
+      // notices at the moment" whether it is empty or broken; this one still keeps the two
+      // apart, because a form is something an organiser is waiting on an answer to — a
+      // member told there is nothing to fill in is a member who misses the sign-up that
+      // was open. If the two panels should behave alike, this is the line to change.
+      setError("The forms didn't load. Give it a refresh?");
       setForms([]);
     }
-  }, [uid]);
+  }, [uid, isClubMember]);
 
+  // WAIT FOR A DEFINITE ANSWER BEFORE ASKING. `isClubMember` is undefined until the
+  // profile read comes back, and a query built from it while it is unknown asks as the
+  // wrong person — which for a form means either missing a members-only sign-up or
+  // being refused the whole list. The panel holds its loading state for that moment.
   useEffect(() => {
     void load();
   }, [load]);
@@ -374,7 +388,7 @@ export default function Forms({
       {forms !== null && visible.length === 0 && !error && (
         <>
           <h3 className="font-display text-display-md font-bold tracking-tight">
-            Nothing to answer right now.
+            Nothing to fill in at the moment
           </h3>
           <p className="measure mt-3 text-body text-haze">
             Sign-ups and the odd &ldquo;which Saturday suits everyone&rdquo; turn up here when the

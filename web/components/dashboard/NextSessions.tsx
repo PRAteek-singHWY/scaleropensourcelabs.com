@@ -18,18 +18,26 @@
 
 import { useEffect, useState } from "react";
 import Panel from "@/components/dashboard/Panel";
+import { useAuth } from "@/lib/auth";
 import { readSessions, sessionWhen, upcoming, type SessionDoc } from "@/lib/sessions";
 
 const SHOWN = 3;
 
 export default function NextSessions() {
+  const { isClubMember } = useAuth();
   const [rows, setRows] = useState<SessionDoc[] | null>(null);
 
+  // WAIT FOR A DEFINITE ANSWER BEFORE ASKING. `isClubMember` is undefined until the
+  // profile read comes back, and the query built from it decides which audiences this
+  // request may even mention — so firing it early would ask as the wrong person and
+  // either miss the members' notices or be refused outright. The panel stays in its
+  // loading state for the extra moment instead.
   useEffect(() => {
+    if (isClubMember === undefined) return;
     let alive = true;
     (async () => {
       try {
-        const all = await readSessions();
+        const all = await readSessions(isClubMember);
         if (alive) setRows(upcoming(all).slice(0, SHOWN));
       } catch (e) {
         // Silent, and deliberately: a schedule that fails to load should cost the member
@@ -42,7 +50,7 @@ export default function NextSessions() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [isClubMember]);
 
   if (rows === null || rows.length === 0) return null;
 

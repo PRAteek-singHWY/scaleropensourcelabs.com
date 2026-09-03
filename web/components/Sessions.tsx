@@ -17,7 +17,9 @@
 // in India a time several hours off the one they just chose.
 
 import { useCallback, useEffect, useState } from "react";
+import AudiencePicker from "@/components/AudiencePicker";
 import Icon from "@/components/Icon";
+import { DEFAULT_AUDIENCE, audienceOf, type Audience } from "@/lib/audience";
 import { useAuth } from "@/lib/auth";
 import {
   deleteSession,
@@ -92,6 +94,7 @@ export default function Sessions() {
   const [speaker, setSpeaker] = useState("");
   const [location, setLocation] = useState("");
   const [when, setWhen] = useState("");
+  const [audience, setAudience] = useState<Audience>(DEFAULT_AUDIENCE);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
@@ -120,6 +123,7 @@ export default function Sessions() {
     setSpeaker("");
     setLocation("");
     setWhen("");
+    setAudience(DEFAULT_AUDIENCE);
     setError("");
   }
 
@@ -130,6 +134,10 @@ export default function Sessions() {
     setSpeaker(s.speaker ?? "");
     setLocation(s.location ?? "");
     setWhen(toLocalInput(s.starts_at));
+    // audienceOf() rather than `s.audience ?? "both"`, so a session scheduled before
+    // this field existed opens in the editor showing the audience it actually has
+    // rather than an empty select that would save as something else.
+    setAudience(audienceOf(s.audience));
     setNote("");
     setError("");
   }
@@ -153,10 +161,18 @@ export default function Sessions() {
       await saveSession(
         editing?.id ?? null,
         user!.email!,
-        { title, speaker, location, starts_at: at },
+        { title, speaker, location, starts_at: at, audience },
         editing,
       );
-      setNote(editing ? "Updated." : "Scheduled. Members see it on their dashboard now.");
+      setNote(
+        editing
+          ? "Updated."
+          : audience === "members"
+            ? "Scheduled. Club members see it on their dashboard now."
+            : audience === "students"
+              ? "Scheduled. Students who are not members see it; members will not."
+              : "Scheduled. Everyone who signs in sees it on their dashboard now.",
+      );
       reset();
       await load();
     } catch (e) {
@@ -260,6 +276,14 @@ export default function Sessions() {
                 placeholder="Lab 2"
               />
             </div>
+            <AudiencePicker
+              id="se-audience"
+              noun="session"
+              value={audience}
+              onChange={setAudience}
+              controlClassName={ctl}
+              className="sm:col-span-2"
+            />
           </div>
 
           {error && (

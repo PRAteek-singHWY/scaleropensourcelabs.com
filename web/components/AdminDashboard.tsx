@@ -39,7 +39,14 @@ import AdminMentorship from "@/components/AdminMentorship";
 import { Bars, Counts, ctl, labelOf, tally } from "@/components/admin/ui";
 import { useAuth } from "@/lib/auth";
 import { batchBucket, branchBucket, yearBucket } from "@/lib/batch";
-import { fmtDate, readAllProfiles, toDate, type Profile } from "@/lib/profile";
+import {
+  fmtDate,
+  isClubMember,
+  readAllProfiles,
+  setMembership,
+  toDate,
+  type Profile,
+} from "@/lib/profile";
 import { readAllEnrollments, readMentors, type Enrollment, type Mentor } from "@/lib/mentorship";
 import { HOSTELS, PATHS } from "@/content/join";
 
@@ -53,6 +60,10 @@ function weekStart(d: Date): Date {
 
 export default function AdminDashboard() {
   const { user, isAdmin } = useAuth();
+  /** The uid whose membership is being written, so one row can show it is busy without
+   *  freezing the table. Null when nothing is in flight. */
+  const [saving, setSaving] = useState<string | null>(null);
+  const [memberError, setMemberError] = useState("");
   const [rows, setRows] = useState<Profile[] | null>(null);
   const [mentors, setMentors] = useState<Mentor[] | null>(null);
   const [enrollments, setEnrollments] = useState<Enrollment[] | null>(null);
@@ -70,6 +81,54 @@ export default function AdminDashboard() {
   const [copied, setCopied] = useState("");
   /** Populated only when the clipboard refused, so the addresses are still gettable. */
   const [emailList, setEmailList] = useState("");
+
+  /** Admit somebody to the club, or take them back out.
+   *
+   *  THE TABLE IS UPDATED FROM THE WRITE, NOT RE-READ. A full reload of every profile to
+   *  reflect one changed field would cost a read per member and visibly redraw the
+   *  table under the organiser's cursor — and the one thing that changed is the one
+   *  thing this function already knows. A failed write puts the row back and says so,
+   *  rather than leaving the screen claiming something the database refused.
+   *
+   *  `membership_at` IS SET TO null RATHER THAN A LOCAL Date. The server stamps the real
+   *  value and this row is not re-read; writing `new Date()` here would put a
+   *  client clock into the table where every other timestamp came from the server, and
+   *  it would be wrong by however far the two disagree. Nothing on this screen renders
+   *  it, so null is the honest placeholder until the next full load.
+   */
+  const toggleMembership = useCallback(
+    async (r: Profile) => {
+      if (!user?.email) return;
+      const next = !isClubMember(r);
+      setMemberError("");
+      setSaving(r.uid);
+      try {
+        await setMembership(r.uid, next, user.email);
+        setRows((prev) =>
+          prev
+            ? prev.map((x) =>
+                x.uid === r.uid
+                  ? {
+                      ...x,
+                      membership: next ? "member" : "student",
+                      membership_by: user.email ?? undefined,
+                      membership_at: null,
+                    }
+                  : x,
+              )
+            : prev,
+        );
+      } catch (e) {
+        console.error("[osc] could not change membership", e);
+        setMemberError(
+          `Could not change membership for ${r.name || r.email}. The rules refused it, or the connection dropped.`,
+        );
+      } finally {
+        setSaving(null);
+      }
+    },
+    [user?.email],
+  );
 
   const load = useCallback(async () => {
     setError("");
@@ -476,12 +535,22 @@ export default function AdminDashboard() {
 
         {/* Scrolls inside its own box so a wide table never makes the page scroll
             sideways — the QA sweep asserts no horizontal overflow on every route. */}
+        {/* A refused membership write, said once above the table rather than inside the
+            row that failed — the row has already been put back, so an error attached to
+            it would point at a control that now reads correctly. */}
+        {memberError && (
+          <p className="mt-4 text-sm leading-relaxed text-ember" role="alert">
+            {memberError}
+          </p>
+        )}
+
         <div className="mt-5 overflow-x-auto">
           <table className="w-full min-w-[56rem] border-collapse text-left">
             <thead>
               <tr className="border-b border-seam">
                 {([
                   ["Name", "name"],
+                  ["In the club", null],
                   ["College email", null],
                   ["Batch and branch", "batch"],
                   ["Year", null],
@@ -522,6 +591,31 @@ export default function AdminDashboard() {
               {filtered.map((r) => (
                 <tr key={r.uid} className="border-b border-seam/60 align-top">
                   <td className="py-3 pr-4 text-sm text-ink">{r.name}</td>
+                  {/* MEMBERSHIP, AS A BUTTON RATHER THAN A CHECKBOX. It is an action
+                      somebody takes about another person, not a preference — and a
+                      checkbox in a table of twenty rows is the control most easily
+                      clicked by accident on the way to somewhere else. The label states
+                      the CURRENT state and the title says what pressing it does, which
+                      is the same split the theme toggle uses. */}
+                  <td className="whitespace-nowrap py-3 pr-4">
+                    <button
+                      type="button"
+                      onClick={() => void toggleMembership(r)}
+                      disabled={saving === r.uid}
+                      title={
+                        isClubMember(r)
+                          ? `Remove ${r.name || r.email} from the club`
+                          : `Admit ${r.name || r.email} to the club`
+                      }
+                      className={`tap rounded-full border px-3 py-1 text-[13px] transition-colors disabled:opacity-50 ${
+                        isClubMember(r)
+                          ? "border-accent/60 text-accent hover:border-accent"
+                          : "border-seam text-dust hover:border-accent/60 hover:text-accent"
+                      }`}
+                    >
+                      {saving === r.uid ? "Saving…" : isClubMember(r) ? "Member" : "Student"}
+                    </button>
+                  </td>
                   <td className="py-3 pr-4 font-mono text-[13px] text-haze">{r.email}</td>
                   <td className="whitespace-nowrap py-3 pr-4 text-sm text-haze">
                     {batchBucket(r.email)}
@@ -555,7 +649,7 @@ export default function AdminDashboard() {
               ))}
               {rows !== null && filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-6 text-sm text-dust">
+                  <td colSpan={9} className="py-6 text-sm text-dust">
                     {stats.total === 0
                       ? "Nobody has registered yet."
                       : "No member matches that filter."}

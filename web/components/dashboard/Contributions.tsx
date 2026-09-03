@@ -108,7 +108,10 @@ export default function Contributions({
       setRow(await readContributions(uid));
     } catch (e) {
       console.error("[osc] could not read contributions", e);
-      setError("We could not load your GitHub activity. Reload the page.");
+      // Same shape as the forms' — "X didn't load. Give it a refresh?" A member who meets
+      // both in one session should not be able to tell that two different people wrote them.
+      // The board no longer carries this shape: it falls back to its empty state instead.
+      setError("Your GitHub activity didn't load. Give it a refresh?");
       setRow(null);
     }
   }, [uid]);

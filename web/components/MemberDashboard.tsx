@@ -28,6 +28,7 @@ import Board from "@/components/dashboard/Board";
 import Contributions from "@/components/dashboard/Contributions";
 import Forms from "@/components/dashboard/Forms";
 import NextSessions from "@/components/dashboard/NextSessions";
+import MentorPicker from "@/components/MentorPicker";
 import NextUp from "@/components/dashboard/NextUp";
 import Panel from "@/components/dashboard/Panel";
 import { isComplete, readProfile, type Profile } from "@/lib/profile";
@@ -234,6 +235,21 @@ export default function MemberDashboard() {
           )}
         </div>
       </div>
+
+      {/* ------------------------------------------------------------- the programmes
+          RESTORED, NOT NEW. This was rendered here in b996d6a and disappeared in the
+          merge that took upstream's structure alongside this dashboard — the component,
+          its library and its firestore rules all survived, and only the one line that
+          put it on screen was lost. The result was a mentorship system that was fully
+          built, fully protected, and unreachable: a member had no way to pick a mentor
+          and nothing on the page said so. Same failure as the /join form the rules file
+          documents — correct in git, correct in review, and wrong about which features
+          were reachable.
+
+          It owns its own reads and its own signed-out state, so it goes at the foot of
+          the page rather than inside the two-column grid: it is a section, not a panel,
+          and it is the one thing here a member acts on once a term rather than weekly. */}
+      <MentorPicker user={user} />
     </div>
   );
 }

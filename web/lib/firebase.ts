@@ -187,8 +187,15 @@ export const USERS = "users";
  *  ever signed in — with uid keys you would have to make them sign in, read their uid
  *  out of the Auth tab, and then create the document, which is a worse first day.
  *
- *  Writes are denied to every client, including admins: the list is managed by hand in
- *  the console, so a compromised admin session cannot appoint more admins. */
+ *  IT IS ALSO THE CORE-TEAM ROSTER — see lib/roster.ts. One row carries both the access
+ *  grant and the public team billing, because they were two lists and the two lists
+ *  drifted.
+ *
+ *  Writes are OWNER-ONLY and nobody may write their own row: a plain admin, and therefore
+ *  one compromised admin account, cannot appoint accomplices or retire anybody, and an
+ *  owner cannot demote themselves into a state only somebody else can undo. Nobody may
+ *  delete a row at all — retiring is `active: false`, which isAdmin() in firestore.rules
+ *  reads on every request. */
 export const ADMINS = "admins";
 
 /** The mentors an organiser has published, one document each.
@@ -198,8 +205,9 @@ export const ADMINS = "admins";
  *  admins from the dashboard. That is a deliberate widening and it is acceptable for one
  *  reason: a mentor entry is published, organiser-authored, non-personal copy — the same
  *  kind of thing that lives in content/ — so the worst a compromised admin session can do
- *  here is deface a list, not read or alter anybody's details. Contrast `admins`, where
- *  the same reasoning does not hold and every client write stays denied. */
+ *  here is deface a list, not read or alter anybody's details. Contrast `admins`, where the
+ *  same reasoning does not hold: writing that one grants access, so it is narrowed to
+ *  owners and fenced with a rule nobody may write their own row. */
 export const MENTORS = "mentors";
 
 /** One document per member who has enrolled in a mentorship programme, keyed by uid for
@@ -235,10 +243,13 @@ export function isAllowedEmail(email: string | null | undefined): boolean {
  *  firestore.rules, the client and the check scripts must not be able to disagree about a
  *  collection's name, and one file is the only way to guarantee that.
  *
- *  NOTE THAT firestore.rules DOES NOT YET COVER THESE. The merge took upstream's rules
- *  wholesale, so `forms`, `sessions` and the roster fields fall to the catch-all and are
- *  DENIED. That is a loud break rather than a hole — the panels error, nothing leaks — but
- *  those blocks have to be re-applied before any of this works again.
+ *  firestore.rules NOW COVERS ALL OF THESE. The merge took upstream's rules wholesale, so
+ *  for a while `forms`, `sessions` and the roster fields fell to the catch-all and were
+ *  denied — a loud break rather than a hole, but a break. The blocks are back, and each
+ *  one is executed against the emulator by `npm run rules:emulator`.
+ *
+ *  EDITING THIS FILE ALONE STILL CHANGES NOTHING IN PRODUCTION. Rules deploy separately:
+ *  `firebase deploy --only firestore:rules`.
  *  ──────────────────────────────────────────────────────────────────────────── */
 
 /** The notice board. Every member reads it; admins write it. */

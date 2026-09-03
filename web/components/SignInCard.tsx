@@ -248,7 +248,13 @@ export default function SignInCard() {
             <CapIcon />
           </span>
           <div>
-            <h3 className="font-semibold text-ink">Who can sign in</h3>
+            {/* h2, NOT h3. The card's own h1 is "Sign in with your college account"
+                four inches above this, and there is nothing between them — so an h3 here
+                skipped a level, which a screen reader reads as a missing section rather
+                than as the next one down. `npm run qa` reports it as `heading-skip`, and
+                it was the only one on the route. The visual weight is carried by the
+                classes, not the tag, so nothing on screen changes. */}
+            <h2 className="font-semibold text-ink">Who can sign in</h2>
             <p className="mt-2 text-[15px] leading-relaxed text-haze">
               Students with an <strong className="text-ink">@{DOMAIN}</strong> address. No
               other address can register, and that is the whole check — no fee, no

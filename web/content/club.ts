@@ -1343,9 +1343,82 @@ export const TEAM_CONTENT: TeamGroup = {
   remit:
     "Writes and keeps the words — docs, READMEs, event write-ups and everything on this site. Bring a README nobody can follow, a project that needs explaining to a first-year, or a session that needs writing up.",
   members: [
-    { name: "Divyanshi Saini" },
-    { name: "Sarvika Sharma" },
-    { name: "Aarsheya Jasrotia" },
+    {
+      name: "Divyanshi Saini",
+      batch: "'29",
+      /* 336px square rather than the README's 448, and the source's ceiling
+         rather than an oversight: the original is a 720x1280 phone portrait in
+         which the face spans about 165px. A wider crop has the head reading too
+         small in a 72px circle, and upscaling this one would add bytes and no
+         detail. Comfortably clears the 144px the desk circle needs at 2x. */
+      photo: "/people/divyanshi-saini.jpg",
+      highlights: [
+        {
+          headline: "🌏 Asian Hackathon for Green Future, Hanoi",
+          detail: "Placed among the top 33 teams across Asia",
+        },
+        {
+          headline: "🎤 Hosting and communications",
+          detail: "Hosted Mr. Gaurav Bhalotia, CTO of EY",
+        },
+        {
+          headline: "🎯 Core organising team @ Scaler Innovation Lab",
+          detail:
+            "Organised Daydream Hackathon, Django Day, IQOO Hackathon and mixer events",
+        },
+      ],
+    },
+    {
+      name: "Sarvika Sharma",
+      batch: "'29",
+      /* SQUARE CROP OF THE SUPPLIED PHOTO, which arrived as a 1600x898 landscape
+         frame at the desk. public/people/README.md asks for square here because the
+         chart's frame is a circle and `object-fit: cover` keeps only the middle band
+         — on the original that is a chin and a forehead. Cropped to 560px square
+         around the face, with what headroom the source had above the hair. The
+         original is still in this directory as sarvika.jpeg. */
+      photo: "/people/sarvika-sharma.jpg",
+      highlights: [
+        {
+          headline:
+            "I'm Sarvika, a developer drawn to backend systems, open source, and how things work under the hood.",
+          detail:
+            "Always curious to explore new technologies and contribute to projects that make me a better developer.",
+        },
+        {
+          headline: "🚀 Backend Intern @ Zopper",
+          detail: "Experience working on real-world software systems",
+        },
+        {
+          headline: "🎯 Events & Operations @ Scaler Innovation Lab",
+          detail:
+            "Organised hackathons and tech events, hosted guest mentors and speakers, and worked across event management and hospitality",
+        },
+      ],
+    },
+    {
+      name: "Aarsheya Jasrotia",
+      batch: "'29",
+      photo: "/people/aarsheya-jasrotia.jpg",
+      highlights: [
+        {
+          headline:
+            "I'm Aarsheya, and I'm usually either building something, overthinking something, or doing both at once.",
+        },
+        {
+          headline:
+            "I like tech, but I also like making things that are actually fun, interesting, and sorta niche.",
+        },
+        {
+          headline:
+            "I'm curious about a lot of things, which means I'm constantly picking up some new obsession.",
+        },
+        {
+          headline:
+            "Still figuring stuff out, but having a pretty good time doing it.",
+        },
+      ],
+    },
     {
       name: "Srishti Kumari",
       batch: "'29",

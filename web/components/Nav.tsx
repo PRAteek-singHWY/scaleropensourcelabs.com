@@ -52,7 +52,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Outline from "@/components/Outline";
 import ThemeToggle from "@/components/ThemeToggle";
-import { JOIN_HREF, LINKS, PAGES } from "@/content/site";
+import { DASHBOARD_HREF, JOIN_HREF, LINKS, PAGES } from "@/content/site";
 import { useAuth } from "@/lib/auth";
 
 export default function Nav() {
@@ -161,17 +161,53 @@ export default function Nav() {
               its one persistent control.
 
               The destination used to stay /join, back when the gate on that page held
-              every signed-in state itself. It does not any more — /join is the door and
-              the dashboard is the room — so sending a member there would make the one
-              control that is on screen at every scroll position take them to a page that
-              immediately redirects. It points at the room.
+              every signed-in state itself. It does not any more — /join is the
+              APPLICATION FORM now: anonymous, one-shot, written by somebody who has not
+              joined yet. Sending a member there hands them a form they filled in months
+              ago, so it points at the dashboard instead.
 
               `user === undefined` — the session is still being restored — deliberately
               renders "Join" rather than a spinner or an empty button: it is the correct
               label for the majority of readers, it never shifts the bar's width enough
               to reflow, and a member sees it settle to "Dashboard" a moment later. */}
+          {/* SIGNING IN IS NOT JOINING, and this link is the only place in the site's
+              chrome that says so. The button beside it goes to the application form —
+              no account, one submission, written by a stranger. A member who did that in
+              August and just wants back in needs a different door, and the bar offered
+              them none: an existing member on a new laptop, or after clearing their
+              cookies, pressed the only control there was and landed on an application
+              form with no sign-in anywhere on it. /join carries a line pointing at the
+              dashboard as well, but a sentence above a form is not wayfinding — the bar
+              is, and it is on screen at every scroll position.
+
+              QUIET, AND DELIBERATELY NOT A SECOND BUTTON. Almost nobody reading this
+              site is a member yet, and two filled controls side by side would ask every
+              one of them to work out which of two things they are before they can act.
+              A plain link is found by the person looking for it and skimmed past by
+              everybody else, which is the right weighting for a returning-member
+              affordance in a bar whose job is to recruit new ones.
+
+              `!user` RATHER THAN `user === null`, so it renders during the session
+              restore as well as when signed out. If the reader turns out to be a member
+              it disappears at the same moment the button settles to "Dashboard" — one
+              reflow instead of two, and it falls on the members who already know where
+              their dashboard is rather than on the first-time readers who do not.
+
+              sm+ ONLY, for the reason the GitHub link above is lg+ only: at 390px the
+              route strip is already scrolling, and the bar's optional items yield before
+              the plate is allowed to grow. A phone reader who presses "Join" still meets
+              the sign-in line above the form on /join, and the footer carries it at
+              every width. */}
+          {!user && (
+            <Link
+              href={DASHBOARD_HREF}
+              className="nav-link -my-3 hidden shrink-0 whitespace-nowrap py-3 sm:inline-block"
+            >
+              Sign in
+            </Link>
+          )}
           <Link
-            href={user ? "/dashboard" : JOIN_HREF}
+            href={user ? DASHBOARD_HREF : JOIN_HREF}
             className="btn btn-pop btn-compact shrink-0"
           >
             {user ? "Dashboard" : "Join"}
