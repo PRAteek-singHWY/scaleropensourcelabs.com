@@ -426,7 +426,7 @@ html {
      scroll-padding-top is load-bearing alongside it: the nav is `fixed` and
      outside flow, so an anchor target would otherwise come to rest behind the
      plate. The browser applies this offset to every scroll-into-view — the nav
-     links, the outline rail, the sticky CTA and a deep link pasted into the
+     links, the outline panel, the sticky CTA and a deep link pasted into the
      address bar all land in the same place.
 
      The number tracks the nav, and the nav FLOATS: 0.75rem of top inset plus a

@@ -83,10 +83,10 @@ export default function Outline() {
      A menu that vanishes and leaves focus nowhere strands a keyboard reader at
      the top of the document. */
   const btn = useRef<HTMLButtonElement>(null);
-  // The rail lives in the nav, which lives in the root layout, so it survives every
+  // The panel lives in the nav, which lives in the root layout, so it survives every
   // client-side navigation while the sections it indexes are swapped out from under
   // it. Without this the list was scanned once and then frozen: a reader who opened
-  // the rail on /projects saw the home page's eight sections, clicked one, and got
+  // it on /projects saw the home page's eight sections, clicked one, and got
   // nothing — the anchors pointed at ids that were no longer in the document.
   //
   // Re-scanning per route also means `active` has to be cleared, which the effect
@@ -184,8 +184,8 @@ export default function Outline() {
        step with the nav's contents.
        It carries the breakpoint too. The button was `hidden lg:flex` on its own,
        and a wrapper that stayed in the flow below lg would be a zero-width flex
-       item in the nav's `gap-4` row — two gaps of dead space on a phone, around
-       nothing. Hidden here, so there is no item to space. */
+       item in the nav's `gap-3 sm:gap-4` row — two gaps of dead space on a phone,
+       around nothing. Hidden here, so there is no item to space. */
     <div className="relative hidden lg:flex">
       {/* aria-pressed rather than a checkbox: this is a control that changes the
           view, and a button carrying its own state is what a screen reader expects

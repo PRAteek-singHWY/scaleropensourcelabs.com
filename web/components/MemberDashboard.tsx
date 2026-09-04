@@ -115,6 +115,12 @@ export default function MemberDashboard() {
   if (user === undefined || (user && profile === undefined)) {
     return (
       <div className="card rounded-panel bg-raise p-8" aria-busy="true">
+        {/* THE HIDDEN H1 IS HERE TOO, because this branch is a state the route can be
+            LOADED IN, not just a flicker between two states that have one. On a
+            configured deployment a hard load paints this card until auth resolves, so
+            without it the document has no h1 for as long as that takes — the same hole
+            the unconfigured branch of SignInCard had, and the same check catches it. */}
+        <h1 className="sr-only">Your dashboard</h1>
         <p className="label">One moment</p>
         <p className="mt-3 text-body text-haze">Finding your things…</p>
       </div>

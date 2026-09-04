@@ -117,7 +117,15 @@ export default function SignInCard() {
   if (!configured) {
     return (
       <div className="card rounded-panel bg-raise p-8 sm:p-10">
-        <p className="text-display-md font-semibold">Sign-in is not set up here.</p>
+        {/* h1, FOR THE SAME REASON AS THE CONFIGURED BRANCH BELOW, and it was a <p> here
+            until the smoke suite caught it. This card is the whole of /dashboard's main
+            for a reader with no Firebase config — which is exactly how CI runs the site,
+            and how a contributor with no .env.local runs it — so with a <p> the document
+            had no h1 at all on that route and `exactly one h1` was red on /dashboard
+            while every other check passed. The classes are the <p>'s, unchanged: Tailwind
+            preflight strips the browser's h1 styles, so this is a tag change and not a
+            design one. */}
+        <h1 className="text-display-md font-semibold">Sign-in is not set up here.</h1>
         <p className="measure mt-4 text-body text-haze">
           This deployment has no Firebase configuration, so there is nothing for this page
           to show. If you are running the site locally, see <code>web/.env.example</code>.
