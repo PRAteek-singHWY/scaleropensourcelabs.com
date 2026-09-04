@@ -257,9 +257,9 @@ export default function Note({
           {title}
         </p>
         {body && (
-          <p className="mt-2 text-[15px] font-medium leading-snug">{body}</p>
+          <p className="mt-2 text-[0.9375rem] font-medium leading-snug">{body}</p>
         )}
-        {children && <div className="mt-2 text-[15px] font-medium">{children}</div>}
+        {children && <div className="mt-2 text-[0.9375rem] font-medium">{children}</div>}
         {fold && <span aria-hidden className="note-fold" />}
       </div>
     </div>

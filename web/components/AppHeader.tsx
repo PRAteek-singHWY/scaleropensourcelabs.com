@@ -34,7 +34,7 @@ export default function AppHeader() {
 
   return (
     <header className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-4">
-      <div className="plate mx-auto flex h-14 w-full max-w-[88rem] items-center gap-4 rounded-full border border-edge px-4 sm:px-6">
+      <div className="plate mx-auto flex h-[56px] w-full max-w-[88rem] items-center gap-4 rounded-full border border-edge px-4 sm:px-6">
         {/* THE ONE WAY BACK TO THE PUBLIC SITE, and it is the wordmark rather than a
             "← Back to site" link, because that is where a wordmark goes in every app a
             member has ever used and it costs no width on a phone. */}
@@ -87,7 +87,7 @@ export default function AppHeader() {
                   {name}
                 </span>
                 {batch && (
-                  <span className="block font-mono text-[11px] uppercase tracking-wider text-dust">
+                  <span className="block font-mono text-[0.6875rem] uppercase tracking-wider text-dust">
                     {batch.label} · {batch.branch}
                   </span>
                 )}

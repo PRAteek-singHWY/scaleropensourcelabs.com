@@ -20,7 +20,7 @@ export default function AppFooter() {
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 border-t border-seam pt-6">
         {/* `.tap` on each link and gap-y-4 to pay for it. The QA sweep measures these
             under the 44px touch floor otherwise, on both themes at mobile. */}
-        <p className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[15px]">
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.9375rem]">
           <Link href="/privacy#what-we-store" className="tap link-u text-haze">
             Privacy
           </Link>

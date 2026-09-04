@@ -121,7 +121,7 @@ export default function Projects() {
                       document to 486px against 390px. shrink-0 is only safe on text
                       whose length is bounded, and content from a data file never is. */}
                   {p.size && (
-                    <span className="min-w-0 text-right font-mono text-[13px] uppercase tracking-[0.16em] text-dust">
+                    <span className="min-w-0 text-right font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-dust">
                       {p.size}
                     </span>
                   )}
@@ -139,7 +139,7 @@ export default function Projects() {
                     {p.stack.map((s) => (
                       <li
                         key={s}
-                        className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-[13px] text-haze"
+                        className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-[0.8125rem] text-haze"
                       >
                         {s}
                       </li>
@@ -277,7 +277,7 @@ export default function Projects() {
                     {r.stack.map((s) => (
                       <li
                         key={s}
-                        className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-[13px] text-haze"
+                        className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-[0.8125rem] text-haze"
                       >
                         {s}
                       </li>
@@ -371,7 +371,7 @@ export default function Projects() {
                     {/* The org, set as type in a bordered plate rather than as a
                         logo. Their trademark, and the site's CSP blocks remote
                         images anyway — see content/projects.ts. */}
-                    <span className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-[13px] uppercase tracking-[0.14em] text-haze">
+                    <span className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-haze">
                       {p.org}
                     </span>
                     {p.tag ? (
@@ -441,7 +441,7 @@ export default function Projects() {
           </>
         )}
 
-        <p className="mt-10 font-mono text-[13px] leading-relaxed text-dust">
+        <p className="mt-10 font-mono text-[0.8125rem] leading-relaxed text-dust">
           Contributor counts and merge ratios were read from the GitHub API on
           2026-07-29. They move — open the repository if you want today&apos;s number.
         </p>

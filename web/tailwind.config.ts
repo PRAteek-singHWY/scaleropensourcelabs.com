@@ -129,8 +129,8 @@ const config: Config = {
         // type would change at the two extremes and hold across the middle of the
         // range, which is most desktop widths. The offset has to ride the interpolated
         // term to be a real 2px everywhere rather than at the endpoints only.
-        "display-xl": ["clamp(2.75rem, 6.2vw, 5.25rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
-        "display-lg": ["clamp(1.9375rem, 3.6vw, 2.9375rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
+        "display-xl": ["clamp(2.75rem, 4.65vw, 5.25rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
+        "display-lg": ["clamp(1.9375rem, 2.7vw, 2.9375rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
         // Apple's tracking is POSITIVE below roughly 40px. Measured off
         // apple.com/mac: 80px/-1.2px (-0.015em), 48px/-0.144px (-0.003em), then it
         // crosses zero — 32px/+0.128px (+0.004em), 28px/+0.196px (+0.007em),
@@ -138,12 +138,12 @@ const config: Config = {
         // below the hero was being over-tightened. Optical sizing runs the other
         // way at text sizes: large type needs closing up, small type needs opening
         // out, and copying the display value downward is the usual mistake.
-        "display-md": ["clamp(1.375rem, 2.1vw, 1.8125rem)", { lineHeight: "1.32", letterSpacing: "0.006em" }],
+        "display-md": ["clamp(1.375rem, 1.575vw, 1.8125rem)", { lineHeight: "1.32", letterSpacing: "0.006em" }],
         // Body copy gets the same treatment for a different reason: 1.5 is the WCAG
         // 1.4.8 floor for a block of text, not a comfortable value, and this page's
         // paragraphs run to a 44em measure. Long lines need more leading than short
         // ones to stop the eye returning to the line it just left.
-        "body-lg": ["clamp(1.1875rem, 1.6vw, 1.5rem)", { lineHeight: "1.62", letterSpacing: "0.008em" }],
+        "body-lg": ["clamp(1.1875rem, 1.2vw, 1.5rem)", { lineHeight: "1.62", letterSpacing: "0.008em" }],
         // 17px — Apple's body size, and the reference the tracking values above were
         // measured from. It spent a while at 19px and is back. The tracking was
         // deliberately NOT re-derived when it went up and is not re-derived now that

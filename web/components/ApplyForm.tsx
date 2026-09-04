@@ -430,7 +430,7 @@ export default function ApplyForm() {
         </Suspense>
 
         {deadline && (
-          <p className="text-[15px] font-medium text-ember">
+          <p className="text-[0.9375rem] font-medium text-ember">
             Applications for this cohort close {deadline}.
           </p>
         )}
@@ -444,7 +444,7 @@ export default function ApplyForm() {
         </button>
 
         {state === "error" && (
-          <p className="text-[15px] leading-relaxed text-ember" role="alert">
+          <p className="text-[0.9375rem] leading-relaxed text-ember" role="alert">
             {message}{" "}
             <a href={`mailto:${LINKS.email}`} className="underline">
               {LINKS.email}
@@ -456,13 +456,13 @@ export default function ApplyForm() {
             than in a policy page nobody opens. A form that quietly began keeping names,
             emails and hostels without saying so would be the exact behaviour this site
             criticises elsewhere, and it is the applicant's information, not ours. */}
-        <p className="border-t border-seam pt-5 text-[15px] leading-relaxed text-dust">
+        <p className="border-t border-seam pt-5 text-[0.9375rem] leading-relaxed text-dust">
           What we do with this: your answers go to the club organisers and nowhere else.
           Nothing here is published on the site — the names on it are only there because
           those people were asked and said yes.
         </p>
 
-        <p className="text-[15px] leading-relaxed text-dust">
+        <p className="text-[0.9375rem] leading-relaxed text-dust">
           Not ready to apply? Turn up to a build day instead — no signup, no form, and
           nobody will ask whether you have contributed before.
         </p>

@@ -1297,8 +1297,22 @@ export const TEAM_SHADOWS: TeamMember[] = [
     name: "Yash Virulkar",
     designation: "Shadow",
     shadowOf: "Vice President",
+    batch: "'29",
+    photo: "/people/yash.jpeg",
     remit:
       "Learning the vice president's half of running a term, and taking it over at handover. Safe to bring anything you would bring the Vice President.",
+    // His own words, split at his own full stops. Headline-only, so the renderer
+    // sets them as prose rather than as labels.
+    highlights: [
+      { headline: "Hey, I am Yash. I love rust and working on complex system." },
+      { headline: "Currently working on mergit-io and CrownOs." },
+      {
+        headline:
+          "I have done open source work at Openwisp, Karmada and KCL.",
+      },
+      { headline: "Oh yeah, I use Nix btw ❄️" },
+      { headline: "1x hackathon winner" },
+    ],
   },
 ];
 
@@ -1431,11 +1445,11 @@ export const TEAM_CONTENT: TeamGroup = {
       highlights: [
         {
           headline:
-            "A curious mind with 47 tabs open - and somehow, all of them are important. 🧠",
+            "A curious mind with 47 tabs open - and somehow, all of them are important.",
         },
         {
           headline:
-            "Coding today, chasing SOB tomorrow, and turning every random curiosity into a new mission. 💻",
+            "Coding today, chasing SOB tomorrow, and turning every random curiosity into a new mission.",
         },
         {
           headline:
@@ -1443,7 +1457,7 @@ export const TEAM_CONTENT: TeamGroup = {
         },
         {
           headline:
-            "Ambitious, relentlessly curious, slightly chaotic… but definitely not built for an ordinary life. 🚀",
+            "Ambitious, relentlessly curious, slightly chaotic… but definitely not built for an ordinary life.",
         },
       ],
     },

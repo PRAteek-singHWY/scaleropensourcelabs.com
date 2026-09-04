@@ -436,8 +436,37 @@ html {
      plate went from 3rem to 3.5rem when the Join button had to reach a 44px touch
      target, and this number went with it. */
   scroll-behavior: smooth;
-  scroll-padding-top: 5.5rem;
+  /* IN PX, BECAUSE THE THING IT CLEARS IS IN PX. The plate holds a 44px touch
+     target and so keeps a 56px height while the root scales (see `font-size`
+     below): 0.75rem of inset plus 56px is a 65px bottom edge, 68px at sm+ where
+     the inset grows. 80px clears the taller of the two with air to spare. */
+  scroll-padding-top: 80px;
   -webkit-text-size-adjust: 100%;
+
+  /* THE WHOLE PAGE, AT THREE QUARTERS. The design was drawn large enough that a
+     1080p laptop had to be zoomed to 75% before a section fit on screen — which
+     is the browser telling you the root is too big, not the reader. One number
+     here does what that zoom did, at every reader's default zoom, on the site and
+     in the dashboard alike: 75% of 16px is a 12px root, and every rem on the page
+     — type scale, spacing, radii, the nav plate, the container caps — is a
+     multiple of it.
+
+     A PERCENTAGE RATHER THAN `font-size: 12px`, and the difference matters. A
+     percentage resolves against whatever the reader set as their browser's
+     default text size, so somebody running 20px because they need to still gets
+     their proportional increase (15px here). A hard px value would overrule that
+     preference outright, which is the accessibility failure this looks like but
+     is not.
+
+     WHAT IT DOES NOT SCALE, deliberately: the px in this file. Hairlines, borders
+     and the 44px minimum touch targets are physical constants — a 0.75px rule is
+     a blurry rule, and a thumb does not get smaller because the type did. Type
+     was the part that had to move, so `text-[13px]`-style utilities were all
+     rewritten in rem to come with it, and the vw terms in the fluid clamps came
+     down by the same quarter — leave those in px and the headings would hold
+     their old size across the middle of the viewport range while everything
+     around them shrank. */
+  font-size: 75%;
 }
 
 body {
@@ -542,10 +571,15 @@ body::before {
    it per route is a copy per route that can drift.
 
    THE DERIVATION: the nav floats rather than sitting on the top edge — 0.75rem of
-   inset plus a 3.5rem plate puts its bottom at 4.25rem, and 4.5rem at sm+ where the
-   inset grows. These values clear that with 1.75rem / 3rem of air, so a page title
-   has room to breathe under the glass instead of tucking against it. Move the nav's
-   inset or height and this moves too, along with `scroll-padding-top` above.
+   inset plus a 56px plate puts its bottom at 65px, and 68px at sm+ where the inset
+   grows. These values clear that with 21px / 36px of air, so a page title has room
+   to breathe under the glass instead of tucking against it. Move the nav's inset or
+   height and this moves too, along with `scroll-padding-top` above.
+
+   PX ON BOTH SIDES OF THAT SUM. The plate stopped scaling with the root when the
+   page went to 75% — it contains a 44px touch target, which is a physical floor —
+   so a clearance in rem would have shrunk away from a bar that did not. The air
+   either side is the old 28px / 48px taken down by the same quarter.
 
    DO NOT PAIR THIS WITH A pt-* UTILITY. Every custom class in this file is declared
    after `@tailwind utilities`, so at equal specificity source order hands the win to
@@ -553,11 +587,11 @@ body::before {
    markup and 6rem on the screen. Use `.page-top` for the clearance and `pb-*` for
    whatever the band needs underneath. */
 .page-top {
-  padding-top: 6rem;
+  padding-top: 86px;
 }
 @media (min-width: 640px) {
   .page-top {
-    padding-top: 7.5rem;
+    padding-top: 104px;
   }
 }
 

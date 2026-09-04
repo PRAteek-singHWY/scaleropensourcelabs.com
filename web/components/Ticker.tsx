@@ -177,7 +177,7 @@ export default function Ticker() {
         >
           <span
             aria-hidden
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-seam bg-raise text-[13px] leading-none text-haze transition-colors duration-200 group-hover:border-accent/60 group-hover:text-accent"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-seam bg-raise text-[0.8125rem] leading-none text-haze transition-colors duration-200 group-hover:border-accent/60 group-hover:text-accent"
           >
             {paused ? "▶" : "❚❚"}
           </span>

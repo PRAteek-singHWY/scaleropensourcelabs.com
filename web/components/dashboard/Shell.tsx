@@ -115,7 +115,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         data-app-bar
         className="sticky top-0 z-50 border-b border-seam bg-raise/95 backdrop-blur"
       >
-        <div className="flex h-14 items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="flex h-[56px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link
             href="/"
             className="tap shrink-0 font-display text-[0.9375rem] font-bold tracking-tight text-ink transition-colors hover:text-accent"

@@ -149,7 +149,7 @@ export default function MemberDashboard() {
 
       {loadError && (
         <p
-          className="card rounded-panel bg-raise p-6 text-[15px] leading-relaxed text-ember"
+          className="card rounded-panel bg-raise p-6 text-[0.9375rem] leading-relaxed text-ember"
           role="alert"
         >
           {loadError}

@@ -190,7 +190,7 @@ export default function Join() {
                   they are in the wrong place — doing nothing at all. Signing in is not
                   a reference you consult beside the form; it is where you were going
                   instead of filling it in. */}
-              <p className="mt-6 text-[15px] leading-relaxed text-dust">
+              <p className="mt-6 text-[0.9375rem] leading-relaxed text-dust">
                 Already joined?{" "}
                 <Link href={DASHBOARD_HREF} className="link-u text-accent">
                   Sign in to your dashboard

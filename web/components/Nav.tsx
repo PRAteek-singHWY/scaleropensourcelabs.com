@@ -53,13 +53,9 @@ import { usePathname } from "next/navigation";
 import Outline from "@/components/Outline";
 import ThemeToggle from "@/components/ThemeToggle";
 import { DASHBOARD_HREF, JOIN_HREF, LINKS, PAGES } from "@/content/site";
-import { useAuth } from "@/lib/auth";
 
 export default function Nav() {
   const pathname = usePathname();
-  // Only for the Join/Profile label at the far end of the bar. The nav does no
-  // access control — see the note on that button below.
-  const { user } = useAuth();
 
   return (
     <header className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-6">
@@ -75,7 +71,7 @@ export default function Nav() {
         // nothing else — see the block in globals.css. It is a scroll-driven
         // pseudo-element, so it costs no state here and browsers without
         // animation-timeline get the bar exactly as it was.
-        className="nav-plate plate mx-auto flex h-14 max-w-[88rem] items-center justify-between gap-3 rounded-2xl border border-seam/70 px-3 sm:gap-4 sm:px-6"
+        className="nav-plate plate mx-auto flex h-[56px] max-w-[88rem] items-center justify-between gap-3 rounded-2xl border border-seam/70 px-3 sm:gap-4 sm:px-6"
       >
         <Link
           href="/"
@@ -155,21 +151,6 @@ export default function Nav() {
               in-page CTAs all over the site; if the bar wore it too, the one control
               that is on screen at every scroll position would look like every other
               button. Yellow makes it the single loudest thing in the chrome. */}
-          {/* THE LABEL AND THE DESTINATION BOTH CHANGE ONCE SOMEBODY IS SIGNED IN.
-              "Join" to a member who joined last month is the bar telling them to do a
-              thing they have already done, which is how a site teaches people to ignore
-              its one persistent control.
-
-              The destination used to stay /join, back when the gate on that page held
-              every signed-in state itself. It does not any more — /join is the
-              APPLICATION FORM now: anonymous, one-shot, written by somebody who has not
-              joined yet. Sending a member there hands them a form they filled in months
-              ago, so it points at the dashboard instead.
-
-              `user === undefined` — the session is still being restored — deliberately
-              renders "Join" rather than a spinner or an empty button: it is the correct
-              label for the majority of readers, it never shifts the bar's width enough
-              to reflow, and a member sees it settle to "Dashboard" a moment later. */}
           {/* SIGNING IN IS NOT JOINING, and this link is the only place in the site's
               chrome that says so. The button beside it goes to the application form —
               no account, one submission, written by a stranger. A member who did that in
@@ -187,30 +168,29 @@ export default function Nav() {
               everybody else, which is the right weighting for a returning-member
               affordance in a bar whose job is to recruit new ones.
 
-              `!user` RATHER THAN `user === null`, so it renders during the session
-              restore as well as when signed out. If the reader turns out to be a member
-              it disappears at the same moment the button settles to "Dashboard" — one
-              reflow instead of two, and it falls on the members who already know where
-              their dashboard is rather than on the first-time readers who do not.
+              IT DOES NOT DEPEND ON THE SESSION. This link and the button beside it used
+              to swap on `user` — the link vanished and the button relabelled itself to
+              "Dashboard" once somebody was signed in. The bar does no access control and
+              never did, so all that state bought was a control that read differently
+              depending on which browser you opened the site in, and a member who WAS
+              signed in lost the only door in the chrome that names the members' area.
+              One label, every reader, every visit: /dashboard shows the sign-in card to
+              a stranger and the dashboard to a member, which is where that branch
+              belongs.
 
               sm+ ONLY, for the reason the GitHub link above is lg+ only: at 390px the
               route strip is already scrolling, and the bar's optional items yield before
               the plate is allowed to grow. A phone reader who presses "Join" still meets
               the sign-in line above the form on /join, and the footer carries it at
               every width. */}
-          {!user && (
-            <Link
-              href={DASHBOARD_HREF}
-              className="nav-link -my-3 hidden shrink-0 whitespace-nowrap py-3 sm:inline-block"
-            >
-              Sign in
-            </Link>
-          )}
           <Link
-            href={user ? DASHBOARD_HREF : JOIN_HREF}
-            className="btn btn-pop btn-compact shrink-0"
+            href={DASHBOARD_HREF}
+            className="nav-link -my-3 hidden shrink-0 whitespace-nowrap py-3 sm:inline-block"
           >
-            {user ? "Dashboard" : "Join"}
+            Sign in
+          </Link>
+          <Link href={JOIN_HREF} className="btn btn-pop btn-compact shrink-0">
+            Join
           </Link>
         </div>
       </nav>

@@ -118,7 +118,7 @@ export default function StickyCTA() {
           </p>
           {/* Only rendered when a real date is configured. */}
           {deadline && (
-            <p className="mt-0.5 truncate text-[15px] text-ember">
+            <p className="mt-0.5 truncate text-[0.9375rem] text-ember">
               Applications close {deadline}
             </p>
           )}
