@@ -136,8 +136,18 @@ function ProgrammeField({ p }: { p: ProgrammeInfo }) {
           <div className="border-t border-seam pt-5 sm:col-span-2">
             <dt className="label">Who from SST has done it</dt>
             <dd className="mt-2 text-sm leading-relaxed">
+              {/* The written answer, for programmes where a count and a standout
+                  name say more than a list of selections could — see `ours` in
+                  ProgrammeInfo. It sits above the derived names rather than
+                  replacing them, so adding a selection later cannot silently drop
+                  this line, and this line cannot silently hide a selection. */}
+              {p.ours && <p className="text-ink">{p.ours}</p>}
               {ours.length > 0 ? (
-                <ul className="flex flex-wrap gap-x-5 gap-y-2">
+                <ul
+                  className={`flex flex-wrap gap-x-5 gap-y-2${
+                    p.ours ? " mt-2" : ""
+                  }`}
+                >
                   {ours.map((a) => (
                     <li key={`${a.name}-${a.year}`} className="text-ink">
                       {a.url ? (
@@ -162,7 +172,7 @@ function ProgrammeField({ p }: { p: ProgrammeInfo }) {
                     </li>
                   ))}
                 </ul>
-              ) : (
+              ) : p.ours ? null : (
                 // TIER-AWARE, because one sentence cannot serve both. The first
                 // version said "the first person from this college to get in has not
                 // been picked" for every programme — which is meaningless for

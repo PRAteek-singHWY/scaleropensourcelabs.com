@@ -22,7 +22,7 @@
 //
 //   * It is NOT per-student. One wall under the whole grid reads as a section
 //     motif; a strip behind each card would read as that person's activity, and
-//     none of these fifteen has activity data recorded anywhere in this repo.
+//     none of these students has activity data recorded anywhere in this repo.
 //
 //   * The pattern is DETERMINISTIC, from a tiny integer hash rather than
 //     Math.random(). Random would differ between the server render and the client

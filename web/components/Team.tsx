@@ -357,7 +357,6 @@ function Node({
   member,
   diameter,
   designation,
-  remit,
   tone = "quiet",
   priority = false,
   maxWidth = CARD_MAX_W,
@@ -376,8 +375,11 @@ function Node({
   };
   diameter: string;
   designation?: string;
-  /** Overrides member.remit. A desk's remit belongs to the desk, not the person. */
-  remit?: string;
+  /* The `remit` override that used to sit here is gone with its one caller. It
+     existed so a desk could push its own remit onto each member's hover card;
+     nothing does that any more, and a prop kept for a caller that no longer
+     exists is the next person's wrong turn. A remit on the card now means the
+     person holds an office that has one. */
   tone?: "loud" | "quiet";
   priority?: boolean;
   maxWidth?: string;
@@ -386,6 +388,14 @@ function Node({
   /** Which edge it is anchored to, so a card near the chart's edge stays on the page. */
   tipAlign?: "start" | "center" | "end";
 }) {
+  // Whether there is anything to say on hover. A node with nothing to say must not
+  // render a card: `.person-tip` is a styled bubble with padding and a border, so
+  // an empty one is a small dark rectangle that appears on hover and explains
+  // nothing. This became reachable the moment the desk stopped passing its remit
+  // down — three of its four members carry only a name.
+  const hasTip = Boolean(
+    member.remit || member.batch || member.highlights?.length,
+  );
   return (
     <div
       className="mx-auto flex flex-col items-center px-3 text-center"
@@ -424,18 +434,22 @@ function Node({
             is read out from the stacked list below, where it is plain text rather
             than a hover state — which is also what a touch device gets, since the
             chart only renders at lg+ and hover does not exist on a phone. */}
-        <div
-          aria-hidden
-          className="person-tip"
-          data-tip={tip}
-          data-align={tipAlign}
-        >
-          {member.batch && (
-            <p className="person-tip-batch">Batch {member.batch}</p>
-          )}
-          <p className="person-tip-remit">{remit ?? member.remit}</p>
-          <Highlights items={member.highlights} />
-        </div>
+        {hasTip && (
+          <div
+            aria-hidden
+            className="person-tip"
+            data-tip={tip}
+            data-align={tipAlign}
+          >
+            {member.batch && (
+              <p className="person-tip-batch">Batch {member.batch}</p>
+            )}
+            {member.remit && (
+              <p className="person-tip-remit">{member.remit}</p>
+            )}
+            <Highlights items={member.highlights} />
+          </div>
+        )}
       </div>
       <Caption designation={designation} name={member.name} tone={tone} />
       {member.github && (
@@ -709,12 +723,21 @@ export default function Team() {
                 gridTemplateColumns: `repeat(${DESK.members.length}, minmax(0, 1fr))`,
               }}
             >
+              {/* NO REMIT PASSED DOWN, per the club. The desk's remit used to ride
+                  on every member's hover card, which meant four faces in a row each
+                  popping the same paragraph — the sentence is about the desk, not
+                  about the person under the pointer, and reading it four times is
+                  how you learn to stop hovering. It has not been deleted: the desk
+                  label above these four still stands for it in the chart, and the
+                  stacked list below writes it out once, in full, where it is read
+                  aloud and where touch devices get it. What is left on hover is only
+                  what belongs to the person — their batch and their highlights — and
+                  a member with neither now gets no bubble at all. */}
               {DESK.members.map((m, i) => (
                 <Node
                   key={m.name}
                   member={m}
                   diameter={DESK_D}
-                  remit={DESK.remit}
                   tipAlign={align(DESK_MEMBER_X[i])}
                 />
               ))}
