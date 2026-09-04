@@ -67,11 +67,46 @@ export type Profile = {
    *  passed one, and inventing a default would put every one of them in the same
    *  bucket in the organisers' breakdown. */
   path?: string;
+  /** WHETHER THIS STUDENT IS ACTUALLY IN THE CLUB — the one field on this document its
+   *  subject cannot write.
+   *
+   *  Signing in proves somebody studies here; it has never meant they joined anything.
+   *  Everything else in this type is the member describing themselves, and it is
+   *  theirs to edit. This is the club's statement about them, so the rules split
+   *  users/{uid} into two write paths: the member may change everything except these
+   *  three keys, and an admin may change nothing else. See onlyMembershipChanged() in
+   *  firestore.rules — without it, a member could grant themselves membership by
+   *  editing their own profile, and membership decides what they are allowed to read.
+   *
+   *  ABSENT MEANS NOT A MEMBER. Every profile written before this field existed belongs
+   *  to somebody who signed in, which by itself was never membership in anything — so
+   *  the default is the safe reading rather than a grandfather clause. Contrast
+   *  `active` on a roster row, where an absent field means yes for the opposite
+   *  reason. */
+  membership?: "member" | "student";
+  /** Which organiser last changed it, and when. Required by the rules on any write
+   *  that touches `membership`, and stamped from the caller's own token rather than
+   *  from the request body, so it cannot name somebody else. "Who is in this club" is
+   *  the question the organisers' page opens with; a membership that changed with no
+   *  record of who changed it cannot answer the follow-up. */
+  membership_by?: string;
+  membership_at?: unknown;
   /** Server timestamps, not client clocks. `created_at` is written once and the rules
    *  refuse to let an update change it, so "member since" is trustworthy. */
   created_at?: unknown;
   updated_at?: unknown;
 };
+
+/** Is this profile's owner in the club?
+ *
+ *  THE ONLY PLACE THIS FIELD IS COMPARED TO A STRING. Every call site asks a yes/no
+ *  question, and a bare `p.membership === "member"` scattered through the components
+ *  is how one of them ends up written as `"Member"` and silently answers no forever.
+ *  Mirrors isClubMember() in firestore.rules, which is the actual boundary — this is
+ *  what the screen uses to decide what to draw. */
+export function isClubMember(p: Profile | null | undefined): boolean {
+  return p?.membership === "member";
+}
 
 /** What the form must fill in before a profile counts as complete. Mirrors the
  *  `hasAll` list in firestore.rules; `npm run rules` fails if they diverge. */
@@ -148,6 +183,40 @@ export async function saveProfile(
   }
 
   await setDoc(doc(db, USERS, uid), body, { merge: true });
+}
+
+/** Admit somebody to the club, or remove them. Organisers only.
+ *
+ *  THE ONE WRITE IN THIS FILE TO SOMEBODY ELSE'S DOCUMENT, and it is deliberately the
+ *  narrowest: three keys, merged, with the actor and the time supplied by the server
+ *  and the rules refusing the write if any other field differs. An organiser cannot use
+ *  this to correct a member's name — that stays the member's own, which is the point of
+ *  splitting the write paths rather than giving admins a blanket update.
+ *
+ *  `by` IS PASSED IN RATHER THAN READ FROM THE AUTH CLIENT HERE, so this module stays
+ *  free of the auth context and testable without one. It must be the caller's own
+ *  address: the rules compare it against request.auth.token.email and refuse anything
+ *  else, so passing another organiser's address fails the write rather than
+ *  misattributing it. */
+export async function setMembership(
+  uid: string,
+  member: boolean,
+  by: string,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { doc, serverTimestamp, setDoc } = await import("firebase/firestore");
+  // Written as "student" rather than removed, so the record says somebody decided this
+  // rather than leaving it indistinguishable from a profile nobody has looked at.
+  await setDoc(
+    doc(db, USERS, uid),
+    {
+      membership: member ? "member" : "student",
+      membership_by: by,
+      membership_at: serverTimestamp(),
+    },
+    { merge: true },
+  );
 }
 
 /** Read every profile. Admins only — the rules refuse a list to anybody else.

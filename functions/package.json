@@ -1,6 +1,6 @@
 {
   "name": "osc-functions",
-  "description": "Emails the organisers when somebody applies to the club",
+  "description": "Emails the organisers when somebody applies, and syncs members GitHub contributions",
   "private": true,
   "main": "index.js",
   "engines": {
@@ -9,7 +9,7 @@
   "scripts": {
     "serve": "firebase emulators:start --only functions,firestore --project demo-osc",
     "logs": "firebase functions:log",
-    "test": "node test-format.mjs"
+    "test": "node test-format.mjs && node test-github.mjs"
   },
   "dependencies": {
     "firebase-admin": "^13.0.2",

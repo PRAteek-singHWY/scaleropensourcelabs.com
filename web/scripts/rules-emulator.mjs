@@ -139,18 +139,63 @@ const UID_A = "uid-asha";
 const MAIL_A = "asha.23bcs10045@sst.scaler.com";
 const UID_B = "uid-ravi";
 const MAIL_B = "ravi.24bcs10192@sst.scaler.com";
+// A third student who has never been a member, for the profile-creation cases.
+const UID_C = "uid-new";
+const MAIL_C = "new.25bcs10001@sst.scaler.com";
 const UID_ADMIN = "uid-organiser";
 const MAIL_ADMIN = "organiser@sst.scaler.com";
+const UID_OWNER = "uid-owner";
+const MAIL_OWNER = "owner@sst.scaler.com";
+// Somebody who used to run the club. The row survives, because it is also the handover
+// record; the access must not.
+const UID_RETIRED = "uid-retired";
+const MAIL_RETIRED = "retired@sst.scaler.com";
+// THE PERSON THE ROSTER TESTS APPOINT, AND DELIBERATELY NOT ONE OF THE MEMBERS ABOVE.
+// Appointing MAIL_B made them a real admin for every case that ran afterwards, so "read
+// somebody else's response" and "read somebody else's contributions" both SUCCEEDED —
+// correctly, because by then the person doing the reading was an organiser. Two tests
+// went red for a reason that had nothing to do with the rule they were testing, which is
+// the most misleading kind of red there is. Nobody ever signs in as this address.
+const MAIL_APPOINTEE = "newlead@sst.scaler.com";
 
-// Seed with rules disabled: the admins list is deliberately unwritable by every client,
-// so there is no in-rules way to create it. This mirrors reality, where an organiser
-// adds the document by hand in the Firebase console.
+// Seed with rules disabled, which mirrors reality: the FIRST owner is added by hand in
+// the Firebase console, because a rule that let a client create the first roster row
+// would let any client create one.
 await env.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
   const { doc, setDoc } = await import("firebase/firestore");
+  // A LEGACY ROW, ON PURPOSE: no active flag and no role. This is the shape every row the
+  // club already had carries, and the two defaults say it is an active plain admin. If a
+  // rules edit ever inverts either default, this row is what notices — every admin case
+  // below runs as this person.
   await setDoc(doc(db, "admins", MAIL_ADMIN), { added_by: "console" });
+  await setDoc(doc(db, "admins", MAIL_OWNER), {
+    email: MAIL_OWNER,
+    name: "Nikita Rao",
+    role: "owner",
+    active: true,
+    added_by: "console",
+  });
+  await setDoc(doc(db, "admins", MAIL_RETIRED), {
+    email: MAIL_RETIRED,
+    name: "Former Lead",
+    role: "admin",
+    active: false,
+    added_by: "console",
+  });
   // A pre-existing legacy application, to prove those rows are still unreadable.
   await setDoc(doc(db, "applications", "legacy-1"), { name: "Old Applicant" });
+  // GitHub counts, as the Cloud Function writes them: through the Admin SDK, which does
+  // not pass through the rules at all. Seeded here for the same reason — there is no
+  // in-rules way to create one, and that is the feature rather than a gap in the test.
+  await setDoc(doc(db, "contributions", UID_A), {
+    uid: UID_A,
+    github: "asha",
+    merged: 4,
+    open: 1,
+    repos: 3,
+    recent: [],
+  });
 });
 
 const { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, query, where } =
@@ -337,15 +382,122 @@ await check("reading your own admins row", true, () =>
 await check("checking whether somebody ELSE is an admin", false, () =>
   getDoc(doc(member(UID_B, MAIL_B), "admins", MAIL_ADMIN)),
 );
-await check("listing the admins", false, () =>
+// THE ROSTER IS READABLE BY THE TEAM AND NOBODY ELSE. It used to be unreadable by
+// everybody, because it was only an access list; it is the team page's source now, so the
+// organisers' screen has to render it. The document id is an email, so listing it hands
+// over every organiser's inbox — which is exactly why the line is drawn at admins rather
+// than at members.
+await check("an admin reading the whole roster", true, () =>
   getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "admins")),
 );
-// The one privilege escalation this model would otherwise allow.
+await check("a member reading the whole roster", false, () =>
+  getDocs(collection(member(UID_B, MAIL_B), "admins")),
+);
+// The one privilege escalation this model would otherwise allow: a plain admin — and so
+// one compromised admin account — cannot appoint anybody.
 await check("an admin appointing another admin", false, () =>
   setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "admins", MAIL_B), { added_by: UID_ADMIN }),
 );
 await check("a member appointing themselves admin", false, () =>
   setDoc(doc(member(UID_B, MAIL_B), "admins", MAIL_B), { added_by: "me" }),
+);
+
+console.log("\n-- the roster: owners appoint, and cannot appoint themselves --");
+const rosterRow = (email, over = {}) => ({
+  email,
+  name: "Ravi Kumar",
+  role: "admin",
+  active: true,
+  title: "Lead",
+  group: "lead",
+  added_by: MAIL_OWNER,
+  ...over,
+});
+// `added_at` is the roster's created_at: stamped once, frozen after. Named differently
+// from the profile's, which is why it needs its own helper rather than withStamps().
+const withRoster = (d, { added = true } = {}) => ({
+  ...d,
+  ...(added ? { added_at: serverTimestamp() } : {}),
+  updated_at: serverTimestamp(),
+});
+
+await check("an owner appointing an admin", true, () =>
+  setDoc(doc(member(UID_OWNER, MAIL_OWNER), "admins", MAIL_APPOINTEE), withRoster(rosterRow(MAIL_APPOINTEE))),
+);
+await check("an owner retiring that admin", true, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "admins", MAIL_APPOINTEE),
+    withRoster(rosterRow(MAIL_APPOINTEE, { active: false }), { added: false }),
+    { merge: true },
+  ),
+);
+await check("an owner bringing them back", true, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "admins", MAIL_APPOINTEE),
+    withRoster(rosterRow(MAIL_APPOINTEE), { added: false }),
+    { merge: true },
+  ),
+);
+// THE SELF-GUARD, WHICH IS THE INTERESTING ONE. It reads like paternalism and is not:
+// without it, taking one owner account is enough to retire every other owner and hold the
+// club alone. With it, whoever is left can always turn the others back on.
+await check("an owner editing their OWN row", false, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "admins", MAIL_OWNER),
+    withRoster(rosterRow(MAIL_OWNER, { role: "owner" }), { added: false }),
+    { merge: true },
+  ),
+);
+await check("an owner retiring themselves", false, () =>
+  updateDoc(doc(member(UID_OWNER, MAIL_OWNER), "admins", MAIL_OWNER), {
+    active: false,
+    updated_at: serverTimestamp(),
+  }),
+);
+// A RETIRED ORGANISER IS NOT AN ORGANISER. The row is still there — that is the point of
+// retiring rather than deleting — so before the active flag was read in the rules, this
+// person kept every permission and only lost the buttons.
+await check("a retired organiser listing the membership", false, () =>
+  getDocs(collection(member(UID_RETIRED, MAIL_RETIRED), "users")),
+);
+await check("a retired organiser reading the roster", false, () =>
+  getDocs(collection(member(UID_RETIRED, MAIL_RETIRED), "admins")),
+);
+await check("a retired organiser reading their own row", true, () =>
+  getDoc(doc(member(UID_RETIRED, MAIL_RETIRED), "admins", MAIL_RETIRED)),
+);
+
+const badRow = (over) => () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "admins", "newbie@sst.scaler.com"),
+    withRoster(rosterRow("newbie@sst.scaler.com", over)),
+  );
+// The two fields that decide access, and the two least safe to leave unchecked: a role
+// spelled with a capital grants nothing, and an active flag written as a string reads as
+// active forever.
+await check("a role outside the closed set", false, badRow({ role: "Owner" }));
+await check("an active flag written as a string", false, badRow({ active: "true" }));
+await check("a group outside the closed set", false, badRow({ group: "founder" }));
+await check("an extra field on a roster row", false, badRow({ can_deploy: true }));
+// A row cannot grant access to one address while describing another — the id is what
+// isAdmin() looks up, and it lowercases before looking.
+await check("a row whose email disagrees with its id", false, badRow({ email: MAIL_A }));
+await check("appointing somebody who could never sign in", false, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "admins", "friend@gmail.com"),
+    withRoster(rosterRow("friend@gmail.com")),
+  ),
+);
+// Same lesson the profile learned: a full overwrite that simply leaves the date out
+// erases when somebody was appointed.
+await check("overwriting a row without its appointment date", false, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "admins", MAIL_APPOINTEE),
+    withRoster(rosterRow(MAIL_APPOINTEE), { added: false }),
+  ),
+);
+await check("an owner deleting a roster row", false, () =>
+  deleteDoc(doc(member(UID_OWNER, MAIL_OWNER), "admins", MAIL_APPOINTEE)),
 );
 
 console.log("\n-- mentors: published by organisers, read by everyone --");
@@ -512,13 +664,761 @@ await check("an admin withdrawing somebody's enrollment", false, () =>
   deleteDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "enrollments", UID_B)),
 );
 
-console.log("\n-- legacy applications stay sealed --");
+console.log("\n-- the notice board --");
+/** Strip the audience back off a fixture, to model a document written before the field
+ *  existed. Those are refused to ordinary readers by design — see canSeeAudience() in
+ *  firestore.rules — so the cases that use this are asserting that refusal. */
+const withoutAudience = (d) => {
+  const { audience, ...rest } = d;
+  return rest;
+};
+
+const postFor = (over = {}) => ({
+  title: "No session this Saturday",
+  body: "Lab 2 is taken for the hackathon. We are back the week after.",
+  pinned: false,
+  author_email: MAIL_ADMIN,
+  // Every document the composers write now carries one; the fixtures match.
+  audience: "both",
+  ...over,
+});
+const POST_1 = "post-no-session";
+
+await check("an admin posting a notice", true, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", POST_1), withStamps(postFor())),
+);
+// A READER MUST SAY WHICH AUDIENCES THEY ARE ASKING FOR. An unconstrained read of this
+// collection is refused for anybody but an organiser — not because of what is in it,
+// but because a list rule is judged against the query, and nothing in an unfiltered one
+// proves the reader may see whatever turns up next. The pair of cases below is the
+// contract every panel in web/lib is written to.
+await check("a member reading the board unfiltered", false, () =>
+  getDocs(collection(member(UID_A, MAIL_A), "announcements")),
+);
+await check("a member reading the board, audiences named", true, () =>
+  getDocs(query(
+    collection(member(UID_A, MAIL_A), "announcements"),
+    where("audience", "in", ["both", "students"]),
+  )),
+);
+await check("an anonymous visitor reading the board", false, () =>
+  getDocs(collection(env.unauthenticatedContext().firestore(), "announcements")),
+);
+await check("a member posting a notice", false, () =>
+  setDoc(doc(member(UID_A, MAIL_A), "announcements", "post-mine"), withStamps(postFor({ author_email: MAIL_A }))),
+);
+await check("a retired organiser posting a notice", false, () =>
+  setDoc(
+    doc(member(UID_RETIRED, MAIL_RETIRED), "announcements", "post-ghost"),
+    withStamps(postFor({ author_email: MAIL_RETIRED })),
+  ),
+);
+// PINNED ON CREATE, FROZEN ON EDIT — two different rules, and the pair is the point. The
+// first stops an admin signing somebody else's name to a new notice; the second stops the
+// next admin to press "pin" quietly signing theirs to an existing one.
+await check("posting under somebody else's byline", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", "post-forged"),
+    withStamps(postFor({ author_email: MAIL_OWNER })),
+  ),
+);
+await check("another organiser pinning that notice", true, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "announcements", POST_1),
+    withStamps(postFor({ pinned: true }), { created: false }),
+    { merge: true },
+  ),
+);
+await check("rewriting the byline on an edit", false, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "announcements", POST_1),
+    withStamps(postFor({ author_email: MAIL_OWNER }), { created: false }),
+    { merge: true },
+  ),
+);
+await check("archiving a notice", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", POST_1),
+    withStamps(postFor({ pinned: true, archived: true }), { created: false }),
+    { merge: true },
+  ),
+);
+
+const badPost = (over) => () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", "post-bad"), withStamps(postFor(over)));
+// THE LINK, WHICH IS THE ONE FIELD WITH A HOLE IN IT. Free text an organiser types,
+// rendered as a link every member can click.
+await check("a notice linking to https", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", "post-linked"),
+    withStamps(postFor({ link: "https://github.com/orgs/scaler/discussions/12" })),
+  ),
+);
+await check("a notice with a javascript: link", false, badPost({ link: "javascript:alert(1)" }));
+await check("a notice with a plain http link", false, badPost({ link: "http://example.com" }));
+await check("a notice with a data: link", false, badPost({ link: "data:text/html,<script>1</script>" }));
+await check("a category outside the closed set", false, badPost({ category: "urgent" }));
+await check("a notice with no body", false, badPost({ body: "" }));
+await check("a notice with an extra field", false, badPost({ audience: "first-years" }));
+await check("a pinned flag written as a string", false, badPost({ pinned: "true" }));
+await check("a client-forged timestamp on a notice", false, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", "post-backdated"), postFor()),
+);
+// THE FULL-OVERWRITE CASE, which is what setFlags() actually does when somebody presses
+// "pin": it sends the whole document, not one field. A version of it that forgot to put
+// created_at back would wipe the posting date of every notice anybody ever pinned, and
+// nothing on screen would say so — the notice would simply lose its date. Same lesson the
+// profile rules learned once already, in the same shape.
+await check("overwriting a notice without its posting date", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", POST_1),
+    withStamps(postFor({ pinned: true }), { created: false }),
+  ),
+);
+await check("a member deleting a notice", false, () =>
+  deleteDoc(doc(member(UID_A, MAIL_A), "announcements", POST_1)),
+);
+await check("an admin deleting a notice", true, () =>
+  deleteDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", POST_1)),
+);
+
+console.log("\n-- sessions --");
+const sessionFor = (over = {}) => ({
+  title: "Your first pull request",
+  speaker: "Priya Nair",
+  location: "Lab 2",
+  starts_at: new Date(2027, 9, 24, 18, 0),
+  created_by: MAIL_ADMIN,
+  // Every document the composers write now carries one; the fixtures match.
+  audience: "both",
+  ...over,
+});
+const SESSION_1 = "session-first-pr";
+
+await check("an admin scheduling a session", true, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", SESSION_1), withStamps(sessionFor())),
+);
+// A READER MUST SAY WHICH AUDIENCES THEY ARE ASKING FOR. An unconstrained read of this
+// collection is refused for anybody but an organiser — not because of what is in it,
+// but because a list rule is judged against the query, and nothing in an unfiltered one
+// proves the reader may see whatever turns up next. The pair of cases below is the
+// contract every panel in web/lib is written to.
+await check("a member reading the schedule unfiltered", false, () =>
+  getDocs(collection(member(UID_A, MAIL_A), "sessions")),
+);
+await check("a member reading the schedule, audiences named", true, () =>
+  getDocs(query(
+    collection(member(UID_A, MAIL_A), "sessions"),
+    where("audience", "in", ["both", "students"]),
+  )),
+);
+await check("a member scheduling a session", false, () =>
+  setDoc(doc(member(UID_A, MAIL_A), "sessions", "session-mine"), withStamps(sessionFor({ created_by: MAIL_A }))),
+);
+await check("an admin moving a session", true, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "sessions", SESSION_1),
+    withStamps(sessionFor({ location: "Lab 4" }), { created: false }),
+    { merge: true },
+  ),
+);
+await check("claiming somebody else's session on an edit", false, () =>
+  setDoc(
+    doc(member(UID_OWNER, MAIL_OWNER), "sessions", SESSION_1),
+    withStamps(sessionFor({ created_by: MAIL_OWNER }), { created: false }),
+    { merge: true },
+  ),
+);
+// THE ONE CLIENT-CHOSEN DATE IN THE FILE. It is still a DATE — a session whose time is
+// prose is a session nothing can sort or filter, which is the failure that made these
+// stop being pinned notices in the first place.
+await check("a start time that is a string", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", "session-bad"),
+    withStamps(sessionFor({ starts_at: "Saturday, 4pm" })),
+  ),
+);
+await check("a session with an extra field", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", "session-bad"),
+    withStamps(sessionFor({ capacity: 40 })),
+  ),
+);
+await check("moving a session without its scheduling date", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", SESSION_1),
+    withStamps(sessionFor({ location: "Lab 5" }), { created: false }),
+  ),
+);
+await check("a member cancelling a session", false, () =>
+  deleteDoc(doc(member(UID_A, MAIL_A), "sessions", SESSION_1)),
+);
+await check("an admin cancelling a session", true, () =>
+  deleteDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "sessions", SESSION_1)),
+);
+
+console.log("\n-- forms and polls --");
+const FIELDS = [
+  { id: "name-0", label: "Your name", type: "short", required: true },
+  { id: "saturday-1", label: "Which Saturday?", type: "choice", options: ["11th", "18th"] },
+];
+const formFor = (over = {}) => ({
+  title: "Session sign-up",
+  fields: FIELDS,
+  field_ids: FIELDS.map((f) => f.id),
+  open: true,
+  show_tally: false,
+  author_email: MAIL_ADMIN,
+  // Every document the composers write now carries one; the fixtures match.
+  audience: "both",
+  ...over,
+});
+const FORM_1 = "form-signup";
+const FORM_CLOSED = "form-closed";
+const FORM_POLL = "form-poll";
+
+await check("an admin publishing a form", true, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "forms", FORM_1), withStamps(formFor())),
+);
+// A READER MUST SAY WHICH AUDIENCES THEY ARE ASKING FOR. An unconstrained read of this
+// collection is refused for anybody but an organiser — not because of what is in it,
+// but because a list rule is judged against the query, and nothing in an unfiltered one
+// proves the reader may see whatever turns up next. The pair of cases below is the
+// contract every panel in web/lib is written to.
+await check("a member reading the forms unfiltered", false, () =>
+  getDocs(collection(member(UID_A, MAIL_A), "forms")),
+);
+await check("a member reading the forms, audiences named", true, () =>
+  getDocs(query(
+    collection(member(UID_A, MAIL_A), "forms"),
+    where("audience", "in", ["both", "students"]),
+  )),
+);
+await check("a member publishing a form", false, () =>
+  setDoc(doc(member(UID_A, MAIL_A), "forms", "form-mine"), withStamps(formFor({ author_email: MAIL_A }))),
+);
+// THE MIRROR, WHICH IS THE ONLY THING KEEPING ANSWER KEYS HONEST. Rules cannot iterate a
+// list of maps, so if the flat id list stops matching the questions there is no other way
+// to express "answers may only use keys this form asked about".
+await check("a form whose id mirror is short", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "forms", "form-bad"),
+    withStamps(formFor({ field_ids: ["name-0"] })),
+  ),
+);
+await check("a form with no questions", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "forms", "form-bad"),
+    withStamps(formFor({ fields: [], field_ids: [] })),
+  ),
+);
+// A COUNT THE CLIENT SUPPLIES IS A COUNT THE CLIENT INVENTED.
+await check("publishing a form with a tally already in it", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "forms", "form-bad"),
+    withStamps(formFor({ tally: { "saturday-1": { "11th": 99 } } })),
+  ),
+);
+
+// A poll the Cloud Function has already counted. Seeded with rules disabled because that
+// is exactly how it arrives in production — the Admin SDK does not pass through the rules.
+const TALLY = { "saturday-1": { "11th": 3, "18th": 1 } };
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const db = ctx.firestore();
+  const { doc: d2, setDoc: s2, serverTimestamp: t2 } = await import("firebase/firestore");
+  await s2(d2(db, "forms", FORM_POLL), {
+    ...formFor({ show_tally: true, title: "Which Saturday suits you?" }),
+    tally: TALLY,
+    created_at: t2(),
+    updated_at: t2(),
+  });
+});
+// FIXING A TYPO IN A POLL THAT ALREADY HAS VOTES. This is the case the rules have to get
+// right and the one that is easy to get wrong in either direction: refuse the write and
+// the question can never be corrected, allow a changed tally and the counts are fiction.
+await check("editing a poll and carrying its counts back unchanged", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "forms", FORM_POLL),
+    withStamps(
+      formFor({ show_tally: true, title: "Which Saturday suits you best?", tally: TALLY }),
+      { created: false },
+    ),
+    { merge: true },
+  ),
+);
+await check("editing a poll and adjusting its counts", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "forms", FORM_POLL),
+    withStamps(
+      formFor({ show_tally: true, tally: { "saturday-1": { "11th": 99, "18th": 1 } } }),
+      { created: false },
+    ),
+    { merge: true },
+  ),
+);
+
+await check("editing a form without its publication date", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "forms", FORM_1),
+    withStamps(formFor({ title: "Session sign-up (revised)" }), { created: false }),
+  ),
+);
+
+console.log("\n-- responses: attributed, and readable by nobody else --");
+const responseFor = (uid, email, over = {}) => ({
+  uid,
+  email,
+  name: "Asha Verma",
+  answers: { "name-0": "Asha Verma", "saturday-1": "11th" },
+  ...over,
+});
+// submitted_at is deliberately not frozen, so the helper stamps updated_at alone.
+const withAnswer = (d) => ({ ...d, submitted_at: serverTimestamp(), updated_at: serverTimestamp() });
+
+await check("a member answering a form", true, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "forms", FORM_1, "responses", UID_A),
+    withAnswer(responseFor(UID_A, MAIL_A)),
+  ),
+);
+await check("a member changing their own answer", true, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "forms", FORM_1, "responses", UID_A),
+    withAnswer(responseFor(UID_A, MAIL_A, { answers: { "name-0": "Asha V", "saturday-1": "18th" } })),
+    { merge: true },
+  ),
+);
+await check("a second member answering the same form", true, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "forms", FORM_1, "responses", UID_B),
+    withAnswer(responseFor(UID_B, MAIL_B, { name: "Ravi Kumar" })),
+  ),
+);
+await check("reading your own answer", true, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "forms", FORM_1, "responses", UID_A)),
+);
+// THE RULE THAT KEEPS THIS A FORM SYSTEM RATHER THAN A PUBLIC ONE. Answers are
+// attributed on purpose — somebody has to chase the people who did not sign up — and that
+// is only safe while no member can read another's.
+await check("reading somebody else's answer", false, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "forms", FORM_1, "responses", UID_A)),
+);
+await check("listing the answers as a member", false, () =>
+  getDocs(collection(member(UID_A, MAIL_A), "forms", FORM_1, "responses")),
+);
+await check("listing the answers as an admin", true, () =>
+  getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "forms", FORM_1, "responses")),
+);
+await check("an admin reading one answer", true, () =>
+  getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "forms", FORM_1, "responses", UID_A)),
+);
+await check("answering as somebody else", false, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "forms", FORM_1, "responses", UID_A),
+    withAnswer(responseFor(UID_A, MAIL_A)),
+  ),
+);
+await check("claiming another address on your own answer", false, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "forms", FORM_1, "responses", UID_B),
+    withAnswer(responseFor(UID_B, MAIL_A)),
+  ),
+);
+// ANSWER KEYS ARE PINNED TO THE FORM'S OWN QUESTIONS. Without this a member can append
+// whatever they like to a document the organisers later export to a spreadsheet.
+await check("an answer to a question the form never asked", false, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "forms", FORM_1, "responses", UID_B),
+    withAnswer(responseFor(UID_B, MAIL_B, { answers: { "name-0": "Ravi", "salary-9": "lots" } })),
+  ),
+);
+await check("an extra field on a response", false, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "forms", FORM_1, "responses", UID_B),
+    withAnswer(responseFor(UID_B, MAIL_B, { verified: true })),
+  ),
+);
+await check("an admin answering on somebody's behalf", false, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "forms", FORM_1, "responses", UID_A),
+    withAnswer(responseFor(UID_A, MAIL_A)),
+  ),
+);
+await check("withdrawing your own answer", false, () =>
+  deleteDoc(doc(member(UID_A, MAIL_A), "forms", FORM_1, "responses", UID_A)),
+);
+await check("answering a form that does not exist", false, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "forms", "form-imaginary", "responses", UID_A),
+    withAnswer(responseFor(UID_A, MAIL_A)),
+  ),
+);
+
+// CLOSING A FORM IS THE ONLY THING AN ORGANISER HAS to stop a sign-up once the room is
+// full, so it has to hold in the rules and not just in a hidden button.
+await check("an admin closing a form", true, () =>
+  setDoc(
+    doc(member(UID_ADMIN, MAIL_ADMIN), "forms", FORM_CLOSED),
+    withStamps(formFor({ open: false, title: "Last term's sign-up" })),
+  ),
+);
+await check("answering a closed form", false, () =>
+  setDoc(
+    doc(member(UID_A, MAIL_A), "forms", FORM_CLOSED, "responses", UID_A),
+    withAnswer(responseFor(UID_A, MAIL_A)),
+  ),
+);
+await check("reading a closed form", true, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "forms", FORM_CLOSED)),
+);
+
+console.log("\n-- contributions: read by two people, written by none --");
+await check("reading your own contributions", true, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "contributions", UID_A)),
+);
+await check("reading somebody else's contributions", false, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "contributions", UID_A)),
+);
+await check("an admin reading a member's contributions", true, () =>
+  getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "contributions", UID_A)),
+);
+// THE WHOLE POINT OF THE COLLECTION. "Merged pull requests" is the one number on this
+// dashboard somebody has a reason to inflate, and the counts arrive through a Cloud
+// Function using the Admin SDK — which never passes through this file.
+await check("inflating your own merged count", false, () =>
+  setDoc(doc(member(UID_A, MAIL_A), "contributions", UID_A), {
+    uid: UID_A,
+    github: "asha",
+    merged: 400,
+    open: 0,
+    repos: 40,
+    recent: [],
+  }),
+);
+await check("an admin writing a member's counts", false, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "contributions", UID_A), { merged: 0 }),
+);
+await check("an owner writing a member's counts", false, () =>
+  setDoc(doc(member(UID_OWNER, MAIL_OWNER), "contributions", UID_A), { merged: 0 }),
+);
+await check("a member listing everybody's contributions", false, () =>
+  getDocs(collection(member(UID_A, MAIL_A), "contributions")),
+);
+
+console.log("\n-- applications: a stranger's front door, write-only --");
+// THE ONLY UNAUTHENTICATED WRITE IN THE FILE. Everything else here is about keeping people
+// out of each other's rows; this one is about letting somebody with no account in at all,
+// because a club whose apply form needs a college Google account has locked its front door
+// with the key you get by walking through it.
+//
+// A merge once denied this create while /join still rendered the form that writes to it,
+// so every application was refused with nothing on screen to say so. That is the failure
+// this block exists to make loud.
+const stranger = () => env.unauthenticatedContext().firestore();
+const applicationFor = (over = {}) => ({
+  name: "Meera Iyer",
+  // NOT a college address, deliberately: somebody applying from a personal one is an
+  // applicant to talk to, not a forgery to reject.
+  email: "meera.iyer@gmail.com",
+  year_branch: "1st year, CSE",
+  hostel: "uniworld-1",
+  level: "beginner",
+  path: "first-contribution",
+  programs: ["gsoc"],
+  github: "meera",
+  ...over,
+});
+const withSubmitted = (d) => ({ ...d, submitted_at: serverTimestamp() });
+
+await check("a stranger applying", true, () =>
+  setDoc(doc(stranger(), "applications", "app-1"), withSubmitted(applicationFor())),
+);
+await check("a stranger applying with no github", true, () => {
+  const d = applicationFor();
+  delete d.github;
+  return setDoc(doc(stranger(), "applications", "app-2"), withSubmitted(d));
+});
+await check("a signed-in member applying", true, () =>
+  setDoc(doc(member(UID_A, MAIL_A), "applications", "app-3"), withSubmitted(applicationFor())),
+);
+await check("applying with Other ticked and explained", true, () =>
+  setDoc(
+    doc(stranger(), "applications", "app-4"),
+    withSubmitted(applicationFor({ programs: ["gsoc", "other"], programs_other: "Zephyr" })),
+  ),
+);
+
+// READ STAYS SHUT TO EVERYBODY, admins included. These rows hold names and addresses
+// belonging to people who are not members yet and never agreed to appear in anything.
+await check("an admin reading an application", false, () =>
+  getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "applications", "app-1")),
+);
+await check("an owner reading an application", false, () =>
+  getDoc(doc(member(UID_OWNER, MAIL_OWNER), "applications", "app-1")),
+);
+await check("a stranger reading back their own application", false, () =>
+  getDoc(doc(stranger(), "applications", "app-1")),
+);
+await check("listing the applications as an admin", false, () =>
+  getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "applications")),
+);
 await check("reading a legacy application as an admin", false, () =>
   getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "applications", "legacy-1")),
 );
-await check("writing a new application", false, () =>
-  setDoc(doc(member(UID_A, MAIL_A), "applications", "new-1"), { name: "x" }),
+await check("editing an application after sending it", false, () =>
+  setDoc(doc(stranger(), "applications", "app-1"), withSubmitted(applicationFor({ name: "Someone Else" }))),
 );
+await check("deleting an application", false, () =>
+  deleteDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "applications", "app-1")),
+);
+
+// VALIDATION IS THE WHOLE BOUNDARY HERE. There is no uid to compare and no verified
+// address — every field was typed by somebody the club has never met, so the shape check
+// is the only thing standing between the collection and whatever a script feels like
+// sending.
+const badApplication = (over) => () =>
+  setDoc(doc(stranger(), "applications", "app-bad"), withSubmitted(applicationFor(over)));
+await check("an application with an extra field", false, badApplication({ admin: true }));
+await check("an application with no name", false, badApplication({ name: "" }));
+await check("an application with a malformed email", false, badApplication({ email: "not-an-email" }));
+await check("an application with no year or branch", false, badApplication({ year_branch: "" }));
+// THE SET THAT HAD ALREADY DRIFTED. The rule recovered from git accepted none/some-git/
+// merged; the form has offered beginner/intermediate since upstream changed it. Deployed
+// unexamined, it would have refused every real application while looking correct.
+await check("the level the form actually sends", true, () =>
+  setDoc(
+    doc(stranger(), "applications", "app-level"),
+    withSubmitted(applicationFor({ level: "intermediate" })),
+  ),
+);
+await check("a level from the rule's previous vocabulary", false, badApplication({ level: "some-git" }));
+await check("a hostel outside the closed set", false, badApplication({ hostel: "uniworld-9" }));
+await check("a path outside the closed set", false, badApplication({ path: "hackathon" }));
+await check("an application with no programmes ticked", false, badApplication({ programs: [] }));
+await check("a programme outside the closed set", false, badApplication({ programs: ["nasa"] }));
+// The pairing, in both directions — the same shape as the mentorship one.
+await check("Other ticked with nothing to explain it", false, badApplication({ programs: ["other"] }));
+await check("an explanation with Other not ticked", false,
+  badApplication({ programs: ["gsoc"], programs_other: "Zephyr" }));
+await check("a client-forged submission time", false, () =>
+  setDoc(doc(stranger(), "applications", "app-backdated"), {
+    ...applicationFor(),
+    submitted_at: new Date(2000, 0, 1),
+  }),
+);
+await check("an application with no submission time at all", false, () =>
+  setDoc(doc(stranger(), "applications", "app-nostamp"), applicationFor()),
+);
+// The floor: a stranger has exactly one door, and it is this one.
+await check("a stranger writing anywhere else", false, () =>
+  setDoc(doc(stranger(), "announcements", "post-anon"), withStamps(postFor())),
+);
+
+// ---------------------------------------------------------------------------
+console.log("\n-- membership: a student is not a member --");
+
+// THE BUG THIS WHOLE SECTION EXISTS TO CATCH. `isStudent()` and `isClubMember()` look
+// alike, read alike, and were the same function until an audience picker needed them not
+// to be. Every case below fails loudly if they are ever re-merged.
+//
+// UID_A is seeded as a member; UID_B never is, and is the control that every "members
+// only" case is measured against.
+await env.withSecurityRulesDisabled(async (ctx) => {
+  const db = ctx.firestore();
+  const { doc, setDoc } = await import("firebase/firestore");
+  // Seeded past the rules because the only legitimate way to set `membership` is an
+  // admin write, and that path is itself under test further down.
+  await setDoc(doc(db, "users", UID_A), {
+    uid: UID_A, email: MAIL_A, name: "Asha Verma", hostel: "uniworld-1",
+    membership: "member", membership_by: MAIL_ADMIN,
+    created_at: serverTimestamp(), updated_at: serverTimestamp(),
+  });
+  // created_at IS NOT OPTIONAL IN THIS FIXTURE. immutablesUnchanged() compares it
+  // across the write, and reading a field that is not there raises rather than
+  // returning null — which denies the member's own entirely legal name edit and looks
+  // like a membership bug. Every real profile has one; the fixture must too.
+  await setDoc(doc(db, "users", UID_B), {
+    uid: UID_B, email: MAIL_B, name: "Ravi Kumar", hostel: "uniworld-2",
+    created_at: serverTimestamp(), updated_at: serverTimestamp(),
+  });
+  // One notice per audience, plus one with no audience field at all — the shape every
+  // notice written before this feature carries.
+  await setDoc(doc(db, "announcements", "post-members"), { ...postFor(), audience: "members" });
+  await setDoc(doc(db, "announcements", "post-students"), { ...postFor(), audience: "students" });
+  await setDoc(doc(db, "announcements", "post-both"), { ...postFor(), audience: "both" });
+  await setDoc(doc(db, "announcements", "post-legacy"), withoutAudience(postFor()));
+  await setDoc(doc(db, "forms", "form-members"), { ...formFor(), audience: "members", open: true });
+  // No audience field: the shape of a form written before this feature.
+  await setDoc(doc(db, "forms", "form-legacy"), withoutAudience({ ...formFor(), open: true }));
+});
+
+// The heart of it: one document, two students, two different answers.
+await check("a club member reads a members-only notice", true, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "announcements", "post-members")),
+);
+await check("a non-member reads a members-only notice", false, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "announcements", "post-members")),
+);
+await check("a non-member reads a students-only notice", true, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "announcements", "post-students")),
+);
+// The case that looks like a mistake and is the entire reason for a third audience:
+// recruitment copy is withheld from the people who have already joined.
+await check("a club member reads a students-only notice", false, () =>
+  getDoc(doc(member(UID_A, MAIL_A), "announcements", "post-students")),
+);
+await check("everyone reads a notice addressed to both", true, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "announcements", "post-both")),
+);
+// A NOTICE WITH NO AUDIENCE IS REFUSED TO MEMBERS, AND THAT IS THE CHOSEN BEHAVIOUR.
+// The tolerant alternative — defaulting an absent audience to "everyone" — cannot be
+// expressed in a read rule without also disabling enforcement on every list; see the
+// note on canSeeAudience() in firestore.rules. It costs nothing real, because such a
+// document is already unreachable through the where() clause every reader carries, and
+// AudienceBackfill.tsx surfaces them on the organisers' page until they are stamped.
+await check("a notice with no audience at all, read by a non-member", false, () =>
+  getDoc(doc(member(UID_B, MAIL_B), "announcements", "post-legacy")),
+);
+// The people who can fix it can still see it.
+await check("an organiser reads an unstamped notice", true, () =>
+  getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", "post-legacy")),
+);
+// And a form written before audiences existed still takes answers — the write-time
+// check defaults where the read rule cannot.
+await check("a non-member answers a form with no audience", true, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "forms", "form-legacy", "responses", UID_B),
+    withAnswer(responseFor(UID_B, MAIL_B)),
+  ),
+);
+// THE ORGANISER PANELS DEPEND ON THIS ONE. Composer, Sessions and FormBuilder all read
+// their collection unfiltered, which is only allowed because isAdmin() does not depend
+// on the document being read — so the prover can satisfy the rule for any row the query
+// might return. If this ever fails, every admin screen goes blank at once, and the fix
+// is to give those reads an audience clause rather than to loosen the rule.
+await check("an organiser listing the whole board unfiltered", true, () =>
+  getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "announcements")),
+);
+await check("an organiser listing every form unfiltered", true, () =>
+  getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "forms")),
+);
+await check("an organiser listing every session unfiltered", true, () =>
+  getDocs(collection(member(UID_ADMIN, MAIL_ADMIN), "sessions")),
+);
+await check("an organiser reads every audience", true, () =>
+  getDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", "post-students")),
+);
+
+// A LIST THAT REACHES FURTHER THAN THE READER MAY SEE FAILS ENTIRELY. Every reader in
+// web/lib is written around this: the where() clause is not a filter, it is what makes
+// the read succeed at all. If this case ever starts passing, Firestore has changed its
+// semantics and those clauses could be reconsidered — until then they are load-bearing.
+await check("a non-member listing the whole board", false, () =>
+  getDocs(query(collection(member(UID_B, MAIL_B), "announcements"))),
+);
+await check("a non-member listing only what they may see", true, () =>
+  getDocs(query(
+    collection(member(UID_B, MAIL_B), "announcements"),
+    where("audience", "in", ["both", "students"]),
+  )),
+);
+await check("a club member listing only what they may see", true, () =>
+  getDocs(query(
+    collection(member(UID_A, MAIL_A), "announcements"),
+    where("audience", "in", ["both", "members"]),
+  )),
+);
+
+// The back door. Reading a form and answering it are separate requests against separate
+// paths, so a read gate is not automatically a write gate.
+await check("a non-member answering a members-only form", false, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "forms", "form-members", "responses", UID_B),
+    withAnswer(responseFor(UID_B, MAIL_B)),
+  ),
+);
+
+console.log("\n-- membership: who may grant it --");
+
+// THE PRIVILEGE ESCALATION THIS MODEL LIVES OR DIES ON. Membership sits on a document
+// its own subject owns and may otherwise edit freely.
+await check("a student granting themselves membership", false, () =>
+  updateDoc(doc(member(UID_B, MAIL_B), "users", UID_B), {
+    membership: "member", membership_by: MAIL_B, membership_at: serverTimestamp(),
+  }),
+);
+await check("a student slipping membership in alongside a real edit", false, () =>
+  setDoc(doc(member(UID_B, MAIL_B), "users", UID_B), {
+    uid: UID_B, email: MAIL_B, name: "Ravi Kumar", hostel: "uniworld-2",
+    membership: "member", updated_at: serverTimestamp(),
+  }),
+);
+await check("a student editing their own name, membership untouched", true, () =>
+  setDoc(
+    doc(member(UID_B, MAIL_B), "users", UID_B),
+    { uid: UID_B, email: MAIL_B, name: "Ravi K", hostel: "uniworld-2", updated_at: serverTimestamp() },
+    { merge: true },
+  ),
+);
+await check("a new profile that claims membership on creation", false, () =>
+  setDoc(doc(member(UID_C, MAIL_C), "users", UID_C), {
+    uid: UID_C, email: MAIL_C, name: "New Student", hostel: "uniworld-1",
+    membership: "member", updated_at: serverTimestamp(),
+  }),
+);
+await check("a new profile with no membership claim", true, () =>
+  setDoc(doc(member(UID_C, MAIL_C), "users", UID_C), {
+    uid: UID_C, email: MAIL_C, name: "New Student", hostel: "uniworld-1",
+    created_at: serverTimestamp(), updated_at: serverTimestamp(),
+  }),
+);
+
+// The organiser's path, and its limits.
+await check("an organiser admitting somebody to the club", true, () =>
+  updateDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "users", UID_B), {
+    membership: "member", membership_by: MAIL_ADMIN, membership_at: serverTimestamp(),
+  }),
+);
+await check("an organiser removing somebody from the club", true, () =>
+  updateDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "users", UID_B), {
+    membership: "student", membership_by: MAIL_ADMIN, membership_at: serverTimestamp(),
+  }),
+);
+// Stamped from the token, never the body: an organiser cannot sign somebody else's name
+// to a membership decision.
+await check("an organiser attributing the change to another organiser", false, () =>
+  updateDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "users", UID_B), {
+    membership: "member", membership_by: MAIL_OWNER, membership_at: serverTimestamp(),
+  }),
+);
+await check("an organiser backdating a membership change", false, () =>
+  updateDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "users", UID_B), {
+    membership: "member", membership_by: MAIL_ADMIN, membership_at: new Date(2020, 0, 1),
+  }),
+);
+// The narrowness of the admin path. It is for membership and nothing else — an organiser
+// does not acquire edit rights over somebody's name by way of this rule.
+await check("an organiser editing a member's name through the membership path", false, () =>
+  updateDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "users", UID_B), {
+    name: "Renamed By Admin", membership: "member",
+    membership_by: MAIL_ADMIN, membership_at: serverTimestamp(),
+  }),
+);
+await check("a retired organiser admitting somebody", false, () =>
+  updateDoc(doc(member(UID_RETIRED, MAIL_RETIRED), "users", UID_B), {
+    membership: "member", membership_by: MAIL_RETIRED, membership_at: serverTimestamp(),
+  }),
+);
+await check("an ordinary student admitting somebody else", false, () =>
+  updateDoc(doc(member(UID_A, MAIL_A), "users", UID_B), {
+    membership: "member", membership_by: MAIL_A, membership_at: serverTimestamp(),
+  }),
+);
+await check("an organiser writing an audience outside the closed set", false, () =>
+  setDoc(doc(member(UID_ADMIN, MAIL_ADMIN), "announcements", "post-badaudience"),
+    withStamps({ ...postFor(), audience: "everyone" })),
+);
+
 
 console.log("\n-- anything else --");
 await check("writing to an unknown collection", false, () =>

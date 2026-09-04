@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import JoinGate from "@/components/JoinGate";
+import ApplyForm from "@/components/ApplyForm";
 import Duo from "@/components/Duo";
 import Note from "@/components/fx/Note";
+import { DASHBOARD_HREF } from "@/content/site";
 
 // THE APPLICATION FORM. One route, one job.
 //
@@ -170,19 +171,55 @@ export default function Join() {
                   <p className="mt-1 text-sm text-haze">No prior experience</p>
                 </div>
               </div>
+
+              {/* THE WAY BACK IN. The nav carries a "Sign in" link of its own now, so
+                  this is no longer the only thing between a returning member and their
+                  dashboard — but it stays, because that link is sm+ only and because
+                  this is the page somebody lands on when they press "Join" out of habit.
+                  It is the sentence that stops them filling in an application they have
+                  already sent.
+
+                  BEFORE THE FORM, NOT AFTER IT. Under the fields it would be found by
+                  somebody who had already filled them in, which is the one moment the
+                  sentence is no longer useful — a second application is exactly what it
+                  exists to prevent.
+
+                  Small and quiet on purpose: almost nobody reading this page is a
+                  member, and a sign-in prompt with equal weight to the form would ask
+                  every first-time reader to work out which of two things they are.
+
+                  SAME TAB, AND IT USED TO OPEN A NEW ONE. `target="_blank"` on an
+                  internal route left this application page open behind the reader as a
+                  stale, signed-out copy of a site they had just signed into, and left
+                  the back button — the thing somebody presses the moment they realise
+                  they are in the wrong place — doing nothing at all. Signing in is not
+                  a reference you consult beside the form; it is where you were going
+                  instead of filling it in. */}
+              <p className="mt-6 text-[0.9375rem] leading-relaxed text-dust">
+                Already joined?{" "}
+                <Link href={DASHBOARD_HREF} className="link-u text-accent">
+                  Sign in to your dashboard
+                </Link>{" "}
+                — no need to apply twice.
+              </p>
             </div>
 
-            {/* WAS <ApplyForm />, THE ANONYMOUS ONE-SHOT FORM. It is now sign-in
-                first: register with a college Google account, then fill a profile
-                once that you can come back and edit. The column this sits in, the
-                copy beside it and the two tiles above are unchanged — the flow
-                changed, not the page.
+            {/* THE ANONYMOUS APPLICATION FORM, and it is back here after a spell as a
+                sign-in gate. For a while this column held <JoinGate />: register with
+                a college Google account first, then fill a profile. That put an
+                account requirement in front of the club's front door — a stranger
+                could not apply without already holding the thing that membership
+                grants — and it made the headline three inches to the left false at
+                the exact moment somebody acted on it.
 
-                Everything about the gate is client-side, because the site is a
-                static export. Route-gating is therefore cosmetic and the data is
-                protected by firestore.rules instead. See the note at the top of
-                lib/auth.tsx before assuming a hidden page is a safe one. */}
-            <JoinGate />
+                Sign-in did not go away; it stopped being this page's business. It
+                lives on /dashboard now (components/SignInCard.tsx), which is the one
+                place that genuinely needs to know who you are. This page asks, that
+                page identifies, and neither has to care about the other.
+
+                The column this sits in, the copy beside it and the two tiles above
+                are unchanged — the flow changed, not the page. */}
+            <ApplyForm />
           </div>
         </section>
 

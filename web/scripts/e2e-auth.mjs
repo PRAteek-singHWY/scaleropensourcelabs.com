@@ -476,8 +476,18 @@ console.log("-- a student signs up --");
   await pg.waitForTimeout(1500);
   ok("an edit saves", (await pg.locator("main").innerText()).includes("Asha V Verma"));
 
-  ok("a member is not offered the organisers' dashboard",
-    !(await pg.getByRole("link", { name: /organisers.* dashboard/i }).first().isVisible().catch(() => false)));
+  // MATCHED ON THE DESTINATION, NOT ON THE WORDING. This asserted a link named
+  // /organisers.* dashboard/i, and the shell's two routes to /admin are labelled
+  // "Organisers" — so the assertion stopped matching the thing it was written to catch
+  // and passed on a page that could have carried both links. An href cannot drift out of
+  // step with itself, so it counts anchors pointing at the page instead.
+  //
+  // IT COUNTS RATHER THAN CHECKING VISIBILITY, because there are two of them —
+  // components/dashboard/Shell.tsx puts one in the app bar and one in the sidebar — and
+  // the sidebar is `lg:flex`, so at a narrower viewport a leaked row would be in the DOM
+  // and invisible. This context is 1440 wide, where both would render.
+  ok("a member is offered no route to the organisers' page",
+    (await pg.locator('a[href^="/admin"]').count()) === 0);
   await pg.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(3000);
   ok("/admin refuses a member", /not for you/i.test(await pg.locator("main").innerText()));

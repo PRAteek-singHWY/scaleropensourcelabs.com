@@ -193,7 +193,7 @@ export default function MediaSplit() {
                   />
                 ))}
               </div>
-              <p className="border-t-2 border-black px-4 py-3 font-mono text-[13px] text-dust">
+              <p className="border-t-2 border-black px-4 py-3 font-mono text-[0.8125rem] text-dust">
                 Members of the current cohort · photographs to follow
               </p>
             </div>

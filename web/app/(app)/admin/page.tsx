@@ -1,47 +1,49 @@
 import type { Metadata } from "next";
 import AdminDashboard from "@/components/AdminDashboard";
+import AudienceBackfill from "@/components/AudienceBackfill";
+import Composer from "@/components/Composer";
+import FormBuilder from "@/components/FormBuilder";
+import Roster from "@/components/Roster";
+import Sessions from "@/components/Sessions";
 
-// THE ORGANISERS' DASHBOARD. Counts first, list second — see the header of
-// AdminDashboard.tsx for what it is for and, more importantly, for what it is not:
-// this route is not a privilege gate. The page ships to anybody who asks for it,
-// because the site is a static export with no server to refuse them. What refuses
-// them is the `list` rule on users/{uid} in firestore.rules, which only an address
-// in the `admins` collection satisfies. A non-admin who loads this URL gets a page
-// that cannot fetch anything.
+// THE ORGANISERS' PAGE. Same shell as the member dashboard — it comes from
+// (app)/layout.tsx, so this file is only the content.
 //
-// NOT IN PAGES, so it appears in neither the nav strip nor the footer's route list.
-// It is reached from the finished profile on /join, and only when the signed-in
-// address is an admin. That is a convenience rather than concealment — the URL is
-// guessable and that is fine.
+// NOT A PRIVILEGE GATE. The page ships to anybody who asks for it, because the site is a
+// static export with no server to refuse them. What refuses them is the `list` rule on
+// users/{uid} and the admin-only writes on every collection below, none of which any
+// client can talk its way past. A non-admin who loads this URL gets a page whose every
+// panel renders its own "not for you" state.
 //
-// `noindex`, because a page that lists members has no business in a search index
-// even though it renders nothing without an authorised session.
+// THE ORDER IS BY HOW OFTEN AN ORGANISER DOES THE THING: membership is the question the
+// page is opened with, notices and sessions are weekly, forms every few weeks, and the
+// roster once a term — which is why it is last, where nobody reaches it by accident.
 
 export const metadata: Metadata = {
   title: "Organisers",
-  description: "Club membership by batch, year, branch and hostel, and the mentorship cohort.",
+  description: "Club membership, sessions, notices and forms.",
   robots: { index: false, follow: false },
 };
 
 export default function Admin() {
   return (
-    <main id="main">
-      <section className="section page-top pb-8">
-        <p className="label">Organisers only</p>
-        <h1 className="mt-4 max-w-3xl font-display text-display-lg font-bold tracking-tight">
-          Who is in the club.
+    <div className="space-y-5">
+      <div>
+        <h1 className="font-display text-display-lg font-bold tracking-tight">
+          Admin dashboard
         </h1>
-        <p className="measure mt-4 text-body-lg text-haze">
-          Every registered member and the breakdowns most often asked for — by batch, by
-          year, by branch, by hostel — then the mentor list and who has chosen whom. Counts
-          are over the whole membership; the search and filters below narrow only the
-          lists.
+        <p className="measure mt-2 text-body text-haze">
+          Who is in the club, what they have been told, and what you have asked them.
         </p>
+      </div>
 
-        <div className="mt-10">
-          <AdminDashboard />
-        </div>
-      </section>
-    </main>
+      {/* Renders only while there is something to migrate — see the component. */}
+      <AudienceBackfill />
+      <AdminDashboard />
+      <Composer />
+      <Sessions />
+      <FormBuilder />
+      <Roster />
+    </div>
   );
 }

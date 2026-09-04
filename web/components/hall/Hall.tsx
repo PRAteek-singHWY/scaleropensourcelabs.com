@@ -85,7 +85,7 @@ export default function Hall() {
           as two unrelated elements sharing a row. */}
       <div className="mt-7 flex flex-wrap items-end gap-x-5 gap-y-3 border-t border-seam pt-6">
         <p className="flex items-baseline gap-3">
-          <span className="font-display text-[clamp(3.625rem,calc(6vw_+_0.125rem),4.625rem)] font-bold leading-[0.85] tracking-[-0.04em]">
+          <span className="font-display text-[clamp(3.5rem,4.5vw,4.5rem)] font-bold leading-[0.85] tracking-[-0.04em]">
             {stats.total}
           </span>
           <span className="text-body-lg text-haze">
@@ -396,7 +396,7 @@ export default function Hall() {
               <span
                 aria-hidden
                 className="relative select-none font-display font-extrabold leading-none text-black"
-                style={{ fontSize: "clamp(2.625rem, calc(26cqw + 0.125rem), 7.125rem)" }}
+                style={{ fontSize: "clamp(2.5rem, 26cqw, 7rem)" }}
               >
                 +
               </span>

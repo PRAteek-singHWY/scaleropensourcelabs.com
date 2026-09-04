@@ -388,11 +388,14 @@ function Node({
   /** Which edge it is anchored to, so a card near the chart's edge stays on the page. */
   tipAlign?: "start" | "center" | "end";
 }) {
-  // Whether there is anything to say on hover. A node with nothing to say must not
-  // render a card: `.person-tip` is a styled bubble with padding and a border, so
-  // an empty one is a small dark rectangle that appears on hover and explains
-  // nothing. This became reachable the moment the desk stopped passing its remit
-  // down — three of its four members carry only a name.
+  /* WHAT THE CARD HAS TO SAY, WORKED OUT BEFORE IT IS DRAWN, because it may have
+     nothing. A desk member holds no office and so carries no remit, and every
+     other field a desk member has is optional — a name and nothing else is a
+     shape the content type allows, and became reachable the moment the desk
+     stopped passing its remit down. `.person-tip` is a styled bubble with padding
+     and a border, so an empty one renders as a small dark rectangle that appears
+     on hover and says nothing, which reads as a bug rather than as an absence.
+     The portrait is still the hover target; it just has no answer, so gives none. */
   const hasTip = Boolean(
     member.remit || member.batch || member.highlights?.length,
   );

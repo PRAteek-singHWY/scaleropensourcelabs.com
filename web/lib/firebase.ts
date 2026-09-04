@@ -187,8 +187,15 @@ export const USERS = "users";
  *  ever signed in — with uid keys you would have to make them sign in, read their uid
  *  out of the Auth tab, and then create the document, which is a worse first day.
  *
- *  Writes are denied to every client, including admins: the list is managed by hand in
- *  the console, so a compromised admin session cannot appoint more admins. */
+ *  IT IS ALSO THE CORE-TEAM ROSTER — see lib/roster.ts. One row carries both the access
+ *  grant and the public team billing, because they were two lists and the two lists
+ *  drifted.
+ *
+ *  Writes are OWNER-ONLY and nobody may write their own row: a plain admin, and therefore
+ *  one compromised admin account, cannot appoint accomplices or retire anybody, and an
+ *  owner cannot demote themselves into a state only somebody else can undo. Nobody may
+ *  delete a row at all — retiring is `active: false`, which isAdmin() in firestore.rules
+ *  reads on every request. */
 export const ADMINS = "admins";
 
 /** The mentors an organiser has published, one document each.
@@ -198,8 +205,9 @@ export const ADMINS = "admins";
  *  admins from the dashboard. That is a deliberate widening and it is acceptable for one
  *  reason: a mentor entry is published, organiser-authored, non-personal copy — the same
  *  kind of thing that lives in content/ — so the worst a compromised admin session can do
- *  here is deface a list, not read or alter anybody's details. Contrast `admins`, where
- *  the same reasoning does not hold and every client write stays denied. */
+ *  here is deface a list, not read or alter anybody's details. Contrast `admins`, where the
+ *  same reasoning does not hold: writing that one grants access, so it is narrowed to
+ *  owners and fenced with a rule nobody may write their own row. */
 export const MENTORS = "mentors";
 
 /** One document per member who has enrolled in a mentorship programme, keyed by uid for
@@ -227,3 +235,55 @@ export function isAllowedEmail(email: string | null | undefined): boolean {
   if (!email) return false;
   return email.trim().toLowerCase().endsWith(`@${ALLOWED_EMAIL_DOMAIN}`);
 }
+
+/** ─────────────────────────────────────────────────────────────────────────────
+ *  COLLECTIONS ADDED BY THE DASHBOARD WORK, re-applied after the upstream merge.
+ *
+ *  They live here rather than beside their libraries for the same reason the others do:
+ *  firestore.rules, the client and the check scripts must not be able to disagree about a
+ *  collection's name, and one file is the only way to guarantee that.
+ *
+ *  firestore.rules NOW COVERS ALL OF THESE. The merge took upstream's rules wholesale, so
+ *  for a while `forms`, `sessions` and the roster fields fell to the catch-all and were
+ *  denied — a loud break rather than a hole, but a break. The blocks are back, and each
+ *  one is executed against the emulator by `npm run rules:emulator`.
+ *
+ *  EDITING THIS FILE ALONE STILL CHANGES NOTHING IN PRODUCTION. Rules deploy separately:
+ *  `firebase deploy --only firestore:rules`.
+ *  ──────────────────────────────────────────────────────────────────────────── */
+
+/** The notice board. Every member reads it; admins write it. */
+export const ANNOUNCEMENTS = "announcements";
+
+/** Forms AND polls — a poll is a form with `show_tally` on. */
+export const FORMS = "forms";
+
+/** One answer per member, keyed by uid so a second is impossible by construction. */
+export const RESPONSES = "responses";
+
+/** When the club meets. Separate from the board because a session has a TIME and stops
+ *  being upcoming, and neither is expressible as a notice. */
+export const SESSIONS = "sessions";
+
+/** GitHub counts for one member, written ONLY by the Cloud Function. */
+export const CONTRIBUTIONS = "contributions";
+
+/** The callable-functions handle, or null when Firebase is not configured.
+ *
+ *  Dynamically imported like the others: firebase/functions is another payload that the
+ *  routes with no dashboard must not carry. */
+export async function getFunctionsClient() {
+  const app = await getApp();
+  if (!app) return null;
+  const { getFunctions, connectFunctionsEmulator } = await import("firebase/functions");
+  const fns = getFunctions(app);
+  if (EMULATOR && !functionsEmulatorConnected) {
+    const [host] = EMULATOR.split(":");
+    connectFunctionsEmulator(fns, host, 5001);
+    functionsEmulatorConnected = true;
+  }
+  return fns;
+}
+
+/** Guards the Functions emulator wiring, same reason as the Firestore one. */
+let functionsEmulatorConnected = false;

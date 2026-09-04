@@ -1,285 +1,261 @@
 "use client";
 
-// A member's own page. Where signing in leads.
+// The member's dashboard, laid out to the Stitch design.
 //
-// WHAT IT IS FOR. Before this existed, joining ended on a read-only summary card in the
-// right-hand column of a marketing page: you filled in a form, it told you the details
-// were saved, and there was nothing else. Every subsequent thing the club wanted a member
-// to do — enrol in the GSoC cohort, correct a detail, find the organisers' dashboard —
-// had nowhere to live. This is that somewhere.
+// THE PROFILE FORM IS A PANEL, NOT A GATE. It used to render INSTEAD of the dashboard
+// whenever a profile was incomplete, so a member signing in for the first time met a
+// hostel dropdown and everything worth arriving for sat behind it — which is why the
+// club's own organisers reported the site "has no dashboard". They had never got past the
+// form. Nothing is blocked on it now; the club simply knows less about somebody until
+// they fill it in.
 //
-// WHY IT IS NOT A `<dl>` ANY MORE. It was: four label/value rows in a bordered list, which
-// is the correct markup for a definition list and the wrong object for this screen. A
-// table of your own answers read back to you is a form's confirmation step, and it made a
-// page somebody lands on every week feel like the receipt for one they filled in once. The
-// same four facts are tiles now — same information, same reading order, but the page reads
-// as a place rather than as a submission.
+// THE ORDER IS THE DESIGN'S, AND IT IS ORDERED BY WHAT CHANGED:
 //
-// IT DECIDES WHO NEEDS ONBOARDING, and it is the only page that does. /join sends every
-// signed-in reader here without reading their profile, so there is exactly one place that
-// answers "has this member finished joining" rather than two that can disagree. A reader
-// without a complete profile is sent on to /onboarding, carrying any ?path= with them.
+//   the strip      four figures, so the page answers "anything for me?" before a word
+//   left column    what moved and what is asked of you
+//   right column   what is standing: where to go next, and what we hold about you
 //
-// NOT A PRIVILEGE GATE — see the note at the top of MemberOnly.tsx. This HTML is on the
-// CDN and anybody can fetch it. firestore.rules is what refuses to hand over data.
+// NO GREETING HEADING, WHICH THE PREVIOUS VERSION HAD. The design opens straight on the
+// figures, and it is right to: "Good to see you, Asha" is the page being pleased with
+// itself, and it pushed the only line that answers a question below the fold on a laptop.
+// The h1 the document still needs is visually hidden — see the note on it.
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import type { User } from "firebase/auth";
-import MemberOnly, { GateCard } from "@/components/MemberOnly";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import ProfileCard from "@/components/ProfileCard";
+import ProfileForm from "@/components/ProfileForm";
+import SignInCard from "@/components/SignInCard";
+import Board from "@/components/dashboard/Board";
+import Contributions from "@/components/dashboard/Contributions";
+import Forms from "@/components/dashboard/Forms";
+import NextSessions from "@/components/dashboard/NextSessions";
 import MentorPicker from "@/components/MentorPicker";
+import NextUp from "@/components/dashboard/NextUp";
+import Panel from "@/components/dashboard/Panel";
+import { isComplete, readProfile, type Profile } from "@/lib/profile";
 import { useAuth } from "@/lib/auth";
-import { batchFromEmail } from "@/lib/batch";
-import { fmtDate, isComplete, readProfile, toDate, type Profile } from "@/lib/profile";
-import { HOSTELS, PATHS } from "@/content/join";
 
-/** One fact, as an object rather than a table row.
+/** One figure in the strip.
  *
- *  `mono` is for the values that are identifiers — a GitHub handle, a batch code. Names
- *  and places are not identifiers and reading them in a monospace face makes a person's
- *  hostel look like a database key. */
-function Tile({
+ *  `note` is the small coloured line the design puts beside several of the numbers —
+ *  "+12 this week", "pending review". It is optional because only some of the four have
+ *  anything true to say there, and inventing one for the others to make the row even is
+ *  how a strip of facts becomes a strip of decoration. */
+function Stat({
+  n,
   label,
-  value,
-  mono = false,
-  href,
+  note,
 }: {
+  n: number | string;
   label: string;
-  value: string;
-  mono?: boolean;
-  href?: string;
+  note?: string;
 }) {
-  const body = (
-    <span
-      className={[
-        "mt-2 block break-words text-body-lg font-semibold",
-        mono ? "font-mono text-[15px]" : "",
-        // A value nobody gave is stated in the quiet colour rather than left blank: an
-        // empty tile reads as broken, "not given" reads as a fact.
-        value === "—" || value === "not given" || value === "not recorded"
-          ? "font-normal text-dust"
-          : "text-ink",
-      ].join(" ")}
-    >
-      {value}
-    </span>
-  );
-
   return (
-    <div className="card rounded-panel bg-raise p-5 transition-colors">
-      <span className="label">{label}</span>
-      {href ? (
-        <a
-          href={href}
-          target="_blank"
-          rel="noreferrer"
-          className="block underline decoration-seam underline-offset-4 transition-colors hover:decoration-accent"
-        >
-          {body}
-        </a>
-      ) : (
-        body
-      )}
+    <div className="card rounded-panel bg-raise px-5 py-4">
+      <p className="font-mono text-[0.6875rem] font-medium uppercase leading-tight tracking-[0.12em] text-haze">
+        {label}
+      </p>
+      <p className="mt-2 flex flex-wrap items-baseline gap-x-2">
+        <span className="font-display text-[2.125rem] font-bold leading-none tabular-nums tracking-tight">
+          {n}
+        </span>
+        {note && <span className="text-sm font-medium text-ember">{note}</span>}
+      </p>
     </div>
   );
 }
 
-function Body({ user }: { user: User }) {
-  const { isAdmin } = useAuth();
-  const router = useRouter();
-  const params = useSearchParams();
+export default function MemberDashboard() {
+  const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
+  const [editing, setEditing] = useState(false);
   const [loadError, setLoadError] = useState("");
-
-  const path = params.get("path");
+  /** Reported up by the panels that already did the reads, so the strip costs no extra
+   *  queries. `null` means "not known yet", which renders as an em dash rather than a
+   *  zero — "0 merged" and "we have not looked yet" are different sentences and only the
+   *  second is true at first paint. */
+  const [pending, setPending] = useState<number | null>(null);
+  const [merged, setMerged] = useState<number | null>(null);
+  const [repos, setRepos] = useState<number | null>(null);
+  const [openPrs, setOpenPrs] = useState<number | null>(null);
 
   const load = useCallback(async (uid: string) => {
     setLoadError("");
     try {
       setProfile(await readProfile(uid));
     } catch (e) {
+      // NOT swallowed into "no profile yet". A refusal here means the rules said no, which
+      // on this collection almost always means an off-domain address — and presenting that
+      // as an empty form would silently ask somebody to fill in details that cannot save.
       console.error("[osc] could not read profile", e);
+      setLoadError("We could not load your details. Reload the page, or email us.");
       setProfile(null);
-      setLoadError("We could not load your profile. Reload the page, or email us.");
     }
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setProfile(user === null ? null : undefined);
+      return;
+    }
     void load(user.uid);
   }, [user, load]);
 
-  // Not finished joining — go and finish. `replace` rather than `push`: a member bounced
-  // through here has no reason to be able to go "back" to a page that will bounce them
-  // again. The ?path= rides along, because this may be the first hop after sign-in.
-  //
-  // The load error is checked too: a profile we FAILED to read is not a profile that does
-  // not exist, and redirecting on a network blip would drop somebody into onboarding they
-  // have already done.
-  const needsOnboarding = profile !== undefined && !isComplete(profile) && !loadError;
-  useEffect(() => {
-    if (!needsOnboarding) return;
-    router.replace(path ? `/onboarding?path=${encodeURIComponent(path)}` : "/onboarding");
-  }, [needsOnboarding, path, router]);
+  // Stable identities, so the child effects reporting these numbers do not re-fire on
+  // every render of this component.
+  const onPending = useCallback((n: number) => setPending(n), []);
+  const onSummary = useCallback((m: number, r: number, o: number) => {
+    setMerged(m);
+    setRepos(r);
+    setOpenPrs(o);
+  }, []);
 
-  if (profile === undefined || needsOnboarding) {
+  // `user === undefined` is its own state rather than being folded into "signed out":
+  // rendering a sign-in prompt while the session is still being restored shows it to
+  // somebody who is already signed in, every time they load the page.
+  if (user === undefined || (user && profile === undefined)) {
     return (
-      <GateCard busy>
+      <div className="card rounded-panel bg-raise p-8" aria-busy="true">
+        {/* THE HIDDEN H1 IS HERE TOO, because this branch is a state the route can be
+            LOADED IN, not just a flicker between two states that have one. On a
+            configured deployment a hard load paints this card until auth resolves, so
+            without it the document has no h1 for as long as that takes — the same hole
+            the unconfigured branch of SignInCard had, and the same check catches it. */}
+        <h1 className="sr-only">Your dashboard</h1>
         <p className="label">One moment</p>
-        <p className="mt-3 text-body text-haze">
-          {needsOnboarding ? "Just three questions first…" : "Loading your dashboard…"}
-        </p>
-      </GateCard>
+        <p className="mt-3 text-body text-haze">Finding your things…</p>
+      </div>
     );
   }
 
-  if (!profile) {
-    return (
-      <GateCard>
-        <p className="chip">Something went wrong</p>
-        <p className="mt-4 text-body text-ember" role="alert">
-          {loadError || "We could not load your profile."}
-        </p>
-      </GateCard>
-    );
-  }
+  // The card itself, not a link to one: /join is the anonymous application form, and
+  // sending a returning member there would hand them an application to fill in again.
+  if (!user) return <SignInCard />;
 
-  const batch = batchFromEmail(profile.email);
-  const joined = toDate(profile.created_at);
-  const firstName = profile.name.trim().split(/\s+/)[0];
+  const complete = isComplete(profile);
 
   return (
-    <div className="space-y-10">
-      {/* ---------------------------------------------------------------- the band
-          THE ONE THING ON THE PAGE THAT IS NOT IN A CARD. Everything used to be: the
-          greeting, the address, the details and the mentorship all sat inside the same
-          bordered white rectangle, so nothing had any rank and the page read as one long
-          panel. Lifting the identity out onto the page gives the cards below something to
-          be subordinate to, which is most of what makes a layout feel composed rather
-          than stacked. */}
-      <div>
-        {/* NO SECOND BIG HEADING. The first draft opened with the member's first name at
-            display size, which read well on its own and put two competing headlines on
-            one screen — the route's h1 four inches above says "Your club." The name moved
-            into this sentence instead, where it does the same work of making the page
-            theirs without arguing with the heading. */}
-        <p className="measure text-body-lg text-haze">
-          You are on the list, <strong className="font-semibold text-ink">{firstName}</strong>.
-          Somebody will message you before the next session — there is nothing to prepare,
-          and nothing else to do here unless you want to enrol in a programme below.
+    <div className="space-y-5">
+      {/* THE H1 THE DESIGN DOES NOT DRAW. The page opens on the figures, so there is no
+          visible heading to carry the document's title — but a page with no h1 hands a
+          screen-reader user a document with no name, and the site's own checks require
+          exactly one. Hidden rather than invented. */}
+      <h1 className="sr-only">Your dashboard</h1>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {/* "WAITING ON YOU" LEADS, and it is the one figure the design does not have.
+            Stitch opens with Total Contributions, which is an achievement — and a
+            dashboard whose first number is a score is a leaderboard, which is the wrong
+            instrument for a club whose whole pitch is "you do not need to be good yet".
+            The other three are the design's, in its order. */}
+        <Stat n={pending ?? "—"} label="Waiting on you" />
+        <Stat n={merged ?? "—"} label="Pull requests merged" />
+        <Stat n={openPrs ?? "—"} label="Open pull requests" note={openPrs ? "in review" : undefined} />
+        <Stat n={repos ?? "—"} label="Projects touched" />
+      </div>
+
+      {loadError && (
+        <p
+          className="card rounded-panel bg-raise p-6 text-[0.9375rem] leading-relaxed text-ember"
+          role="alert"
+        >
+          {loadError}
         </p>
+      )}
 
-        {/* THE GATE PLATE, RETURNED, and reshaped. The same yellow object that carried
-            the domain rule on the way in now carries the address it let through, which is
-            what makes the two screens one flow rather than two forms. It is a full-width
-            slab here rather than a boxed card, because on this page it is the header
-            rather than a row in a table.
-            "REGISTERED", not "MEMBER" — being on the list is what has happened; the club
-            part happens on a Saturday, and the plate does not get to promise it either.
-            The keyline without the offset shadow, for the reason set out in JoinGate.tsx:
-            on this stylesheet the hard shadow marks a CONTROL, and this is a plate of
-            text. */}
-        <div className="mt-7 rounded-panel border-2 border-black bg-pop p-6 text-black sm:p-7">
-          <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
-            <div className="min-w-0">
-              <p className="font-mono text-label uppercase tracking-wider text-black/70">
-                Registered
-              </p>
-              <p className="mt-1.5 break-all font-mono text-[1.125rem] font-bold leading-tight sm:text-[1.375rem]">
-                {profile.email}
-              </p>
-            </div>
-            {joined && (
-              <p className="shrink-0 font-mono text-[0.8125rem] uppercase tracking-wider text-black/80">
-                Member since {fmtDate(profile.created_at)}
-              </p>
-            )}
-          </div>
+      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:items-start">
+        <div className="space-y-5">
+          {/* ABOVE THE BOARD, because a sign-up nobody scrolls to is a sign-up nobody
+              fills in — and unlike a notice, this one is asking for something back. */}
+          <Forms
+            uid={user.uid}
+            email={user.email ?? ""}
+            name={profile?.name ?? user.displayName ?? undefined}
+            onPending={onPending}
+          />
+          {/* WHAT'S ON, BETWEEN THE FORMS AND THE BOARD. A session is the most
+              time-bound thing on the page — miss it and it is gone — so it sits above the
+              notices, which keep. It renders nothing at all when there is no schedule; see
+              the note in NextSessions.tsx for why that panel is the one exception to
+              every-panel-keeps-its-empty-state. */}
+          <NextSessions />
+          <Board />
+          <Contributions
+            uid={user.uid}
+            handle={profile?.github}
+            onEditProfile={() => setEditing(true)}
+            onSummary={onSummary}
+          />
+        </div>
 
-          {/* On black-on-yellow, which is 14.9:1 — the highest-contrast pair in the
-              palette, and the licence for spending the loudest colour on the site here. */}
-          {batch && (
-            <ul className="mt-5 flex flex-wrap gap-2 border-t border-black/20 pt-5">
-              {[batch.label, batch.branch, batch.yearLabel, `Roll ${batch.roll}`].map((v) => (
-                <li
-                  key={v}
-                  className="rounded-full border border-black/30 px-3 py-1 font-mono text-[13px] font-medium"
-                >
-                  {v}
-                </li>
-              ))}
-            </ul>
+        <div className="space-y-5">
+          {/* The only filled surface on the page. NextUp reads the member's chosen route
+              and programmes, so it has nothing to say until there is a profile. */}
+          {profile && complete && <NextUp profile={profile} />}
+
+          {editing || !complete ? (
+            <Panel
+              icon="user"
+              title="Your details"
+              id="details"
+              action={
+                editing && complete ? (
+                  <button
+                    type="button"
+                    onClick={() => setEditing(false)}
+                    className="tap font-mono text-label uppercase text-haze underline transition-colors hover:text-ink"
+                  >
+                    Cancel
+                  </button>
+                ) : undefined
+              }
+            >
+              {/* THE PROMPT THAT REPLACED THE GATE. It says what the details are FOR,
+                  because "fill in this form" with no reason attached is the thing
+                  everybody skips — and it is honest that nothing is blocked on it. */}
+              {!complete && (
+                <p className="measure mb-5 text-body text-haze">
+                  Everything else here already works. This is just so the organisers know
+                  which hostel to find you in and what you are chasing — a minute, once.
+                </p>
+              )}
+              {/* SUSPENSE IS REQUIRED, not tidiness: ProfileForm reads useSearchParams for
+                  the ?path= preselect, and an unwrapped useSearchParams fails the static
+                  export build outright. */}
+              <Suspense fallback={<div className="h-[42rem]" aria-hidden />}>
+                <ProfileForm
+                  user={user}
+                  profile={profile ?? null}
+                  onSaved={() => {
+                    setEditing(false);
+                    // Re-read rather than trusting the local echo, so the card shows the
+                    // server's timestamps rather than a client clock.
+                    void load(user.uid);
+                  }}
+                />
+              </Suspense>
+            </Panel>
+          ) : (
+            profile && (
+              <ProfileCard profile={profile} tone="record" onEdit={() => setEditing(true)} />
+            )
           )}
         </div>
       </div>
 
-      {/* ------------------------------------------------------------ the four facts */}
-      <section aria-labelledby="your-details">
-        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-          {/* h2, because the route's h1 is the page title and the QA sweep checks heading
-              order. It is styled as a `.label` rather than as a display heading: this is
-              a section marker on an app screen, not a headline. */}
-          <h2 id="your-details" className="label">
-            Your details
-          </h2>
-          <Link
-            href="/onboarding?edit=1"
-            className="tap font-mono text-label uppercase tracking-wider text-accent underline decoration-accent/40 underline-offset-4 transition-colors hover:text-ink"
-          >
-            Edit
-          </Link>
-        </div>
-        {/* The address is on the plate above, so it is not repeated here — it was the one
-            row of the old table a reader could already see twice on the screen. Nor are
-            batch, branch or year: those are on the plate too, and they are read out of the
-            address rather than stored, so listing them as "details" would imply they were
-            something the member had told us. */}
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Tile label="Name" value={profile.name} />
-          <Tile
-            label="Hostel"
-            value={HOSTELS.find((h) => h.value === profile.hostel)?.label ?? profile.hostel}
-          />
-          <Tile
-            label="GitHub"
-            mono
-            value={profile.github ?? "not given"}
-            href={profile.github ? `https://github.com/${profile.github}` : undefined}
-          />
-          <Tile
-            label="How you found us"
-            value={
-              profile.path
-                ? PATHS.find((p) => p.id === profile.path)?.name ?? profile.path
-                : "not recorded"
-            }
-          />
-        </div>
-      </section>
+      {/* ------------------------------------------------------------- the programmes
+          RESTORED, NOT NEW. This was rendered here in b996d6a and disappeared in the
+          merge that took upstream's structure alongside this dashboard — the component,
+          its library and its firestore rules all survived, and only the one line that
+          put it on screen was lost. The result was a mentorship system that was fully
+          built, fully protected, and unreachable: a member had no way to pick a mentor
+          and nothing on the page said so. Same failure as the /join form the rules file
+          documents — correct in git, correct in review, and wrong about which features
+          were reachable.
 
-      {/* ------------------------------------------------------------- the programmes */}
+          It owns its own reads and its own signed-out state, so it goes at the foot of
+          the page rather than inside the two-column grid: it is a section, not a panel,
+          and it is the one thing here a member acts on once a term rather than weekly. */}
       <MentorPicker user={user} />
-
-      {/* Only rendered for an admin, and it is a convenience rather than a gate — the
-          dashboard refuses to load data for anybody else because the rules refuse the
-          query, not because this link is hidden. It sits at the foot rather than beside
-          "Edit" because it is the one link on this page that leads somewhere else
-          entirely. */}
-      {isAdmin && (
-        <div className="border-t border-seam pt-8">
-          <Link href="/admin" className="btn btn-secondary">
-            Open the organisers&apos; dashboard
-          </Link>
-        </div>
-      )}
     </div>
-  );
-}
-
-export default function MemberDashboard() {
-  return (
-    <MemberOnly loading="Loading your dashboard…">
-      {(user) => <Body user={user} />}
-    </MemberOnly>
   );
 }

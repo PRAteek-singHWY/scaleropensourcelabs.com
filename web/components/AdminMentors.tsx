@@ -119,7 +119,7 @@ function Editor({
         />
         {/* A live count, because 600 characters is not a length anybody can eyeball and
             the rules reject the 601st with a permission error that reads like a fault. */}
-        <p className="mt-1.5 text-right font-mono text-[13px] text-dust">
+        <p className="mt-1.5 text-right font-mono text-[0.8125rem] text-dust">
           {v.description.length}/600
         </p>
       </div>
@@ -273,7 +273,7 @@ export default function AdminMentors({
       </div>
 
       {error && (
-        <p className="mt-4 text-[15px] leading-relaxed text-ember" role="alert">
+        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ember" role="alert">
           {error}
         </p>
       )}
@@ -294,7 +294,7 @@ export default function AdminMentors({
           // An empty state that says what happens next, not just that the list is empty.
           // Until there is one mentor, every member's dashboard shows "enrolment opens
           // when the organisers add them" — which is a sentence somebody has to act on.
-          <p className="rounded-tile border border-dashed border-seam p-5 text-[15px] leading-relaxed text-dust">
+          <p className="rounded-tile border border-dashed border-seam p-5 text-[0.9375rem] leading-relaxed text-dust">
             No mentors yet. Until you add one, the mentorship card on every member&apos;s
             dashboard says enrolment has not opened.
           </p>
@@ -334,29 +334,29 @@ export default function AdminMentors({
                   <p className="font-semibold text-ink">
                     {m.name}
                     {m.org && (
-                      <span className="ml-2 font-mono text-[13px] font-normal text-dust">
+                      <span className="ml-2 font-mono text-[0.8125rem] font-normal text-dust">
                         {m.org}
                       </span>
                     )}
                     {!m.active && (
-                      <span className="ml-2 rounded-md border border-seam px-2 py-0.5 font-mono text-[11px] uppercase tracking-wider text-dust">
+                      <span className="ml-2 rounded-md border border-seam px-2 py-0.5 font-mono text-[0.6875rem] uppercase tracking-wider text-dust">
                         hidden
                       </span>
                     )}
                   </p>
-                  <p className="mt-1 font-mono text-[13px] text-dust">
+                  <p className="mt-1 font-mono text-[0.8125rem] text-dust">
                     {labelOf(PROGRAMS, m.programme)}
                   </p>
                 </div>
                 {/* The demand, inline, so the list doubles as the answer to "who is
                     oversubscribed" without scrolling to the charts. */}
-                <p className="shrink-0 font-mono text-[13px] text-haze">
+                <p className="shrink-0 font-mono text-[0.8125rem] text-haze">
                   1st: <span className="text-ink">{c.first}</span> · 2nd:{" "}
                   <span className="text-ink">{c.second}</span>
                 </p>
               </div>
 
-              <p className="mt-3 text-[15px] leading-relaxed text-haze">{m.description}</p>
+              <p className="mt-3 text-[0.9375rem] leading-relaxed text-haze">{m.description}</p>
 
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-seam pt-4">
                 <button
@@ -390,7 +390,7 @@ export default function AdminMentors({
                     do instead. A greyed-out Delete with no explanation is the organiser
                     reloading the page to see whether it comes back. */}
                 {picked ? (
-                  <p className="text-[13px] text-dust">
+                  <p className="text-[0.8125rem] text-dust">
                     {c.total} student{c.total === 1 ? "" : "s"} picked this mentor — hide
                     instead of deleting.
                   </p>

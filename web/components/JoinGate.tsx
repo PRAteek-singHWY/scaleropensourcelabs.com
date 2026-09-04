@@ -168,7 +168,7 @@ export function Steps({ at }: { at: 1 | 2 }) {
               <span
                 aria-hidden
                 className={[
-                  "grid h-7 w-7 shrink-0 place-items-center rounded-full font-mono text-[12px] font-bold leading-none",
+                  "grid h-7 w-7 shrink-0 place-items-center rounded-full font-mono text-[0.75rem] font-bold leading-none",
                   done || live
                     ? "bg-accent text-bg"
                     : // Dashed, not solid: a step you have not reached is not a box that
@@ -327,13 +327,13 @@ function Gate() {
 
       {error && (
         <div className="mt-5" role="alert">
-          <p className="text-[15px] leading-relaxed text-ember">{error}</p>
+          <p className="text-[0.9375rem] leading-relaxed text-ember">{error}</p>
           {/* A REFUSAL USED TO BE A DEAD END. Somebody signed into a personal Gmail on
               a shared laptop was told their address was wrong and left looking at the
               same button, with no hint that the fix is to pick another account. The
               button above now says so, and this line names what to look for. */}
           {wrongAccount && (
-            <p className="mt-2 text-[15px] leading-relaxed text-dust">
+            <p className="mt-2 text-[0.9375rem] leading-relaxed text-dust">
               You signed in as{" "}
               <span className="font-mono text-haze">{wrongAccount}</span>. Press the
               button again and pick your college account from the list — Google will
@@ -377,7 +377,7 @@ function Gate() {
           </span>
           <div>
             <h3 className="font-semibold text-ink">Who can sign in</h3>
-            <p className="mt-2 text-[15px] leading-relaxed text-haze">
+            <p className="mt-2 text-[0.9375rem] leading-relaxed text-haze">
               Students with an <strong className="text-ink">@{DOMAIN}</strong> address.
               No other address can register, and that is the whole check — no fee, no
               interview, no prior experience.
@@ -411,7 +411,7 @@ function Gate() {
             separator is a rule, and a rule drawn as text has to meet a text contrast
             bar it was never trying to meet. Drawn as a 1px border it is a rule, the
             checker treats it as one, and it looks the same. */}
-        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[15px]">
+        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[0.9375rem]">
           <Link href="/privacy#what-we-store" className="tap link-u text-haze">
             Privacy
           </Link>

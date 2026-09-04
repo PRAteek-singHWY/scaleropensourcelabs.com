@@ -32,48 +32,44 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
     // for every section, so the diagram cannot animate ahead of the block it
     // explains and a bundle failure leaves it fully drawn.
     <figure className={className} data-reveal-group>
-      {/* THE CONTAINER IS FOR THE LANE DRAW, and it is the fix for a genuine
-          conflict between two things this diagram wants at once.
+      {/* aria-hidden with the meaning carried by the labelled list underneath. A
+          screen reader gets the three sentences, which is strictly more than a
+          description of the picture would give it.
 
-          `vector-effect: non-scaling-stroke` is what keeps the rails 2px at every
-          width instead of thickening as the graph stretches (see the note at the
-          top of this file). Its side effect is that stroke dash lengths are then
-          measured in SCREEN pixels rather than user units — and that quietly
-          defeats the `pathLength={1}` trick the heading underlines draw themselves
-          with. Measured, not guessed: with pathLength normalisation the dash comes
-          out as "the whole path" = 304 units, that number is then read as 304px
-          against a lane rendered 1199px long at 1440, and the lane paints as four
-          dashes with three gaps in it. It looked like a broken diagram, which is
-          exactly what it was.
+          The lane drawing itself is the one animation on this site that is doing
+          the diagram's own job: the graph's whole claim is that your branch LEAVES
+          the history and REJOINS it, and a line that arrives already joined has to
+          be read rather than watched.
 
-          So the dash length is authored per lane as a fraction of the container's
-          width instead — the one unit that tracks the rendered size of a
-          `w-full` svg. 304 of 320 viewBox units is 95cqw; the branch's 181 is
-          57cqw. Both then equal their lane's own screen length at every width,
-          which is what makes one dash cover exactly one lane. */}
-      <div className="[container-type:inline-size]">
-        {/* aria-hidden with the meaning carried by the labelled list underneath. A
-            screen reader gets the three sentences, which is strictly more than a
-            description of the picture would give it.
+          NONE OF THAT DRAW IS AUTHORED HERE ANY MORE, which is the repair. Each
+          lane used to carry its own length in a `--lane` variable so that a stroke
+          dash could uncover it, and that number cannot be written in any unit that
+          survives contact with a real screen. `vector-effect: non-scaling-stroke`
+          takes dash lengths out of the viewBox scale, and which pixels they then
+          mean — CSS or device — is not the same answer in every browser. Measured,
+          not guessed: a lane declared as 95cqw came out as 1077 CSS px, was read as
+          1077 DEVICE px on a 150%-scaled Windows display, and painted two thirds of
+          a rail 1701 device px long before falling into the gap. Both lanes broke
+          in the same place, at the same fraction, on an ordinary laptop.
 
-            The lane drawing itself is the one animation on this site that is doing
-            the diagram's own job: the graph's whole claim is that your branch
-            LEAVES the history and REJOINS it, and a line that arrives already
-            joined has to be read rather than watched. */}
-        <svg
-          viewBox="0 0 320 96"
-          className="block h-auto w-full"
-          aria-hidden
-          focusable="false"
-          fill="none"
-          strokeWidth={2}
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        >
+          So globals.css wipes each lane with a clip instead, left to right, taken
+          from the path's own bounding box. Both lanes only ever advance in x, so a
+          wipe and a draw are the same picture — and there is now no length anywhere
+          in the effect to get wrong, at any width, on any display, in any unit. The
+          `d` attributes below can be reshaped freely with nothing to retune. */}
+      <svg
+        viewBox="0 0 320 96"
+        className="block h-auto w-full"
+        aria-hidden
+        focusable="false"
+        fill="none"
+        strokeWidth={2}
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      >
         {/* The project's own history, running straight through. */}
         <path
           className="graph-lane"
-          style={{ "--lane": "95cqw" } as React.CSSProperties}
           d="M8 28 H312"
           stroke={NEUTRAL}
           vectorEffect="non-scaling-stroke"
@@ -84,7 +80,6 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
             which is how git clients actually draw this. */}
         <path
           className="graph-lane"
-          style={{ "--lane": "57cqw" } as React.CSSProperties}
           d="M96 28 C112 28 116 68 132 68 H200 C216 68 220 28 236 28"
           stroke={ACCENT}
           vectorEffect="non-scaling-stroke"
@@ -139,8 +134,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
           stroke={ACCENT}
           vectorEffect="non-scaling-stroke"
         />
-        </svg>
-      </div>
+      </svg>
 
       {/* A group of its own, so the three explanations arrive in order rather than
           as one block — the same reading order the picture above has just drawn. A
@@ -151,7 +145,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
         data-reveal-group
       >
         <li>
-          <p className="font-mono text-[13px] uppercase tracking-[0.16em] text-dust">
+          <p className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-dust">
             The grey line
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">
@@ -160,7 +154,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
           </p>
         </li>
         <li>
-          <p className="font-mono text-[13px] uppercase tracking-[0.16em] text-accent">
+          <p className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-accent">
             The blue line
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">
@@ -169,7 +163,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
           </p>
         </li>
         <li>
-          <p className="font-mono text-[13px] uppercase tracking-[0.16em] text-accent">
+          <p className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-accent">
             The filled dot
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">

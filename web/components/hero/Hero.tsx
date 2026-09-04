@@ -215,7 +215,7 @@ export default function Hero() {
               only where the type never wraps — and this wraps to two lines below
               about 1150px, which is most phones. At 0.95 "OPEN" and "SOURCE" stacked
               with the O's very nearly touching. */}
-          <h1 className="mt-4 font-display text-[clamp(2.875rem,calc(6.5vw_+_0.125rem),5.625rem)] font-bold uppercase leading-[1.02] tracking-[-0.03em] text-ink">
+          <h1 className="mt-4 font-display text-[clamp(2.75rem,4.875vw,5.5rem)] font-bold uppercase leading-[1.02] tracking-[-0.03em] text-ink">
             Open <span className="text-accent">Source</span>
           </h1>
 

@@ -119,7 +119,7 @@ function MentorCard({
           <span className="min-w-0">
             <span className="block text-body-lg font-semibold text-ink">{mentor.name}</span>
             {mentor.org && (
-              <span className="mt-0.5 block font-mono text-[13px] text-dust">
+              <span className="mt-0.5 block font-mono text-[0.8125rem] text-dust">
                 {mentor.org}
               </span>
             )}
@@ -135,7 +135,7 @@ function MentorCard({
           </span>
         </span>
 
-        <span className="mt-3 block text-[15px] leading-relaxed text-haze">
+        <span className="mt-3 block text-[0.9375rem] leading-relaxed text-haze">
           {mentor.description}
         </span>
 
@@ -180,7 +180,7 @@ function NoneCard({ checked, onChange }: { checked: boolean; onChange: () => voi
             reader's mouth that they had not stated.
             What is left states the choice and nothing else. It is a legitimate answer and
             the card does not editorialise about it. */}
-        <span className="mt-3 block text-[15px] leading-relaxed text-haze">
+        <span className="mt-3 block text-[0.9375rem] leading-relaxed text-haze">
           You only want your first preference.
         </span>
       </span>
@@ -260,6 +260,18 @@ export default function MentorPicker({ user }: { user: User }) {
     if (state === "saving") return;
     setState("saving");
     setMessage("");
+    // DERIVED HERE, NOT READ FROM STATE, and that is a bug fix rather than a
+    // refactor. With one mentor published there is no step two, so "first choice
+    // only" is the only honest answer — and the submit button used to say so by
+    // calling setFirstOnly(true) in its own onClick. It is a type="submit" button:
+    // React processes that click and the form's submit in the same batch, so this
+    // handler still closed over the OLD value and sent first_only: false with no
+    // mentor_2. firestore.rules refuses exactly that pair — "not first-choice-only"
+    // has to come with a second choice — so enrolment failed every time for the
+    // whole period a club has published its first mentor and not yet its second.
+    // The reader saw "That did not save. The fault is ours rather than yours",
+    // which was true and unhelpful.
+    const onlyChoice = onlyOneMentor || firstOnly;
     try {
       await saveEnrollment(
         user.uid,
@@ -267,8 +279,8 @@ export default function MentorPicker({ user }: { user: User }) {
         {
           programme: PROGRAMME,
           mentor_1: first,
-          mentor_2: firstOnly ? undefined : second,
-          first_only: firstOnly,
+          mentor_2: onlyChoice ? undefined : second,
+          first_only: onlyChoice,
         },
         enrollment === null,
       );
@@ -331,7 +343,7 @@ export default function MentorPicker({ user }: { user: User }) {
       </div>
 
       {error && (
-        <p className="mt-4 text-[15px] leading-relaxed text-ember" role="alert">
+        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ember" role="alert">
           {error}
         </p>
       )}
@@ -368,7 +380,7 @@ export default function MentorPicker({ user }: { user: User }) {
                 <span
                   aria-hidden
                   className={[
-                    "grid h-8 w-8 shrink-0 place-items-center rounded-full font-mono text-[12px] font-bold leading-none",
+                    "grid h-8 w-8 shrink-0 place-items-center rounded-full font-mono text-[0.75rem] font-bold leading-none",
                     filled
                       ? "bg-accent text-bg"
                       : // Dashed, not solid: a preference nobody gave is not an empty
@@ -379,7 +391,7 @@ export default function MentorPicker({ user }: { user: User }) {
                   {n as string}
                 </span>
                 <span
-                  className={`text-[17px] ${filled ? "font-semibold text-ink" : "text-dust"}`}
+                  className={`text-[1.0625rem] ${filled ? "font-semibold text-ink" : "text-dust"}`}
                 >
                   {label as string}
                 </span>
@@ -417,7 +429,7 @@ export default function MentorPicker({ user }: { user: User }) {
             // AN HONEST EMPTY STATE, not a disabled button. Nobody has published a mentor
             // yet, and telling the reader that is more useful than a control that does
             // nothing when pressed.
-            <p className="mt-6 rounded-tile border border-dashed border-seam p-5 text-[15px] leading-relaxed text-dust">
+            <p className="mt-6 rounded-tile border border-dashed border-seam p-5 text-[0.9375rem] leading-relaxed text-dust">
               No mentors have been published yet. Enrolment opens when the organisers add
               them — check back, or ask in the club channel.
             </p>
@@ -452,7 +464,7 @@ export default function MentorPicker({ user }: { user: User }) {
                     <span
                       aria-hidden
                       className={[
-                        "grid h-7 w-7 shrink-0 place-items-center rounded-full font-mono text-[12px] font-bold leading-none",
+                        "grid h-7 w-7 shrink-0 place-items-center rounded-full font-mono text-[0.75rem] font-bold leading-none",
                         done || live
                           ? "bg-accent text-bg"
                           : "border border-dashed border-seam text-dust",
@@ -578,9 +590,8 @@ export default function MentorPicker({ user }: { user: User }) {
                   disabled={
                     !first || (!onlyOneMentor && !secondAnswered) || state === "saving"
                   }
-                  onClick={() => {
-                    if (onlyOneMentor) setFirstOnly(true);
-                  }}
+                  // No onClick. It used to set firstOnly here and onSubmit could not
+                  // see it in time — see the note in onSubmit, which now derives it.
                   className="btn btn-primary disabled:opacity-60"
                 >
                   {state === "saving"
@@ -603,7 +614,7 @@ export default function MentorPicker({ user }: { user: User }) {
             {/* The reason a control is off, stated. A disabled button with no explanation
                 is the reader wondering what they missed. */}
             {((step === 1 && !first) || (step === 2 && !secondAnswered)) && (
-              <p className="text-[13px] text-dust">
+              <p className="text-[0.8125rem] text-dust">
                 {step === 1
                   ? "Choose a mentor to continue."
                   : "Choose a backup, or say you only want your first choice."}
@@ -612,7 +623,7 @@ export default function MentorPicker({ user }: { user: User }) {
           </div>
 
           {state === "error" && (
-            <p className="mt-5 text-[15px] leading-relaxed text-ember" role="alert">
+            <p className="mt-5 text-[0.9375rem] leading-relaxed text-ember" role="alert">
               {message}{" "}
               <a href={`mailto:${LINKS.email}`} className="underline">
                 {LINKS.email}

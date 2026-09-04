@@ -271,7 +271,7 @@ export default function AdminMentorship({
               value={emailList}
               onFocus={(e) => e.currentTarget.select()}
               rows={3}
-              className="w-full resize-y rounded-md border border-seam bg-sunk p-3 font-mono text-[13px] text-haze"
+              className="w-full resize-y rounded-md border border-seam bg-sunk p-3 font-mono text-[0.8125rem] text-haze"
             />
             <button
               type="button"
@@ -308,14 +308,14 @@ export default function AdminMentorship({
               {filtered.map((r) => (
                 <tr key={r.enrollment.uid} className="border-b border-seam/60 align-top">
                   <td className="py-3 pr-4 text-sm text-ink">{r.name}</td>
-                  <td className="py-3 pr-4 font-mono text-[13px] text-haze">{r.email}</td>
+                  <td className="py-3 pr-4 font-mono text-[0.8125rem] text-haze">{r.email}</td>
                   <td className="whitespace-nowrap py-3 pr-4 text-sm text-haze">
                     {r.batch ? `${r.batch.label} · ${r.batch.branch}` : "—"}
                     {r.batch && (
-                      <span className="block text-[13px] text-dust">{r.batch.yearLabel}</span>
+                      <span className="block text-[0.8125rem] text-dust">{r.batch.yearLabel}</span>
                     )}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-[13px] text-haze">
+                  <td className="py-3 pr-4 font-mono text-[0.8125rem] text-haze">
                     {r.profile?.github ? (
                       <a
                         href={`https://github.com/${r.profile.github}`}
@@ -339,7 +339,7 @@ export default function AdminMentorship({
                       mentorLabel(names, r.enrollment.mentor_2)
                     )}
                   </td>
-                  <td className="whitespace-nowrap py-3 pr-4 font-mono text-[13px] text-haze">
+                  <td className="whitespace-nowrap py-3 pr-4 font-mono text-[0.8125rem] text-haze">
                     {fmtDate(r.enrollment.created_at)}
                   </td>
                 </tr>
@@ -395,13 +395,13 @@ export default function AdminMentorship({
                 <li key={m.id} className="text-sm text-ink">
                   {m.name}
                   {!m.active && (
-                    <span className="ml-2 font-mono text-[13px] text-dust">hidden</span>
+                    <span className="ml-2 font-mono text-[0.8125rem] text-dust">hidden</span>
                   )}
                 </li>
               ))}
             </ul>
           )}
-          <p className="mt-4 text-[13px] leading-relaxed text-dust">
+          <p className="mt-4 text-[0.8125rem] leading-relaxed text-dust">
             Named rather than drawn as an empty bar, because a bar at zero is a row that
             disappears. A hidden mentor with nobody is expected; a visible one is worth a
             look at their description.
@@ -409,7 +409,7 @@ export default function AdminMentorship({
         </div>
       </div>
 
-      <p className="text-[15px] leading-relaxed text-dust">
+      <p className="text-[0.9375rem] leading-relaxed text-dust">
         Percentages are of students enrolled, and a student holds two preferences — so the
         two demand charts add up past 100%. Nothing on this page is an allocation:
         preferences are what students asked for, and pairing them is still a decision

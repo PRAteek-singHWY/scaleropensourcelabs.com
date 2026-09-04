@@ -38,3 +38,30 @@ export const PAGES = [
 
 /** Where every Join button on every page goes. One destination, deliberately. */
 export const JOIN_HREF = "/join";
+
+/** Where the members' area is — and, because signing in happens there, where the
+ *  chrome's "Sign in" link goes as well.
+ *
+ *  IT IS NOT JOIN_HREF's SIGNED-IN VARIANT, AND THAT IS THE POINT OF THE PAIR. These
+ *  are two doors answering two different questions:
+ *
+ *    JOIN_HREF      the anonymous application form. A stranger asking to join: no
+ *                   account, one submission, nothing to read back afterwards.
+ *    DASHBOARD_HREF the members' area, which asks who you are and shows you your own
+ *                   things. Reached by signing in with a college Google account.
+ *
+ *  So the bar renders BOTH for a signed-out reader — the loud button to the form, a
+ *  quiet link to the door — and only this one for a member. Collapsing them is the bug
+ *  this constant exists to keep fixed: a returning member sent to JOIN_HREF is handed
+ *  an application they filled in months ago.
+ *
+ *  A CONSTANT RATHER THAN A STRING IN Nav.tsx, because three slots render it now: the
+ *  bar's far-end button when there is a session, the bar's sign-in link when there is
+ *  not, and the footer's route row. A rename that moved only one would leave exactly
+ *  one kind of reader with a dead link and everybody else fine — which is the half
+ *  nobody testing the site would click.
+ *
+ *  Absent from PAGES for the same reason /join is: it is one person's own destination,
+ *  it already has its own slot in the bar, and listing it in the strip would put the
+ *  same word in the nav twice. */
+export const DASHBOARD_HREF = "/dashboard";

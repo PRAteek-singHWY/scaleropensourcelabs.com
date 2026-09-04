@@ -15,6 +15,12 @@
 // Plain CommonJS with no imports so next.config.js (CJS) and an ESM build script can
 // both consume it without a bundler.
 
+/** The region every Cloud Function is deployed to. MUST agree with `setGlobalOptions`
+ *  in functions/index.js and FUNCTIONS_REGION in lib/firebase.ts — a CSP naming the
+ *  wrong region blocks the callable, and the SDK reports that as an internal error
+ *  rather than as a blocked request. */
+const FUNCTIONS_REGION = "asia-south1";
+
 /** True while `next dev` is running. Dev needs 'unsafe-eval' for HMR and the local
  *  Firestore emulator; production must have neither. */
 const isDev = process.env.NODE_ENV === "development";
@@ -23,7 +29,7 @@ const isDev = process.env.NODE_ENV === "development";
  *  next.config.js. Directives that only make sense in development are appended there
  *  and never reach a generated .htaccess, which is only ever produced by a production
  *  build. */
-function buildCSP({ dev = isDev, authDomain = "" } = {}) {
+function buildCSP({ dev = isDev, authDomain = "", projectId = "" } = {}) {
   return [
     "default-src 'self'",
     // next/font self-hosts its files at build time, so no font CDN is needed.
@@ -57,6 +63,22 @@ function buildCSP({ dev = isDev, authDomain = "" } = {}) {
       "connect-src 'self'",
       "https://firestore.googleapis.com",
       "https://*.googleapis.com",
+      // THE CALLABLE. The dashboard's "check GitHub now" button invokes
+      // refreshContributions, and the Firebase SDK addresses it at
+      // https://<region>-<projectId>.cloudfunctions.net/<name>. Omitting this origin does
+      // not fail the build or any screenshot — the button renders, the click is blocked
+      // before a request leaves the browser, and the SDK reports `functions/internal`,
+      // which reads like the function threw. Exactly the failure mode the apis.google.com
+      // note above describes.
+      //
+      // The region is hardcoded because it is hardcoded in the two places that matter
+      // already: setGlobalOptions in functions/index.js and FUNCTIONS_REGION in
+      // lib/firebase.ts. Three copies is one too many, but a CSP cannot import.
+      projectId
+        ? `https://${FUNCTIONS_REGION}-${projectId}.cloudfunctions.net`
+        : process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+          ? `https://${FUNCTIONS_REGION}-${process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID}.cloudfunctions.net`
+          : "https://*.cloudfunctions.net",
       // 127.0.0.1 as well as localhost: they are NOT interchangeable to CSP, and the
       // Firestore emulator binds 127.0.0.1.
       dev ? "ws: http://localhost:* http://127.0.0.1:*" : "",

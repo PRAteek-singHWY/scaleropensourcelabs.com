@@ -186,42 +186,50 @@ for (const path of ["/projects", "/hall-of-fame", "/"]) {
 await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
 await assertOurSite(pg);
 await pg.waitForTimeout(700);
-// /join IS BEHIND SIGN-IN NOW, so the two assertions that used to live here — that the
-// form preselects ?path and rejects a bogus one — cannot run from a signed-out browser:
-// there is no #af-path to read until somebody has signed in with a college Google
-// account, which needs the Auth emulator and a popup. That behaviour did not go away and
-// is not untested; it moved to scripts/e2e-auth.mjs, which signs in for real against the
-// Auth emulator. Run it with `npm run e2e:auth`.
+// THE PRESELECT IS REACHABLE FROM A SIGNED-OUT BROWSER AGAIN, so it is asserted here
+// again. It was dropped when /join was the sign-in gate: there was no #af-path to read
+// until somebody had signed in with a real college Google account, which needs the Auth
+// emulator and a popup, so the cheap suite could only assert that the gate rendered.
+// Applying is anonymous now — the form ships to anybody who asks for the page — and the
+// funnel's one silent failure is back within reach: a closing action that links to
+// /join?path=<id> and lands on a form with nothing chosen.
 //
-// What smoke can still assert is the part that would silently break the funnel: that the
-// gate is what renders, and that the QUERY STRING SURVIVES it. Every page's closing
-// action links to /join?path=<id>, and sign-in does not navigate — so if the param were
-// ever dropped here, the preselection would be dead no matter how correct the form is.
-await pg.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
-await pg.waitForTimeout(900);
-// TWO ACCEPTABLE STATES, because this suite runs both with and without a Firebase
-// config, and the second is not an edge case — it is how CI runs and how a contributor
-// fixing a typo runs the site. `.env.local` is gitignored and never present on a runner,
-// so with a config a signed-out reader gets the sign-in card, and without one the gate
-// says plainly there is nothing to sign in to. Both are correct; only "still checking" is
-// not.
-//
-// THIS ASSERTION NAMED ONLY THE FIRST, and had therefore been failing on every push to
-// main since at least 23 August — a red build that says the join page is broken when the
-// join page is fine. A permanently red CI is worse than no CI, because it trains everyone
-// to ignore the one signal that would have caught something real. The new routes below
-// were written this way from the start; this brings the original into line.
+// WHAT THIS REPLACES HAD BEEN RED SINCE THAT SPLIT, for exactly the reason the note
+// further down this file warns about. It asserted that /join renders "sign in with your
+// college account", which stopped being true the moment applying stopped requiring an
+// account — so the suite has been saying the join page is broken while the join page was
+// fine, which is how a team learns to ignore its own checks. The signed-in half of this
+// flow is still covered by scripts/e2e-auth.mjs (`npm run e2e:auth`), against the
+// emulators.
 ok(
-  "join settles on a signed-out state",
-  await pg.evaluate(() =>
-    /sign in with your college account|sign-in is not set up here/i.test(
-      document.querySelector("main")?.innerText ?? "",
-    ),
-  ),
+  "join renders the application form to a signed-out reader",
+  (await pg.evaluate(() => document.querySelectorAll("#af-name, #af-path").length)) === 2,
 );
 ok(
-  "join keeps ?path through the sign-in gate",
+  "join preselects the path from ?path",
+  (await pg.evaluate(() => document.querySelector("#af-path")?.value)) === "program-track",
+);
+ok(
+  "join keeps ?path in the URL",
   new URL(pg.url()).searchParams.get("path") === "program-track",
+);
+// A HAND-EDITED ?path IS NOT TRUSTED. It is checked against the real PATHS, so a bogus
+// one has to fall back to the empty option rather than being selected — a value the
+// rules would refuse on submit, which presents to an applicant as a form that silently
+// will not send.
+await pg.goto(`${BASE}/join?path=nonsense-not-a-path`, { waitUntil: "networkidle" });
+await pg.waitForTimeout(400);
+ok(
+  "join ignores a bogus ?path rather than selecting it",
+  (await pg.evaluate(() => document.querySelector("#af-path")?.value)) === "",
+);
+// THE WAY BACK IN, the one thing on this page that is not addressed to an applicant. A
+// returning member who presses the nav's "Join" out of habit lands here, and this link
+// is what stops them filling in a second application. It is deliberately quiet, which
+// makes it the kind of thing a copy pass deletes without noticing — so it is asserted.
+ok(
+  "join offers a member the way back in",
+  (await pg.evaluate(() => document.querySelectorAll('main a[href="/dashboard"]').length)) === 1,
 );
 // The form must NOT be reachable without signing in. This is a UI assertion, not a
 // security one — the boundary is firestore.rules — but a form rendering to a signed-out
@@ -256,9 +264,18 @@ for (const path of ["/onboarding", "/dashboard"]) {
   // how a contributor fixing a typo runs the site, and how CI runs it — the honest
   // answer is that there is nothing to sign in to. Asserting only the first would fail
   // on a machine with no .env.local for a reason that has nothing to do with the routes.
+  // THREE ACCEPTABLE WORDINGS, because the two routes render two different cards and
+  // the suite also runs with no Firebase config at all. /onboarding goes through
+  // MemberOnly, which says "Sign in first."; /dashboard renders SignInCard, whose h1 is
+  // "Sign in with your college account" — and that second one was missing here, so this
+  // check has been red on /dashboard since the sign-in card moved onto that route. The
+  // unconfigured wording stays: it is how CI runs, and how a contributor with no
+  // .env.local runs the site.
   ok(
     `${label} settles on a signed-out state`,
-    /sign in first|sign-in is not set up here/i.test(text),
+    /sign in first|sign in with your college account|sign-in is not set up here/i.test(
+      text,
+    ),
   );
   // THE ONE THAT MATTERS. Landing on the "checking" card and staying there means the
   // auth state never resolved, which on a static route is indistinguishable from a dead

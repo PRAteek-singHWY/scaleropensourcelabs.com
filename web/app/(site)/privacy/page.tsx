@@ -184,7 +184,7 @@ export default function Privacy() {
           </Part>
         </div>
 
-        <p className="mt-14 border-t border-seam pt-6 text-[15px] leading-relaxed text-dust">
+        <p className="mt-14 border-t border-seam pt-6 text-[0.9375rem] leading-relaxed text-dust">
           Something here wrong, or out of date against the code? This site is one of the
           club&apos;s own repositories —{" "}
           <a href={LINKS.repo} target="_blank" rel="noreferrer" className="link-u text-accent">

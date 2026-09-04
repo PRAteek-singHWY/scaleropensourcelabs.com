@@ -54,7 +54,7 @@ export default function ProofPanel() {
         <div>
           <p className="label">Contributor rank</p>
           <p className="mt-4 flex items-baseline gap-3">
-            <span className="text-[clamp(3.125rem,calc(7vw_+_0.125rem),5.625rem)] font-semibold leading-[0.9] tracking-tightest text-accent">
+            <span className="text-[clamp(3rem,5.25vw,5.5rem)] font-semibold leading-[0.9] tracking-tightest text-accent">
               #{place}
             </span>
             <span className="text-body-lg text-haze">of {field}</span>
@@ -118,7 +118,7 @@ export default function ProofPanel() {
         </div>
       </div>
 
-      <figcaption className="border-t border-seam px-8 py-4 text-[15px] text-dust sm:px-12">
+      <figcaption className="border-t border-seam px-8 py-4 text-[0.9375rem] text-dust sm:px-12">
         {lead.what} Counted from the public repository — open the link and check.
       </figcaption>
     </figure>

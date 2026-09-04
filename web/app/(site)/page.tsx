@@ -74,11 +74,21 @@ function Sources({ cell }: { cell: Cell }) {
         // guessed, and invisible until the hover underline gave the row a visible
         // hover state to disagree with.
         //
-        // 12px of SYMMETRIC padding instead. No negative margin, so no overlap, and
-        // 19px of line box plus 24px lands at 43px — over the 40px floor scripts/qa.mjs
-        // enforces, which is the stricter of the two numbers in play (WCAG 2.5.8 asks
-        // 24px at AA; 2.5.5 and Apple's HIG want 44). A first pass used 3px and cleared
-        // 24 but not 40, trading the overlap bug for a small-target one.
+        // 14px of SYMMETRIC padding instead. No negative margin, so no overlap, and
+        // 16px of line box plus 28px lands at 44px — which is the HIGHER of the two
+        // numbers in play rather than a squeak past the lower one (WCAG 2.5.8 asks
+        // 24px at AA; 2.5.5 and Apple's HIG want 44, and scripts/qa.mjs enforces 40).
+        // A first pass used 3px and cleared 24 but not 40, trading the overlap bug for
+        // a small-target one.
+        //
+        // IT WAS 12px UNTIL THE TYPE SCALE CAME BACK DOWN, and the failure is worth
+        // recording because of how narrow it was. At the old `text-xs` of 14px the box
+        // measured 42.67px and passed; at 12px it measures 39.9996px, and the sweep
+        // tests `height < 40`. Four ten-thousandths of a pixel, reported as "40x153" —
+        // a number that looks like it should pass, in a check it fails. The 1.3333
+        // leading ratio is where the fraction comes from. Padding to 44 rather than
+        // back to 40 is what stops the same 2px anywhere in this scale from doing it
+        // again.
         // The cost is about 20px of extra height per citation, in the two cells that
         // carry more than one.
         <a
@@ -86,7 +96,7 @@ function Sources({ cell }: { cell: Cell }) {
           href={s.url}
           target="_blank"
           rel="noreferrer"
-          className="py-3 font-mono text-xs text-accent link-u hover:brightness-125"
+          className="py-3.5 font-mono text-xs text-accent link-u hover:brightness-125"
         >
           {s.label} ↗
         </a>
@@ -159,7 +169,7 @@ export default function Home() {
                   </h3>
                   {/* Same reason as the build-day cards: shrink-0 on text from a
                       data file is a viewport overflow waiting for a longer value. */}
-                  <span className="min-w-0 text-right font-mono text-[13px] uppercase tracking-[0.16em] text-dust">
+                  <span className="min-w-0 text-right font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-dust">
                     {e.language}
                   </span>
                 </div>
