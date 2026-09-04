@@ -94,7 +94,7 @@ export default function ProfileCard({
   // `path` is optional now, so its row appears only when there is one.
   const rows: [string, string][] = [
     ["GitHub", p.github ? `@${p.github}` : "not given"],
-    ["Role", isAdmin ? "Organiser" : "Member"],
+    ["Role", isAdmin ? "Organiser" : "Learner"],
     ["Joined", joined ? fmtDate(p.created_at) : "—"],
     ["Name", p.name],
     ["Hostel", labelOf(HOSTELS, p.hostel)],

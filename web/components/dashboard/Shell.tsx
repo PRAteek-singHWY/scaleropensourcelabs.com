@@ -178,7 +178,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-bold text-ink">
-                  {isAdmin ? "Organiser" : "Member"}
+                  {isAdmin ? "Organiser" : "Learner"}
                 </span>
                 <span className="block truncate font-mono text-[0.6875rem] text-dust">
                   {handle}

@@ -122,11 +122,13 @@ export default function Ticker() {
   return (
     <div className="section pt-12 sm:pt-16">
       {/* Inside the measure rather than full-bleed. A band that runs edge to edge
-          has to carry the `50% - 50vw` offsets AND their correction for the
-          reserved outline panel (see the :root[data-outline="1"] block in
-          globals.css); a strip that stops at the container needs neither and
-          reads as an object on the page, which suits the black keyline and hard
-          shadow the rest of this design gives its physical tiles. */}
+          has to carry the `50% - 50vw` offsets, and every element that carries
+          them acquires a correction for anything that pads one side of the page —
+          the outline panel used to reserve a right-hand gutter and cost `.band`
+          and `.stories` exactly that. A strip that stops at the container needs
+          none of it, and reads as an object on the page, which suits the black
+          keyline and hard shadow the rest of this design gives its physical
+          tiles. */}
       {/* THE FRAME AND THE MASKED VIEWPORT ARE TWO ELEMENTS, and they have to be.
           `.ticker` carries a mask that fades its own left and right edges, and a
           mask applies to every descendant — with the button inside it, the

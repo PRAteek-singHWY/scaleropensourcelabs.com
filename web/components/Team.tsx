@@ -375,6 +375,11 @@ function Node({
   };
   diameter: string;
   designation?: string;
+  /* The `remit` override that used to sit here is gone with its one caller. It
+     existed so a desk could push its own remit onto each member's hover card;
+     nothing does that any more, and a prop kept for a caller that no longer
+     exists is the next person's wrong turn. A remit on the card now means the
+     person holds an office that has one. */
   tone?: "loud" | "quiet";
   priority?: boolean;
   maxWidth?: string;
@@ -384,11 +389,13 @@ function Node({
   tipAlign?: "start" | "center" | "end";
 }) {
   /* WHAT THE CARD HAS TO SAY, WORKED OUT BEFORE IT IS DRAWN, because it may have
-     nothing. A desk member carries no office and so no remit, and two of them
-     carry no batch and no highlights either — an unguarded card renders for them
-     as an empty bubble that appears on hover and says nothing, which reads as a
-     bug rather than as an absence. The portrait is still the hover target; it just
-     has no answer, so it gives none. */
+     nothing. A desk member holds no office and so carries no remit, and every
+     other field a desk member has is optional — a name and nothing else is a
+     shape the content type allows, and became reachable the moment the desk
+     stopped passing its remit down. `.person-tip` is a styled bubble with padding
+     and a border, so an empty one renders as a small dark rectangle that appears
+     on hover and says nothing, which reads as a bug rather than as an absence.
+     The portrait is still the hover target; it just has no answer, so gives none. */
   const hasTip = Boolean(
     member.remit || member.batch || member.highlights?.length,
   );
@@ -719,6 +726,16 @@ export default function Team() {
                 gridTemplateColumns: `repeat(${DESK.members.length}, minmax(0, 1fr))`,
               }}
             >
+              {/* NO REMIT PASSED DOWN, per the club. The desk's remit used to ride
+                  on every member's hover card, which meant four faces in a row each
+                  popping the same paragraph — the sentence is about the desk, not
+                  about the person under the pointer, and reading it four times is
+                  how you learn to stop hovering. It has not been deleted: the desk
+                  label above these four still stands for it in the chart, and the
+                  stacked list below writes it out once, in full, where it is read
+                  aloud and where touch devices get it. What is left on hover is only
+                  what belongs to the person — their batch and their highlights — and
+                  a member with neither now gets no bubble at all. */}
               {DESK.members.map((m, i) => (
                 <Node
                   key={m.name}

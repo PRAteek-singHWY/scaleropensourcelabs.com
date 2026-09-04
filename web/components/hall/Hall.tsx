@@ -345,7 +345,8 @@ export default function Hall() {
 
         {/* THE OPEN SLOT, last in the grid.
             Every other card is a record of something that already happened, which
-            makes the whole grid readable as a closed set — fifteen people, done. This
+            makes the whole grid readable as a closed set — this is who got picked,
+            done. This
             one card says the list is still being written, and it is the only card here
             that is an invitation rather than evidence.
 

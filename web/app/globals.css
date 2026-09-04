@@ -2704,30 +2704,19 @@ body::before {
   }
 }
 
-/* With the outline panel open, the page reserves room for it rather than being
-   covered by it. Written as a root-level attribute so one flag moves everything —
-   the panel is 13.5rem plus its right offset, so 15rem clears it with margin.
-   Only at lg+, which is the only place the panel can appear at all. */
-@media (min-width: 1024px) {
-  :root[data-outline="1"] main {
-    padding-right: 15rem;
-  }
+/* THE OUTLINE PANEL RESERVES NO PAGE WIDTH, and the rules that used to do it are
+   gone rather than mislaid. It was a rail pinned to the right of the viewport, so
+   `:root[data-outline="1"] main { padding-right: 15rem }` could hold a gutter open
+   underneath it — along with a correction to `.band::before` and `.stories`, whose
+   full-bleed `50% - 50vw` offsets assume the section is centred and stop being
+   true the moment one side is padded.
 
-  /* The band's full-bleed offsets assume the section is centred in the viewport:
-     `50% - 50vw` equals minus its own left inset only when the gaps either side
-     are equal. Reserving 15rem on the right breaks that, so the band stopped
-     15rem short of the right edge and left a strip of page background beside it.
-     Caught by looking at it in Chrome — no automated check here measures whether
-     a decorative band reaches the edge.
-
-     Derivation: with padding-right P the section's left inset becomes
-     (V - P - W)/2, which is P/2 less than the centred case, so each offset shifts
-     by P/2 = 7.5rem — left inward, right outward. */
-  :root[data-outline="1"] .band::before {
-    left: calc(50% - 50vw + 7.5rem);
-    right: calc(50% - 50vw - 7.5rem);
-  }
-}
+   The panel now opens as a menu under its own toggle in the nav (see
+   components/Outline.tsx), which ends that arrangement two ways over: its distance
+   from the right edge is whatever the nav's right-hand group measures rather than a
+   constant CSS can name, and a page that jumps 240px sideways when a dropdown opens
+   is a worse thing to do to a reader than briefly covering the corner it opens
+   over. Selecting an entry closes it. */
 
 /* An alternating section band. Full-bleed by design — Apple's grey sections run
    edge to edge while the content inside keeps its own measure, which is what
@@ -3311,13 +3300,6 @@ button:focus-visible .icon-slide {
   position: relative;
   margin-inline: calc(50% - 50vw);
 }
-@media (min-width: 1024px) {
-  :root[data-outline="1"] .stories {
-    margin-left: calc(50% - 50vw + 7.5rem);
-    margin-right: calc(50% - 50vw - 7.5rem);
-  }
-}
-
 /* No padding and no gap on the rail: a slide is exactly one rail-width, so the
    inset that lines its content up with the rest of the page has to live INSIDE
    the slide, where it is `.section` doing its normal job rather than a second
