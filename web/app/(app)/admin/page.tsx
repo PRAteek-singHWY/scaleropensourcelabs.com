@@ -1,49 +1,24 @@
 import type { Metadata } from "next";
-import AdminDashboard from "@/components/AdminDashboard";
-import AudienceBackfill from "@/components/AudienceBackfill";
-import Composer from "@/components/Composer";
-import FormBuilder from "@/components/FormBuilder";
-import Roster from "@/components/Roster";
-import Sessions from "@/components/Sessions";
+import AdminOverview from "@/components/admin/Overview";
 
-// THE ORGANISERS' PAGE. Same shell as the member dashboard — it comes from
-// (app)/layout.tsx, so this file is only the content.
+// THE ORGANISERS' OVERVIEW. This route used to render everything: the membership table,
+// the mentor list, the interest list, the notice composer, the session editor, the form
+// builder and the roster — six components and about 3,800 lines, in one column.
+//
+// It is the numbers and a way in now. Each concern has its own route under /admin, and the
+// sidebar switches to them while you are in here.
 //
 // NOT A PRIVILEGE GATE. The page ships to anybody who asks for it, because the site is a
 // static export with no server to refuse them. What refuses them is the `list` rule on
-// users/{uid} and the admin-only writes on every collection below, none of which any
-// client can talk its way past. A non-admin who loads this URL gets a page whose every
-// panel renders its own "not for you" state.
-//
-// THE ORDER IS BY HOW OFTEN AN ORGANISER DOES THE THING: membership is the question the
-// page is opened with, notices and sessions are weekly, forms every few weeks, and the
-// roster once a term — which is why it is last, where nobody reaches it by accident.
+// users/{uid} and the admin-only writes on every collection these pages touch. See
+// components/admin/Gate.tsx.
 
 export const metadata: Metadata = {
   title: "Organisers",
-  description: "Club membership, sessions, notices and forms.",
+  description: "Club membership, mentorship, sessions, notices and forms.",
   robots: { index: false, follow: false },
 };
 
 export default function Admin() {
-  return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="font-display text-display-lg font-bold tracking-tight">
-          Admin dashboard
-        </h1>
-        <p className="measure mt-2 text-body text-haze">
-          Who is in the club, what they have been told, and what you have asked them.
-        </p>
-      </div>
-
-      {/* Renders only while there is something to migrate — see the component. */}
-      <AudienceBackfill />
-      <AdminDashboard />
-      <Composer />
-      <Sessions />
-      <FormBuilder />
-      <Roster />
-    </div>
-  );
+  return <AdminOverview />;
 }

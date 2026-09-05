@@ -1,6 +1,12 @@
 "use client";
 
-// The organisers' view. Three panels: the membership, the mentor list, the mentorship.
+// The MEMBERSHIP section of the organisers' area.
+//
+// It was the whole of /admin — membership, mentors, the interest list, and below them the
+// notice composer, the session editor, the form builder and the roster, about 3,800 lines
+// on one route. An organiser opening it to answer "how many joined this week" scrolled
+// past a form builder to find out. Each concern is a route now; this one is the roster and
+// the numbers about it.
 //
 // WHAT THIS IS FOR, in the club's words: "these are the number of core members, from
 // this hostel and from this hostel, from this batch". So it is a counting tool first and
@@ -46,16 +52,13 @@
 // pattern" — a much smaller and much more actionable claim than "we could not parse what
 // somebody typed".
 //
-// EVERY READ IS ISSUED HERE, not in the panels that use them. AdminMentors needs the pick
-// counts to know whether a mentor is safe to delete, and AdminMentorship needs the profiles
-// to put a name against an enrollment — so a panel owning its own read would mean two
-// panels disagreeing about the data a moment after a write. One load, one Refresh button,
-// one truth. A Refresh also discards any full scan on screen, because a snapshot of a
+// EACH ROUTE OWNS ITS OWN READS. When this was one page, one component issued every query
+// so two panels could not disagree about the data a moment after a write. With a route per
+// concern that argument inverts: opening the membership table should not pay for the
+// mentor list. A Refresh here discards any full scan on screen, because a snapshot of a
 // moment that has passed would show breakdowns disagreeing with the counts beside them.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import AdminMentors from "@/components/AdminMentors";
-import AdminMentorship from "@/components/AdminMentorship";
 import { Bars, Counts, ctl, labelOf, tally } from "@/components/admin/ui";
 import { useAuth } from "@/lib/auth";
 import { batchBucket, branchBucket, yearBucket } from "@/lib/batch";
@@ -67,21 +70,12 @@ import {
   isClubMember,
   readAllProfiles,
   readProfilePage,
-  readProfilesByIds,
   setMembership,
   toDate,
   type Cursor,
   type Profile,
 } from "@/lib/profile";
-import {
-  countDemand,
-  countEnrollments,
-  readAllEnrollments,
-  readEnrollmentPage,
-  readMentors,
-  type Enrollment,
-  type Mentor,
-} from "@/lib/mentorship";
+import { readAllEnrollments, type Enrollment } from "@/lib/mentorship";
 import { HOSTELS, PATHS } from "@/content/join";
 
 /** Rows per page. 25 is about a screenful on a laptop, and small enough that opening the
@@ -115,11 +109,6 @@ export default function AdminDashboard() {
     weeks: [string, number][];
   } | null>(null);
 
-  const [mentors, setMentors] = useState<Mentor[] | null>(null);
-  const [demand, setDemand] = useState<Map<string, { first: number; second: number; total: number }>>(
-    new Map(),
-  );
-  const [enrolledTotal, setEnrolledTotal] = useState<number | null>(null);
 
   /** THE FULL SCAN, and it is null until somebody asks for it.
    *
@@ -132,16 +121,6 @@ export default function AdminDashboard() {
   const [enrollments, setEnrollments] = useState<Enrollment[] | null>(null);
   const [scanning, setScanning] = useState(false);
 
-  /** THE INTEREST LIST, PAGED AND JOINED. At 1,500 enrolments the all-or-nothing version
-   *  cost ~3,000 reads a press and then rendered 1,500 rows into the DOM. A page is 25
-   *  enrollments plus a single `documentId() in [...]` query for exactly the 25 profiles
-   *  those rows name — about 50 reads, whatever the club's size. `names` is a lookup
-   *  built from the same fetch, so a row never has to go and find its own member. */
-  const [enrolRows, setEnrolRows] = useState<Enrollment[] | null>(null);
-  const [enrolNames, setEnrolNames] = useState<Map<string, Profile>>(new Map());
-  const [enrolCursor, setEnrolCursor] = useState<unknown>(null);
-  const [enrolMore, setEnrolMore] = useState(false);
-  const [enrolPaging, setEnrolPaging] = useState(false);
   const [error, setError] = useState("");
   const [q, setQ] = useState("");
   const [hostel, setHostel] = useState("");
@@ -231,12 +210,10 @@ export default function AdminDashboard() {
         return { start, end };
       });
 
-      const [total, withGithub, weekCounts, ms, enrolled, page] = await Promise.all([
+      const [total, withGithub, weekCounts, page] = await Promise.all([
         countProfiles(),
         countProfilesWithGithub(),
         Promise.all(windows.map((w) => countProfilesBetween(w.start, w.end))),
-        readMentors(),
-        countEnrollments(),
         readProfilePage(PAGE, null),
       ]);
 
@@ -248,25 +225,15 @@ export default function AdminDashboard() {
           weekCounts[i],
         ]),
       });
-      setMentors(ms);
-      setEnrolledTotal(enrolled);
       setRows(page.rows);
       setCursor(page.cursor);
       setMore(page.more);
-
-      // Demand needs the mentor ids, so it cannot join the batch above. Two aggregate
-      // queries per mentor, all in flight together.
-      setDemand(await countDemand(ms.map((m) => m.id)));
 
       // A refresh invalidates any full scan that was on screen: it was a snapshot of a
       // moment that has passed, and silently keeping it would show breakdowns that
       // disagree with the counts beside them.
       setEveryone(null);
       setEnrollments(null);
-      setEnrolRows(null);
-      setEnrolNames(new Map());
-      setEnrolCursor(null);
-      setEnrolMore(false);
     } catch (e) {
       console.error("[osc] could not load the dashboard", e);
       setError(
@@ -293,28 +260,6 @@ export default function AdminDashboard() {
       setPaging(false);
     }
   }, [cursor, paging]);
-
-  /** One page of the interest list, with just the profiles that page needs. */
-  const loadEnrolPage = useCallback(async (cur: unknown = null) => {
-    setEnrolPaging(true);
-    try {
-      const page = await readEnrollmentPage(PAGE, cur);
-      const profs = await readProfilesByIds(page.rows.map((e) => e.uid));
-      setEnrolRows((prev) => (cur ? [...(prev ?? []), ...page.rows] : page.rows));
-      setEnrolNames((prev) => {
-        const next = cur ? new Map(prev) : new Map<string, Profile>();
-        for (const [k, v] of profs) next.set(k, v);
-        return next;
-      });
-      setEnrolCursor(page.cursor);
-      setEnrolMore(page.more);
-    } catch (e) {
-      console.error("[osc] could not load the interest list", e);
-      setError("The interest list did not load. Try again.");
-    } finally {
-      setEnrolPaging(false);
-    }
-  }, []);
 
   /** THE EXPENSIVE ONE, behind an explicit press. One read per member and per
    *  enrollment. Everything that needs it says so before spending it. */
@@ -947,34 +892,6 @@ export default function AdminDashboard() {
         group chat, and it is not published on the site.
       </p>
 
-      {/* --------------------------------------------------------- mentorship */}
-      <div className="border-t border-seam pt-8">
-        <h2 className="font-display text-display-md font-bold tracking-tight">
-          Mentorship
-        </h2>
-        <p className="measure mt-3 text-body text-haze">
-          The mentors members can choose from, and who has chosen whom. Adding a mentor
-          here is what opens enrolment on every member&apos;s dashboard.
-        </p>
-      </div>
-
-      <AdminMentors mentors={mentors} demand={demand} onChanged={() => void load()} />
-
-      <AdminMentorship
-        profiles={everyone}
-        mentors={mentors}
-        demand={demand}
-        enrollments={enrollments}
-        enrolledTotal={enrolledTotal}
-        scanning={scanning}
-        onLoadAll={() => void scanEveryone()}
-        enrolRows={enrolRows}
-        enrolProfiles={enrolNames}
-        enrolMore={enrolMore}
-        enrolPaging={enrolPaging}
-        onLoadEnrolPage={(cur: unknown) => void loadEnrolPage(cur)}
-        enrolCursor={enrolCursor}
-      />
     </div>
   );
 }

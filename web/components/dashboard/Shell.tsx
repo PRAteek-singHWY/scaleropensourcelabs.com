@@ -32,6 +32,9 @@ type NavItem = {
   label: string;
   href: string;
   icon: "grid" | "folder" | "settings" | "megaphone" | "compass";
+  /** Shown only while the reader is inside /admin. Six organiser links in a sidebar about
+   *  a member's week would be six links most readers can never use. */
+  adminArea?: boolean;
   /** Only rendered for an admin. A convenience, never a gate: /admin ships its markup to
    *  anybody who asks for it, and what refuses a non-admin is firestore.rules, which
    *  denies every read the page depends on. */
@@ -52,6 +55,16 @@ const NAV: NavItem[] = [
   // breaks nothing, fails no test, and is only found by asking "how does an organiser
   // actually get there".
   { label: "Organisers", href: "/admin", icon: "megaphone", adminOnly: true },
+  // THE ORGANISER SECTIONS, listed only while an organiser is inside them. /admin was one
+  // route with six panels; splitting it into six means the sidebar has to be the way
+  // between them, and a member — or an organiser reading their own dashboard — has no use
+  // for six admin links in a bar about their week.
+  { label: "Members", href: "/admin/members", icon: "grid", adminOnly: true, adminArea: true },
+  { label: "Mentorship", href: "/admin/mentorship", icon: "compass", adminOnly: true, adminArea: true },
+  { label: "Notices", href: "/admin/notices", icon: "megaphone", adminOnly: true, adminArea: true },
+  { label: "Sessions", href: "/admin/sessions", icon: "grid", adminOnly: true, adminArea: true },
+  { label: "Forms", href: "/admin/forms", icon: "folder", adminOnly: true, adminArea: true },
+  { label: "Team", href: "/admin/team", icon: "settings", adminOnly: true, adminArea: true },
   // PULL REQUESTS IS GONE FOR NOW. It anchored to the GitHub panel, which cannot say
   // anything until the contribution sync is deployed and members have handles on their
   // profiles — so it was a nav item leading to a card that reads "tell us where to look".
@@ -247,7 +260,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               // Admin-only items for admins, and never the page you are already on: an
               // item that navigates nowhere is not worth the row it sits in. Anchors are
               // exempt because they scroll somewhere real on this same page.
-              .filter((item) => (!item.adminOnly || isAdmin) && (item.anchor || item.href !== pathname))
+              // `adminArea` items appear only inside /admin — see the note on the field.
+              // The current page is filtered out rather than styled as current: a link to
+              // where you already are is the one dead item in a sidebar.
+              .filter(
+                (item) =>
+                  (!item.adminOnly || isAdmin) &&
+                  (!item.adminArea || pathname.startsWith("/admin")) &&
+                  (item.anchor || item.href !== pathname),
+              )
               .map((item) => (
                 <Link key={item.label} href={item.href} className={NAV_CLASS}>
                   <Icon name={item.icon} size="1.0625rem" strokeWidth={1.75} />
