@@ -17,7 +17,7 @@
 // ONLY "record" HAS A CALLER TODAY, and the reason is worth knowing before anyone deletes
 // the other half or reaches for it. The receipt existed for the last step of /join while
 // /join was the sign-up flow. It is the anonymous application form again, and the "did
-// that work" moment moved with it — ApplyForm owns its own done state now, with copy about
+// that work" moment moved with it — the sign-in gate owns its own done state now, with copy about
 // an application in a queue rather than about a profile that saved.
 //
 // The receipt cannot simply be pointed at /dashboard instead: the only first-save moment

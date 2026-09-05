@@ -7,7 +7,7 @@
 // rather than a tidy-up. On /join it stood in front of the application form, so a
 // stranger could not apply to the club without already holding a college Google account
 // — which inverted the club's own front door and contradicted the headline beside it.
-// Applying is now anonymous (components/ApplyForm.tsx) and this card guards only the
+// Joining is sign-in only (components/JoinGate.tsx on /join) and this card guards only the
 // members' area, which is the one thing that genuinely needs to know who you are.
 //
 // WHAT WENT WITH THE SPLIT, and why its absence is correct:
@@ -110,7 +110,7 @@ export default function SignInCard() {
   // No Firebase project, so there is nothing to sign in to. Says so rather than
   // rendering a button that cannot work.
   //
-  // NOTE THE ASYMMETRY WITH ApplyForm, WHICH IS DELIBERATE. That form renders its fields
+  // NOTE THE ASYMMETRY WITH THE PROFILE FORM, WHICH IS DELIBERATE. That form renders its fields
   // even unconfigured, because a contributor working on its copy or its spacing needs to
   // see them and the fields are the page. Here the button IS the page, and a button that
   // is guaranteed to fail is worse than a sentence explaining why it is absent.

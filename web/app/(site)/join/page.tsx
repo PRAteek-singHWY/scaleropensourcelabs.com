@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import ApplyForm from "@/components/ApplyForm";
+import JoinGate from "@/components/JoinGate";
 import Duo from "@/components/Duo";
 import Note from "@/components/fx/Note";
-import { DASHBOARD_HREF } from "@/content/site";
 
 // THE APPLICATION FORM. One route, one job.
 //
@@ -30,7 +29,7 @@ import { DASHBOARD_HREF } from "@/content/site";
 export const metadata: Metadata = {
   title: "Join",
   description:
-    "Apply to the Scaler Open Source Club. No fee, no interview, no prior experience — a laptop and a GitHub account.",
+    "Join the Scaler Open Source Club. Sign in with your college account — no fee, no interview, no prior experience needed.",
 };
 
 export default function Join() {
@@ -66,7 +65,7 @@ export default function Join() {
               and the only reason it ever looked otherwise was that `top-14`
               landed inside this section's 96px of top padding. A later spacing
               pass cut that padding to 48/64px and the sticker came to rest
-              exactly on the "Applications open" eyebrow, at EVERY width from
+              exactly on the eyebrow above the headline, at EVERY width from
               1024 up.
               So a flush sticker needs a band that is empty in both axes, not
               just a corner. */}
@@ -135,7 +134,7 @@ export default function Join() {
                 header lives a level down inside this two-column grid, so the
                 group goes here and the section keeps its ordinary settle. */}
             <div data-reveal-group>
-              <p className="label">Applications open</p>
+              <p className="label">Open to every SST student</p>
               {/* h1, not the default h2 — same reason as on /hall-of-fame. This was
                   a mid-page band and is now the whole route. */}
               <Duo
@@ -172,54 +171,26 @@ export default function Join() {
                 </div>
               </div>
 
-              {/* THE WAY BACK IN. The nav carries a "Sign in" link of its own now, so
-                  this is no longer the only thing between a returning member and their
-                  dashboard — but it stays, because that link is sm+ only and because
-                  this is the page somebody lands on when they press "Join" out of habit.
-                  It is the sentence that stops them filling in an application they have
-                  already sent.
-
-                  BEFORE THE FORM, NOT AFTER IT. Under the fields it would be found by
-                  somebody who had already filled them in, which is the one moment the
-                  sentence is no longer useful — a second application is exactly what it
-                  exists to prevent.
-
-                  Small and quiet on purpose: almost nobody reading this page is a
-                  member, and a sign-in prompt with equal weight to the form would ask
-                  every first-time reader to work out which of two things they are.
-
-                  SAME TAB, AND IT USED TO OPEN A NEW ONE. `target="_blank"` on an
-                  internal route left this application page open behind the reader as a
-                  stale, signed-out copy of a site they had just signed into, and left
-                  the back button — the thing somebody presses the moment they realise
-                  they are in the wrong place — doing nothing at all. Signing in is not
-                  a reference you consult beside the form; it is where you were going
-                  instead of filling it in. */}
-              <p className="mt-6 text-[1.0625rem] leading-relaxed text-dust">
-                Already joined?{" "}
-                <Link href={DASHBOARD_HREF} className="link-u text-accent">
-                  Sign in to your dashboard
-                </Link>{" "}
-                — no need to apply twice.
-              </p>
             </div>
 
-            {/* THE ANONYMOUS APPLICATION FORM, and it is back here after a spell as a
-                sign-in gate. For a while this column held <JoinGate />: register with
-                a college Google account first, then fill a profile. That put an
-                account requirement in front of the club's front door — a stranger
-                could not apply without already holding the thing that membership
-                grants — and it made the headline three inches to the left false at
-                the exact moment somebody acted on it.
+            {/* SIGN-IN, NOT AN APPLICATION FORM, and this reverses the previous change
+                here rather than drifting from it.
 
-                Sign-in did not go away; it stopped being this page's business. It
-                lives on /dashboard now (components/SignInCard.tsx), which is the one
-                place that genuinely needs to know who you are. This page asks, that
-                page identifies, and neither has to care about the other.
+                The argument for the anonymous form was real and is worth stating: making
+                somebody hold a Google account before they may apply puts a requirement in
+                front of the club's front door, and the headline three inches to the left
+                promises the opposite. That is true of a club that admits anybody.
 
-                The column this sits in, the copy beside it and the two tiles above
-                are unchanged — the flow changed, not the page. */}
-            <ApplyForm />
+                This one does not. Membership IS an @sst.scaler.com address — that is the
+                whole test, and it is the one thing an application form cannot check. A
+                form asks a stranger to type an address they may not own and leaves an
+                organiser to verify it by hand; signing in with the college account proves
+                it in one tap and produces a record nobody had to check. So the door and
+                the test are the same act now, and there is no application to read.
+
+                The two tiles above and the copy beside this are unchanged. The flow
+                changed, not the page. */}
+            <JoinGate />
           </div>
         </section>
 
@@ -231,7 +202,7 @@ export default function Join() {
             the decision already on the screen and then stops, so the only
             thing to do with it is scroll back up and finish.
 
-            NOT INSIDE ApplyForm. It lived in the card for one revision and the
+            NOT INSIDE THE SIGN-IN CARD. It lived in the card for one revision and the
             card is the wrong container: at 15px inside a 7-unit padded tile it
             read as a third disclaimer under the two grey notes about data, and
             disclaimers are what people skip. On the page at display-md it is
@@ -256,9 +227,9 @@ export default function Join() {
             data-reveal-group
           >
             <div>
-              <p className="label">If you close this tab without applying</p>
+              <p className="label">If you close this tab</p>
               <p className="mt-4 text-display-md font-medium text-dust text-balance">
-                You&apos;ll open it again in February. The same form, one semester
+                You&apos;ll open it again in February. The same one tap, one semester
                 less, and a batch of students who already know how to review your
                 code.
               </p>
@@ -268,9 +239,9 @@ export default function Join() {
                 edge below that, so the band never loses the mark that says which
                 of the two futures the page is pointing at. */}
             <div className="border-l-2 border-accent pl-7 lg:pl-14">
-              <p className="label">If you hit the button</p>
+              <p className="label">If you sign in</p>
               <p className="mt-4 text-display-md font-semibold text-ink text-balance">
-                Someone reads it this week. You show up regularly. By November
+                Somebody messages you this week. You show up regularly. By November
                 you&apos;re the one answering the questions.
               </p>
             </div>

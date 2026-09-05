@@ -18,7 +18,7 @@
 // It is a pure text check with no Firebase dependency and no network, so it runs in
 // CI whether or not a Firebase project exists.
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -152,17 +152,21 @@ function contentKeys(exportName) {
   );
 }
 
-// EVERY OCCURRENCE OF EACH SET, not the first. `hostel` and `path` are written TWICE now —
-// once on the member's profile and once on the anonymous application — exactly as
-// `programme` is written twice below. A checker that read only the first copy would let
-// the second drift, and the drift presents as a real applicant getting a permission error
-// on a form that renders perfectly.
+// EVERY OCCURRENCE OF EACH SET, not the first — `programme` below is still written twice,
+// and a checker that read only the first copy would let the second drift into a permission
+// error on a form that renders perfectly.
+//
+// THE COUNTS DROPPED WHEN THE APPLICATION FORM WENT. `hostel` and `path` were written
+// twice, once on the member's profile and once on the anonymous application; that second
+// copy is gone with the collection's validator. `level` and `programs` were
+// application-only, so they are now written nowhere — they are not on the profile, which
+// asks three questions and derives the rest from the address. Asserting 0 keeps that a
+// decision rather than a thing that quietly came back.
 for (const [field, fromContent, expected] of [
-  ["path", contentIds("PATHS"), 2],
-  ["hostel", contentValues("HOSTELS"), 2],
-  // Application-only, so far.
-  ["level", contentKeys("LEVEL_LABEL"), 1],
-  ["programs", contentValues("PROGRAMS"), 1],
+  ["path", contentIds("PATHS"), 1],
+  ["hostel", contentValues("HOSTELS"), 1],
+  ["level", contentKeys("LEVEL_LABEL"), 0],
+  ["programs", contentValues("PROGRAMS"), 0],
 ]) {
   const sets = rulesSets(field);
   ok(`${field} is a closed set everywhere it appears`, sets.length === expected,
@@ -240,7 +244,10 @@ for (const konst of [
 //
 // It also catches the quieter direction: a field ADDED to the form and not to the rules
 // means every application is refused, on a page that renders perfectly.
-const applicationsLib = readFileSync(join(here, "..", "lib", "applications.ts"), "utf8");
+// lib/applications.ts IS GONE, along with the form that wrote to it and the validator
+// that guarded it. What used to be here was a field-by-field parity check between that
+// module's Application type and isWellFormedApplication's hasOnly list. There is nothing
+// left for it to compare, and the collection is asserted sealed further down instead.
 
 /** The `hasOnly([...])` list inside a named rules function. */
 function hasOnlyIn(fnName) {
@@ -259,19 +266,6 @@ function typeFields(src, typeName) {
   if (!m) return null;
   return new Set([...m[1].matchAll(/^\s{2}(\w+)\??:/gm)].map((x) => x[1]));
 }
-
-const appType = typeFields(applicationsLib, "Application");
-// submitted_at is added by submitApplication() rather than typed on the form's payload,
-// so it is the one field the rules expect that the type does not carry.
-const appExpected = appType ? new Set([...appType, "submitted_at"]) : null;
-const appRules = hasOnlyIn("isWellFormedApplication");
-ok(
-  "the application's fields match lib/applications.ts",
-  same(appRules, appExpected),
-  same(appRules, appExpected)
-    ? `(${appRules.size} fields)`
-    : `rules=${show(appRules)} client=${show(appExpected)}`,
-);
 
 // ------------------------------------------------ closed sets outside join.ts
 //
@@ -408,14 +402,21 @@ ok("applications stay unreadable from every client",
   /match \/applications\/\{id\}[\s\S]*?allow read: if false/.test(rules));
 ok("applications cannot be edited once sent",
   /match \/applications\/\{id\}[\s\S]*?allow update, delete: if false/.test(rules));
-// THE ONLY UNAUTHENTICATED WRITE IN THE FILE, and the club's front door. A merge once
-// closed it with a comment calling the collection legacy while /join still rendered the
-// form that writes to it, so every application was silently refused. These two say the
-// door is open AND that the validator is the thing holding it.
-ok("a stranger may still apply",
-  /match \/applications\/\{id\}[\s\S]*?allow create: if isWellFormedApplication/.test(rules));
-ok("an application is validated field by field",
-  /function isWellFormedApplication\(d\)[\s\S]{0,200}hasOnly/.test(rules));
+// THERE IS NO LONGER AN UNAUTHENTICATED WRITE IN THIS FILE, and that is the assertion.
+// Joining is sign-in only: membership is an @sst.scaler.com address, which is the one
+// thing an anonymous form could not check.
+//
+// THE HISTORY MATTERS HERE. A merge once closed this exact door with a comment calling the
+// collection legacy WHILE /join still rendered the form that wrote to it, and every
+// application in between was silently refused. Closing it is only safe while nothing
+// writes here — so if a form ever comes back, this assertion must fail and force the rule
+// to move with it. That coupling is the point.
+ok("no client may create an application any more",
+  /match \/applications\/\{id\}[\s\S]*?allow create: if false/.test(rules));
+ok("and the validator that guarded it is gone with it",
+  !/function isWellFormedApplication\(/.test(rules));
+ok("nothing in the app still writes applications",
+  !existsSync(join(here, "..", "lib", "applications.ts")));
 ok("no test-mode wildcard write", !/allow read, write:\s*if true/.test(rules));
 // FIELDS THAT WERE DELETED STAY DELETED, in both files or neither. `hasOnly` is strict,
 // so a field reintroduced to the form but not the rules means every save fails; the

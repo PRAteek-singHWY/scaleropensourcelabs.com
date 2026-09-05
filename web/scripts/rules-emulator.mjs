@@ -1130,18 +1130,27 @@ const applicationFor = (over = {}) => ({
 });
 const withSubmitted = (d) => ({ ...d, submitted_at: serverTimestamp() });
 
-await check("a stranger applying", true, () =>
+// THE DOOR IS SHUT, AND THESE FOUR USED TO ASSERT IT WAS OPEN. Joining is sign-in only
+// now: membership is an @sst.scaler.com address, which is the one thing an anonymous form
+// could never check. /join renders the sign-in gate and lib/applications.ts is deleted, so
+// nothing writes here at all.
+//
+// THE HISTORY IS WHY THESE ARE KEPT AS DENIALS RATHER THAN DELETED. A merge once closed
+// this exact door while the form was still on the page, and every application in between
+// was silently refused. If a form ever comes back, these four fail loudly and force the
+// rule to move with it — which is the coupling that incident was missing.
+await check("a stranger applying", false, () =>
   setDoc(doc(stranger(), "applications", "app-1"), withSubmitted(applicationFor())),
 );
-await check("a stranger applying with no github", true, () => {
+await check("a stranger applying with no github", false, () => {
   const d = applicationFor();
   delete d.github;
   return setDoc(doc(stranger(), "applications", "app-2"), withSubmitted(d));
 });
-await check("a signed-in member applying", true, () =>
+await check("a signed-in member applying", false, () =>
   setDoc(doc(member(UID_A, MAIL_A), "applications", "app-3"), withSubmitted(applicationFor())),
 );
-await check("applying with Other ticked and explained", true, () =>
+await check("applying with Other ticked and explained", false, () =>
   setDoc(
     doc(stranger(), "applications", "app-4"),
     withSubmitted(applicationFor({ programs: ["gsoc", "other"], programs_other: "Zephyr" })),
@@ -1182,10 +1191,10 @@ await check("an application with an extra field", false, badApplication({ admin:
 await check("an application with no name", false, badApplication({ name: "" }));
 await check("an application with a malformed email", false, badApplication({ email: "not-an-email" }));
 await check("an application with no year or branch", false, badApplication({ year_branch: "" }));
-// THE SET THAT HAD ALREADY DRIFTED. The rule recovered from git accepted none/some-git/
-// merged; the form has offered beginner/intermediate since upstream changed it. Deployed
-// unexamined, it would have refused every real application while looking correct.
-await check("the level the form actually sends", true, () =>
+// WAS "the level the form actually sends", asserting the rule accepted what the form
+// offered. There is no form and no level field left in the rules; a well-formed
+// application is refused for the same reason a malformed one is.
+await check("a well-formed application is refused like any other", false, () =>
   setDoc(
     doc(stranger(), "applications", "app-level"),
     withSubmitted(applicationFor({ level: "intermediate" })),

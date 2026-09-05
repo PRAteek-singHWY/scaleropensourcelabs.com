@@ -201,35 +201,37 @@ await pg.waitForTimeout(700);
 // fine, which is how a team learns to ignore its own checks. The signed-in half of this
 // flow is still covered by scripts/e2e-auth.mjs (`npm run e2e:auth`), against the
 // emulators.
+// JOINING IS SIGN-IN ONLY AGAIN, and these assertions moved with it rather than being
+// deleted. The page held an anonymous application form for a spell; membership is an
+// @sst.scaler.com address, which is the one thing that form could not check, so the door
+// and the test are the same act now.
 ok(
-  "join renders the application form to a signed-out reader",
-  (await pg.evaluate(() => document.querySelectorAll("#af-name, #af-path").length)) === 2,
+  "join offers sign-in, not a form",
+  (await pg.evaluate(() =>
+    /continue with google/i.test(document.querySelector("main")?.innerText ?? ""),
+  )),
 );
+// THE ASSERTION THAT WOULD CATCH A REGRESSION HERE. A form reappearing on this page is
+// the specific thing this change removed, so its absence is checked rather than assumed —
+// zero inputs of any kind in the main column.
 ok(
-  "join preselects the path from ?path",
-  (await pg.evaluate(() => document.querySelector("#af-path")?.value)) === "program-track",
+  "and no application fields survive on the page",
+  (await pg.evaluate(
+    () => document.querySelectorAll("main input, main select, main textarea").length,
+  )) === 0,
 );
 ok(
   "join keeps ?path in the URL",
   new URL(pg.url()).searchParams.get("path") === "program-track",
 );
-// A HAND-EDITED ?path IS NOT TRUSTED. It is checked against the real PATHS, so a bogus
-// one has to fall back to the empty option rather than being selected — a value the
-// rules would refuse on submit, which presents to an applicant as a form that silently
-// will not send.
-await pg.goto(`${BASE}/join?path=nonsense-not-a-path`, { waitUntil: "networkidle" });
-await pg.waitForTimeout(400);
+// THE DOMAIN RULE IS ON THE PAGE, not just in the rules. It is the whole membership test
+// and the one sentence a reader cannot afford to skim past, so a copy pass that removed it
+// would leave people signing in with a personal Gmail and being refused with no warning.
 ok(
-  "join ignores a bogus ?path rather than selecting it",
-  (await pg.evaluate(() => document.querySelector("#af-path")?.value)) === "",
-);
-// THE WAY BACK IN, the one thing on this page that is not addressed to an applicant. A
-// returning member who presses the nav's "Join" out of habit lands here, and this link
-// is what stops them filling in a second application. It is deliberately quiet, which
-// makes it the kind of thing a copy pass deletes without noticing — so it is asserted.
-ok(
-  "join offers a member the way back in",
-  (await pg.evaluate(() => document.querySelectorAll('main a[href="/dashboard"]').length)) === 1,
+  "and states the one address that can register",
+  (await pg.evaluate(() =>
+    /sst\.scaler\.com/i.test(document.querySelector("main")?.innerText ?? ""),
+  )),
 );
 // The form must NOT be reachable without signing in. This is a UI assertion, not a
 // security one — the boundary is firestore.rules — but a form rendering to a signed-out
