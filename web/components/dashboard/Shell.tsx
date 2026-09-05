@@ -31,7 +31,7 @@ import { LINKS } from "@/content/site";
 type NavItem = {
   label: string;
   href: string;
-  icon: "grid" | "folder" | "settings" | "megaphone";
+  icon: "grid" | "folder" | "settings" | "megaphone" | "compass";
   /** Only rendered for an admin. A convenience, never a gate: /admin ships its markup to
    *  anybody who asks for it, and what refuses a non-admin is firestore.rules, which
    *  denies every read the page depends on. */
@@ -58,12 +58,19 @@ const NAV: NavItem[] = [
   // The panel itself stays, and still carries id="open-source", so restoring this is one
   // line when there is something behind it.
   { label: "Projects", href: "/projects", icon: "folder" },
+  // MENTORSHIP IS A ROUTE NOW rather than the last panel on the overview. It is the club's
+  // headline activity and the reason most people join, and it was below four weekly panels
+  // on a page about the week — buried, and mixed in with things it has nothing to do with.
+  { label: "Mentorship", href: "/dashboard/mentorship", icon: "compass" },
   // "MY DETAILS", NOT "SETTINGS". The design's word promised a settings page — notification
   // preferences, account options — and there are none: the only thing a member can change
   // about themselves is their profile. A label that names a page which does not exist is
   // the kind of thing a reader clicks once, finds nothing, and stops trusting the nav over.
   // If anything genuinely settings-shaped ever arrives, it earns the name back.
-  { label: "My details", href: "/dashboard#details", icon: "settings", anchor: true },
+  // AN ANCHOR NO LONGER. `/dashboard#details` scrolled to a panel in the right-hand
+  // column, which is the kind of nav item somebody presses once, watches the page jump,
+  // and stops trusting. It is a page, so the link goes somewhere.
+  { label: "My details", href: "/dashboard/details", icon: "settings" },
 ];
 
 /** The sidebar's link styling.
@@ -101,6 +108,17 @@ const NAV_CLASS =
 export default function Shell({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
   const pathname = usePathname();
+  /** ONBOARDING GETS THE BAR AND THE FOOTER AND NOTHING ELSE.
+   *
+   *  Finishing the profile is a gate: an incomplete one is sent here and the dashboard is
+   *  not reachable until it is done. A sidebar offering Good first issues, Projects and My
+   *  details next to that form is three invitations to leave the one screen the member has
+   *  to finish — and two of them lead to a dashboard that would bounce them straight back.
+   *
+   *  The bar stays, because sign-out has to remain reachable from every signed-in page.
+   *  Somebody who lands here with the wrong Google account needs a way out that is not the
+   *  back button. */
+  const bare = pathname === "/onboarding";
 
   const handle = user?.email?.split("@")[0] ?? "";
   const onAdmin = pathname.startsWith("/admin");
@@ -120,7 +138,11 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             href="/"
             className="tap shrink-0 font-display text-[1.0625rem] font-bold tracking-tight text-ink transition-colors hover:text-accent"
           >
-            OSC <span className="text-dust">/</span> DASHBOARD
+            {/* THE CRUMB NAMES THE PAGE, and on /onboarding that is not the dashboard —
+                which is the one page a member being gated here cannot reach yet. Saying
+                DASHBOARD over a form that stands between them and it is the chrome
+                contradicting the flow. */}
+            OSC <span className="text-dust">/</span> {bare ? "FINISH JOINING" : "DASHBOARD"}
           </Link>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {/* THE VIEW SWITCH, AND IT LIVES IN THE BAR RATHER THAN ONLY IN THE SIDEBAR.
@@ -169,6 +191,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             below that the dashboard is simply one column — which is what the content
             wants anyway, since every panel is full width there. The sign-out and theme
             controls live in the bar above, so nothing is lost by its absence. */}
+        {!bare && (
         <aside className="hidden w-60 shrink-0 flex-col border-r border-seam bg-sunk/60 px-4 py-6 lg:flex">
           {/* Who you are, which the top bar no longer has room for. */}
           {user && (
@@ -253,6 +276,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </aside>
+        )}
 
         <main id="main" className="min-w-0 flex-1 px-4 pb-14 pt-6 sm:px-6 sm:pt-8">
           <div className="mx-auto max-w-[72rem]">{children}</div>

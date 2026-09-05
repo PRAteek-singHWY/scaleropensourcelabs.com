@@ -1,45 +1,43 @@
 "use client";
 
-// The member's dashboard, laid out to the Stitch design.
+// The dashboard OVERVIEW. One question: is anything waiting for me?
 //
-// THE PROFILE FORM IS A PANEL, NOT A GATE. It used to render INSTEAD of the dashboard
-// whenever a profile was incomplete, so a member signing in for the first time met a
-// hostel dropdown and everything worth arriving for sat behind it — which is why the
-// club's own organisers reported the site "has no dashboard". They had never got past the
-// form. Nothing is blocked on it now; the club simply knows less about somebody until
-// they fill it in.
+// IT USED TO BE THE WHOLE SIGNED-IN AREA — four figures, the forms, the notice board, the
+// sessions, the GitHub panel, the profile record, the profile form and the entire
+// mentorship flow, in two columns on one route. Everything the club could say to a member
+// arrived at once, so nothing arrived first, and the two panels somebody returns for each
+// week sat under a form they fill in once.
 //
-// THE ORDER IS THE DESIGN'S, AND IT IS ORDERED BY WHAT CHANGED:
+// It is three sections now, one per route, and the sidebar moves between them:
 //
-//   the strip      four figures, so the page answers "anything for me?" before a word
-//   left column    what moved and what is asked of you
-//   right column   what is standing: where to go next, and what we hold about you
+//   /dashboard             this: what is waiting, what is on, what to do next
+//   /dashboard/mentorship  the GSoC cohort — a decision made once a term
+//   /dashboard/details     the record the club holds, and the form to change it
 //
-// NO GREETING HEADING, WHICH THE PREVIOUS VERSION HAD. The design opens straight on the
-// figures, and it is right to: "Good to see you, Asha" is the page being pleased with
-// itself, and it pushed the only line that answers a question below the fold on a laptop.
-// The h1 the document still needs is visually hidden — see the note on it.
+// WHAT STAYED IS WHAT CHANGES WEEKLY: a form to fill in, a notice, a session, a figure
+// that moved. Everything standing still moved out.
+//
+// THE PROFILE IS GUARANTEED PAST RequireProfile, so there is no "you have not filled this
+// in" branch below and no hidden h1 — the section has a real title now. See that component
+// for why the gate exists and why the form deliberately does not live behind it.
 
-import { Suspense, useCallback, useEffect, useState } from "react";
-import ProfileCard from "@/components/ProfileCard";
-import ProfileForm from "@/components/ProfileForm";
-import SignInCard from "@/components/SignInCard";
+import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
+import type { User } from "firebase/auth";
+import RequireProfile from "@/components/dashboard/RequireProfile";
+import SectionHead from "@/components/dashboard/SectionHead";
 import Board from "@/components/dashboard/Board";
 import Contributions from "@/components/dashboard/Contributions";
 import Forms from "@/components/dashboard/Forms";
 import NextSessions from "@/components/dashboard/NextSessions";
-import MentorPicker from "@/components/MentorPicker";
 import NextUp from "@/components/dashboard/NextUp";
-import Panel from "@/components/dashboard/Panel";
-import { isComplete, readProfile, type Profile } from "@/lib/profile";
-import { useAuth } from "@/lib/auth";
+import type { Profile } from "@/lib/profile";
 
 /** One figure in the strip.
  *
- *  `note` is the small coloured line the design puts beside several of the numbers —
- *  "+12 this week", "pending review". It is optional because only some of the four have
- *  anything true to say there, and inventing one for the others to make the row even is
- *  how a strip of facts becomes a strip of decoration. */
+ *  `note` is the small coloured line beside some of the numbers — "in review". Optional,
+ *  because only some have anything true to say there, and inventing one for the others to
+ *  make the row even is how a strip of facts becomes a strip of decoration. */
 function Stat({
   n,
   label,
@@ -64,11 +62,8 @@ function Stat({
   );
 }
 
-export default function MemberDashboard() {
-  const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
-  const [editing, setEditing] = useState(false);
-  const [loadError, setLoadError] = useState("");
+function Overview({ user, profile }: { user: User; profile: Profile }) {
+  const router = useRouter();
   /** Reported up by the panels that already did the reads, so the strip costs no extra
    *  queries. `null` means "not known yet", which renders as an em dash rather than a
    *  zero — "0 merged" and "we have not looked yet" are different sentences and only the
@@ -78,30 +73,8 @@ export default function MemberDashboard() {
   const [repos, setRepos] = useState<number | null>(null);
   const [openPrs, setOpenPrs] = useState<number | null>(null);
 
-  const load = useCallback(async (uid: string) => {
-    setLoadError("");
-    try {
-      setProfile(await readProfile(uid));
-    } catch (e) {
-      // NOT swallowed into "no profile yet". A refusal here means the rules said no, which
-      // on this collection almost always means an off-domain address — and presenting that
-      // as an empty form would silently ask somebody to fill in details that cannot save.
-      console.error("[osc] could not read profile", e);
-      setLoadError("We could not load your details. Reload the page, or email us.");
-      setProfile(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!user) {
-      setProfile(user === null ? null : undefined);
-      return;
-    }
-    void load(user.uid);
-  }, [user, load]);
-
   // Stable identities, so the child effects reporting these numbers do not re-fire on
-  // every render of this component.
+  // every render.
   const onPending = useCallback((n: number) => setPending(n), []);
   const onSummary = useCallback((m: number, r: number, o: number) => {
     setMerged(m);
@@ -109,153 +82,79 @@ export default function MemberDashboard() {
     setOpenPrs(o);
   }, []);
 
-  // `user === undefined` is its own state rather than being folded into "signed out":
-  // rendering a sign-in prompt while the session is still being restored shows it to
-  // somebody who is already signed in, every time they load the page.
-  if (user === undefined || (user && profile === undefined)) {
-    return (
-      <div className="card rounded-panel bg-raise p-8" aria-busy="true">
-        {/* THE HIDDEN H1 IS HERE TOO, because this branch is a state the route can be
-            LOADED IN, not just a flicker between two states that have one. On a
-            configured deployment a hard load paints this card until auth resolves, so
-            without it the document has no h1 for as long as that takes — the same hole
-            the unconfigured branch of SignInCard had, and the same check catches it. */}
-        <h1 className="sr-only">Your dashboard</h1>
-        <p className="label">One moment</p>
-        <p className="mt-3 text-body text-haze">Finding your things…</p>
-      </div>
-    );
-  }
-
-  // The card itself, not a link to one: /join is the anonymous application form, and
-  // sending a returning member there would hand them an application to fill in again.
-  if (!user) return <SignInCard />;
-
-  const complete = isComplete(profile);
+  const first = profile.name.trim().split(/\s+/)[0] || "Hello";
 
   return (
-    <div className="space-y-5">
-      {/* THE H1 THE DESIGN DOES NOT DRAW. The page opens on the figures, so there is no
-          visible heading to carry the document's title — but a page with no h1 hands a
-          screen-reader user a document with no name, and the site's own checks require
-          exactly one. Hidden rather than invented. */}
-      <h1 className="sr-only">Your dashboard</h1>
+    <>
+      <SectionHead eyebrow="Your week" title={`${first}.`}>
+        Anything the club needs from you turns up here. When this page is quiet there is
+        genuinely nothing to do — which is most weeks, and is not a sign you are behind.
+      </SectionHead>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {/* "WAITING ON YOU" LEADS, and it is the one figure the design does not have.
-            Stitch opens with Total Contributions, which is an achievement — and a
-            dashboard whose first number is a score is a leaderboard, which is the wrong
-            instrument for a club whose whole pitch is "you do not need to be good yet".
-            The other three are the design's, in its order. */}
-        <Stat n={pending ?? "—"} label="Waiting on you" />
-        <Stat n={merged ?? "—"} label="Pull requests merged" />
-        <Stat n={openPrs ?? "—"} label="Open pull requests" note={openPrs ? "in review" : undefined} />
-        <Stat n={repos ?? "—"} label="Projects touched" />
-      </div>
+      {/* "WAITING ON YOU" LEADS, and it is the one figure the design did not have. Opening
+          on a contribution total makes the page a leaderboard, which is the wrong
+          instrument for a club whose pitch is "you do not need to be good yet".
 
-      {loadError && (
-        <p
-          className="card rounded-panel bg-raise p-6 text-[1.0625rem] leading-relaxed text-ember"
-          role="alert"
-        >
-          {loadError}
-        </p>
+          THE GITHUB FIGURES ARE ONLY DRAWN WHEN THEY CAN HOLD A NUMBER. All three are read
+          from GitHub, so a member with no handle met three em-dashes in a row — a strip
+          that read as a dashboard with its data missing rather than one with nothing to
+          say yet. The prompt that fixes it belongs with the control that does it, in the
+          panel below, not as three dead tiles repeating it. */}
+      {profile.github ? (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Stat n={pending ?? "—"} label="Waiting on you" />
+          <Stat n={merged ?? "—"} label="Pull requests merged" />
+          <Stat n={openPrs ?? "—"} label="Open pull requests" note={openPrs ? "in review" : undefined} />
+          <Stat n={repos ?? "—"} label="Projects touched" />
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <Stat n={pending ?? "—"} label="Waiting on you" />
+        </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr] lg:items-start">
-        <div className="space-y-5">
+      {/* THE GAP IS THE DESIGN. These panels ran together at `space-y-5` into one column of
+          cards with no rhythm; at 6/8 the eye gets a break between things that are not
+          related to each other, which is most of what makes a page of panels read as
+          sections rather than as a list. */}
+      <div className="mt-10 grid gap-6 lg:mt-14 lg:grid-cols-[1.6fr_1fr] lg:items-start lg:gap-8">
+        <div className="space-y-6 lg:space-y-8">
           {/* ABOVE THE BOARD, because a sign-up nobody scrolls to is a sign-up nobody
-              fills in — and unlike a notice, this one is asking for something back. */}
+              fills in — and unlike a notice, this one asks for something back. */}
           <Forms
             uid={user.uid}
             email={user.email ?? ""}
-            name={profile?.name ?? user.displayName ?? undefined}
+            name={profile.name}
             onPending={onPending}
           />
-          {/* WHAT'S ON, BETWEEN THE FORMS AND THE BOARD. A session is the most
-              time-bound thing on the page — miss it and it is gone — so it sits above the
-              notices, which keep. It renders nothing at all when there is no schedule; see
-              the note in NextSessions.tsx for why that panel is the one exception to
-              every-panel-keeps-its-empty-state. */}
+          {/* A session is the most time-bound thing here — miss it and it is gone — so it
+              sits above the notices, which keep. It renders nothing at all when there is
+              no schedule; see NextSessions.tsx for why it is the one panel with no empty
+              state. */}
           <NextSessions />
           <Board />
           <Contributions
             uid={user.uid}
-            handle={profile?.github}
-            onEditProfile={() => setEditing(true)}
+            handle={profile.github}
+            onEditProfile={() => router.push("/dashboard/details")}
             onSummary={onSummary}
           />
         </div>
 
-        <div className="space-y-5">
-          {/* The only filled surface on the page. NextUp reads the member's chosen route
-              and programmes, so it has nothing to say until there is a profile. */}
-          {profile && complete && <NextUp profile={profile} />}
-
-          {editing || !complete ? (
-            <Panel
-              icon="user"
-              title="Your details"
-              id="details"
-              action={
-                editing && complete ? (
-                  <button
-                    type="button"
-                    onClick={() => setEditing(false)}
-                    className="tap font-mono text-label uppercase text-haze underline transition-colors hover:text-ink"
-                  >
-                    Cancel
-                  </button>
-                ) : undefined
-              }
-            >
-              {/* THE PROMPT THAT REPLACED THE GATE. It says what the details are FOR,
-                  because "fill in this form" with no reason attached is the thing
-                  everybody skips — and it is honest that nothing is blocked on it. */}
-              {!complete && (
-                <p className="measure mb-5 text-body text-haze">
-                  Everything else here already works. This is just so the organisers know
-                  which hostel to find you in and what you are chasing — a minute, once.
-                </p>
-              )}
-              {/* SUSPENSE IS REQUIRED, not tidiness: ProfileForm reads useSearchParams for
-                  the ?path= preselect, and an unwrapped useSearchParams fails the static
-                  export build outright. */}
-              <Suspense fallback={<div className="h-[42rem]" aria-hidden />}>
-                <ProfileForm
-                  user={user}
-                  profile={profile ?? null}
-                  onSaved={() => {
-                    setEditing(false);
-                    // Re-read rather than trusting the local echo, so the card shows the
-                    // server's timestamps rather than a client clock.
-                    void load(user.uid);
-                  }}
-                />
-              </Suspense>
-            </Panel>
-          ) : (
-            profile && (
-              <ProfileCard profile={profile} tone="record" onEdit={() => setEditing(true)} />
-            )
-          )}
+        <div className="space-y-6 lg:space-y-8">
+          {/* The only filled surface on the page, and the one thing here addressed to
+              somebody with nothing waiting: what to do with the week anyway. */}
+          <NextUp profile={profile} />
         </div>
       </div>
+    </>
+  );
+}
 
-      {/* ------------------------------------------------------------- the programmes
-          RESTORED, NOT NEW. This was rendered here in b996d6a and disappeared in the
-          merge that took upstream's structure alongside this dashboard — the component,
-          its library and its firestore rules all survived, and only the one line that
-          put it on screen was lost. The result was a mentorship system that was fully
-          built, fully protected, and unreachable: a member had no way to pick a mentor
-          and nothing on the page said so. Same failure as the /join form the rules file
-          documents — correct in git, correct in review, and wrong about which features
-          were reachable.
-
-          It owns its own reads and its own signed-out state, so it goes at the foot of
-          the page rather than inside the two-column grid: it is a section, not a panel,
-          and it is the one thing here a member acts on once a term rather than weekly. */}
-      <MentorPicker user={user} />
-    </div>
+export default function MemberDashboard() {
+  return (
+    <RequireProfile>
+      {({ user, profile }) => <Overview user={user} profile={profile} />}
+    </RequireProfile>
   );
 }
