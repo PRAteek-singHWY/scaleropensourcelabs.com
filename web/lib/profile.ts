@@ -219,19 +219,177 @@ export async function setMembership(
   );
 }
 
-/** Read every profile. Admins only — the rules refuse a list to anybody else.
+// READING THE MEMBERSHIP, AND WHAT IT COSTS.
+//
+// This used to be one function that read every profile on every dashboard load, and the
+// comment defending it said the club was a few hundred people and pagination would be
+// machinery with no user. That was true and is no longer: at 1,000 members one page load
+// was ~1,000 reads, every Refresh was another 1,000, and about 33 of them would exhaust
+// the 50,000-a-day free quota — for EVERYONE, including members trying to read their own
+// profile. Three organisers planning a cohort could get there in an afternoon.
+//
+// So the page now pays for what it actually shows:
+//
+//   countProfiles()     1 read per 1,000 documents. Aggregates are billed on the size
+//                       of the RESULT, not the scan, so the headline count is ~1 read.
+//   readProfilePage()   one page of rows, 25 reads.
+//   readAllProfiles()   still here, still a full scan — but nothing calls it on load.
+//                       The breakdowns, the CSV export and search-across-everybody need
+//                       every document by definition, so they are behind a control that
+//                       says what it will cost.
+//
+// WHY THE BREAKDOWNS CANNOT BE AGGREGATED AWAY. Batch, branch and year are derived from
+// the address by lib/batch.ts and are not fields — which is what makes them impossible to
+// forge, and also what makes them impossible to query. `where('batch','==',...)` has
+// nothing to match. That trade was made deliberately and is written up in FIREBASE.md;
+// this is the bill for it. Hostel and path COULD be counted with aggregates, but a
+// breakdown where three of five rows need a full scan anyway would be reading everything
+// regardless, so they ride along.
+
+/** How many members there are, without reading them.
  *
- *  Unpaginated on purpose: the club is a few hundred people, one read per member per
- *  dashboard load, against a free quota of 50,000 reads a day. Paginating that would be
- *  machinery with no user. If the club ever passes a few thousand members this needs
- *  revisiting, and the dashboard says so on screen rather than degrading quietly. */
+ *  `getCountFromServer` is billed at one read per 1,000 documents counted, so this is one
+ *  read for the whole club rather than one per member. */
+export async function countProfiles(): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, getCountFromServer } = await import("firebase/firestore");
+  return (await getCountFromServer(collection(db, USERS))).data().count;
+}
+
+/** How many members joined in a window. One read, whatever the answer is.
+ *
+ *  This is what the eight-week trend is built from: eight of these is eight reads, where
+ *  computing the same chart from the documents was one read per member. `end` is
+ *  exclusive so consecutive buckets cannot both claim a profile written on the boundary. */
+export async function countProfilesBetween(start: Date, end: Date): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, getCountFromServer, query, where } = await import("firebase/firestore");
+  return (
+    await getCountFromServer(
+      query(
+        collection(db, USERS),
+        where("created_at", ">=", start),
+        where("created_at", "<", end),
+      ),
+    )
+  ).data().count;
+}
+
+/** How many members gave a GitHub handle.
+ *
+ *  `> ""` rather than `!= null`, and the difference matters: an optional field is OMITTED
+ *  when not given rather than written empty (see saveProfile), and Firestore excludes
+ *  documents missing the field from any inequality. So this counts exactly the profiles
+ *  that have a non-empty handle, which is the question being asked. */
+export async function countProfilesWithGithub(): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, getCountFromServer, query, where } = await import("firebase/firestore");
+  return (
+    await getCountFromServer(query(collection(db, USERS), where("github", ">", "")))
+  ).data().count;
+}
+
+/** An opaque cursor. It is really a QueryDocumentSnapshot, and it is deliberately not
+ *  typed as one: callers pass it back and never look inside it, and threading Firestore's
+ *  types through the components is how a "no Firebase import outside lib/" rule dies. */
+export type Cursor = unknown;
+
+export type ProfilePage = {
+  rows: Profile[];
+  /** null when there is nothing after this page. */
+  cursor: Cursor | null;
+  /** False when the last page has been reached, so the caller can hide "Load more"
+   *  rather than offering a button that returns nothing. */
+  more: boolean;
+};
+
+/** One page of members, newest first.
+ *
+ *  THE CURSOR IS A SNAPSHOT, NOT A TIMESTAMP. `startAfter(lastCreatedAt)` looks simpler
+ *  and silently skips rows whenever two profiles share a created_at — which happens
+ *  whenever two people finish the form in the same second, i.e. exactly during a
+ *  build day. A snapshot cursor is positional and cannot tie. */
+export async function readProfilePage(
+  pageSize = 25,
+  cursor: Cursor | null = null,
+): Promise<ProfilePage> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, getDocs, limit, orderBy, query, startAfter } = await import(
+    "firebase/firestore"
+  );
+  // Ordered newest first. Members who predate created_at would be dropped by this
+  // orderBy, which is acceptable only because the field has existed since the first
+  // profile ever written — there are no such rows.
+  //
+  // One extra row is fetched and then discarded: it is how you know whether a next page
+  // exists without a second query, and it costs one read rather than a round trip.
+  const parts = [collection(db, USERS), orderBy("created_at", "desc")] as const;
+  const q = cursor
+    ? query(...parts, startAfter(cursor as never), limit(pageSize + 1))
+    : query(...parts, limit(pageSize + 1));
+  const snap = await getDocs(q);
+
+  const more = snap.docs.length > pageSize;
+  const docs = more ? snap.docs.slice(0, pageSize) : snap.docs;
+  return {
+    rows: docs.map((d) => ({ ...(d.data() as Profile), uid: d.id })),
+    cursor: docs.length ? docs[docs.length - 1] : null,
+    more,
+  };
+}
+
+/** The profiles for a specific set of uids, in as few queries as possible.
+ *
+ *  WHY THIS EXISTS. The organisers' interest list is a join: one row per enrollment, but
+ *  the NAME on that row lives on the member's profile. Done naively that is either a
+ *  getDoc per row — 25 round trips for a page — or a full scan of the membership to build
+ *  a lookup, which is what it used to do and what costs one read per member.
+ *
+ *  `documentId() in [...]` fetches them in one query per chunk instead, and the reads are
+ *  exactly the documents wanted. THIRTY IS FIRESTORE'S LIMIT for an `in` clause, not a
+ *  round number picked here — a page of 25 fits in one query, and the chunking is for
+ *  callers that ask for more.
+ *
+ *  Missing uids are simply absent from the map. An enrollment whose member has no profile
+ *  is a real possibility (the rules do not couple the two collections) and the caller
+ *  renders it rather than dropping the row — an enrolment nobody can see is the worst
+ *  outcome here. */
+export async function readProfilesByIds(uids: string[]): Promise<Map<string, Profile>> {
+  const out = new Map<string, Profile>();
+  const wanted = [...new Set(uids)].filter(Boolean);
+  if (wanted.length === 0) return out;
+
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, documentId, getDocs, query, where } = await import("firebase/firestore");
+
+  const chunks: string[][] = [];
+  for (let i = 0; i < wanted.length; i += 30) chunks.push(wanted.slice(i, i + 30));
+
+  await Promise.all(
+    chunks.map(async (chunk) => {
+      const snap = await getDocs(
+        query(collection(db, USERS), where(documentId(), "in", chunk)),
+      );
+      for (const d of snap.docs) out.set(d.id, { ...(d.data() as Profile), uid: d.id });
+    }),
+  );
+  return out;
+}
+
+/** Every profile, in one go. One read per member.
+ *
+ *  NOT CALLED ON PAGE LOAD ANY MORE. It backs the breakdowns, the CSV export and
+ *  search-across-the-whole-club — all of which genuinely need every document — and the
+ *  dashboard states the cost before spending it. */
 export async function readAllProfiles(): Promise<Profile[]> {
   const db = await getDb();
   if (!db) throw new Error("Firebase is not configured");
   const { collection, getDocs, orderBy, query } = await import("firebase/firestore");
-  // Ordered newest first. Members who predate created_at would be dropped by this
-  // orderBy, which is acceptable only because the field has existed since the first
-  // profile ever written — there are no such rows.
   const snap = await getDocs(query(collection(db, USERS), orderBy("created_at", "desc")));
   return snap.docs.map((d) => ({ ...(d.data() as Profile), uid: d.id }));
 }

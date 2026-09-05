@@ -153,12 +153,30 @@ for (const url of [FS, AUTH]) await fetch(url, { method: "DELETE" }).catch(() =>
   }
 }
 
+/** Addresses the Auth emulator currently holds. The clearing block above uses the same
+ *  endpoint; this hoists it so settle() can ask whether a sign-in actually landed. */
+async function authAccounts() {
+  try {
+    const r = await fetch(
+      `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/${PROJECT}/accounts:query`,
+      { method: "POST", headers: OWNER, body: "{}" },
+    );
+    return ((await r.json())?.userInfo ?? []).map((u) => (u.email ?? "").toLowerCase());
+  } catch {
+    return [];
+  }
+}
+
 /** Sign in through the emulator's popup as a brand-new account. */
 async function signIn(pg, email, name) {
   const [pop] = await Promise.all([
     pg.waitForEvent("popup", { timeout: 30000 }),
     pg.getByRole("button", { name: /continue with google/i }).click(),
   ]);
+  const popErrs = [];
+  pop.on("console", (m) => { if (m.type() === "error") popErrs.push(m.text().slice(0, 160)); });
+  pop.on("pageerror", (e) => popErrs.push("pageerror: " + String(e).slice(0, 160)));
+  pop.__errs = popErrs;
   await pop.waitForLoadState("domcontentloaded");
   // A DOM CLICK, AND SCROLLED INTO VIEW FIRST. The emulator's picker lists every account
   // created earlier in the run, so by the time the organiser signs in "Add new account"
@@ -176,78 +194,105 @@ async function signIn(pg, email, name) {
   });
   if (!added) throw new Error("emulator picker: could not find 'Add new account'");
   await pop.waitForTimeout(700);
-  await pop.locator("#email-input").fill(email);
-  await pop.locator("#display-name-input").fill(name);
-  await settle(pop, email, () =>
-    pop.evaluate(() => {
-      const b = [...document.querySelectorAll("button")].find((n) =>
-        /sign in with google/i.test(n.innerText),
-      );
-      b?.click();
-      return Boolean(b);
-    }),
-  );
+  // pressSequentially rather than fill: real keystrokes fire an input event per character,
+  // which removes any question of whether Angular's model has caught up before the form is
+  // submitted. It costs milliseconds on a thirty-character address.
+  await pop.locator("#email-input").pressSequentially(email, { delay: 5 });
+  await pop.locator("#display-name-input").pressSequentially(name, { delay: 5 });
+  await pop.locator("#display-name-input").blur().catch(() => {});
+  await pop.waitForTimeout(400);
+  await settle(pop, email);
   await pg.waitForTimeout(2500);
 }
 
-/** Press the emulator's submit until the popup actually goes away.
+/** Get the emulator's sign-in form to actually submit, and fail loudly if it will not.
  *
- *  ONE CLICK IS NOT ENOUGH, and this is not paranoia. The emulator's form is Angular:
- *  Playwright's fill() updates the model, but a click dispatched in the same tick can
- *  land before the form is valid, and the button then does nothing at all — no error, no
- *  navigation, the form simply still sitting there. It failed about one run in three, and
- *  always on the third or later sign-in, which is what made it look like a problem with
- *  whoever was signing in rather than with the timing.
+ *  THE EMULATOR'S POPUP IS THE LEAST RELIABLE THING THIS SUITE TOUCHES, and it has now
+ *  cost three misdiagnosed runs, each at a different sign-in. What is actually going on:
+ *  the form is Angular, and a click dispatched in the same tick as the field fill can land
+ *  before the model has updated. The button is NOT disabled when this happens — that was
+ *  checked — so the click is delivered to a live control and the form simply does not
+ *  submit. No error, nothing in the console; the popup just sits there.
  *
- *  Retrying is safe: once the popup has gone, `isClosed()` is true and the loop stops, and
- *  a click on a form that already submitted has nothing to hit.
+ *  So rather than one way of pressing it, this tries three, rotating per attempt: a DOM
+ *  click (which survives the Material ripple overlay that swallows synthetic ones), a real
+ *  Playwright click (genuine pointer events, which the DOM click does not produce), and
+ *  Enter in the form (submits without needing the button at all).
+ *
+ *  Retrying is safe: once the popup has gone `isClosed()` is true and the loop stops, and
+ *  pressing a form that already submitted has nothing to hit.
  *
  *  It throws with what the popup was SHOWING rather than "never closed", because the
  *  latter sends you reading the wrong file — this suite's whole design principle. */
-async function settle(pop, email, press) {
+async function settle(pop, email) {
+  const strategies = [
+    () =>
+      pop.evaluate(() => {
+        const b = [...document.querySelectorAll("button")].find((n) =>
+          /sign in with google/i.test(n.innerText),
+        );
+        b?.click();
+        return Boolean(b);
+      }),
+    () =>
+      pop
+        .getByRole("button", { name: /sign in with google/i })
+        .click({ timeout: 3000, force: true })
+        .then(() => true),
+    () => pop.locator("#email-input").press("Enter").then(() => true),
+  ];
+
+  // THE POPUP CLOSING IS A SIDE EFFECT, NOT THE THING BEING WAITED FOR. What matters is
+  // whether the sign-in landed, and the Auth emulator can be asked that directly. Under
+  // load the account was being created a second or two after the press while the window
+  // sat there, so a close-only wait failed a run that had in fact succeeded — the state
+  // dump proved it: field filled, button enabled, no error, form simply still open.
+  //
+  // So each attempt races three outcomes: the window closes, the account appears, or the
+  // wait expires and the next press strategy is tried.
   for (let i = 0; i < 6; i++) {
     if (pop.isClosed()) return;
-    const found = await press().catch(() => false);
-    if (i === 0 && !found) throw new Error(`emulator popup: no submit control for ${email}`);
-    const closed = await pop
-      .waitForEvent("close", { timeout: 5000 })
-      .then(() => true)
-      .catch(() => false);
-    if (closed || pop.isClosed()) return;
+    const pressed = await strategies[i % strategies.length]().catch(() => false);
+    if (i === 0 && !pressed) throw new Error(`emulator popup: no submit control for ${email}`);
+
+    for (let waited = 0; waited < 8000; waited += 500) {
+      if (pop.isClosed()) return;
+      if ((await authAccounts()).includes(email.toLowerCase())) {
+        // Landed. The window is cosmetic from here; close it so the next sign-in in this
+        // run does not inherit a stray popup.
+        await pop.close().catch(() => {});
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
-  const where = pop.url();
-  const what = await pop.evaluate(() => document.body.innerText.slice(0, 200)).catch(() => "?");
+
+  // WHAT THE FORM ACTUALLY THINKS, not just what it looks like. "Never closed" sent me
+  // reading the click strategies three times when the question was whether the field had
+  // a value in it at all.
+  const state = await pop
+    .evaluate(() => {
+      const b = [...document.querySelectorAll("button")].find((n) =>
+        /sign in with google/i.test(n.innerText),
+      );
+      const inputs = [...document.querySelectorAll("input")].map(
+        (i) => `${i.id || i.name || i.type}="${i.value}"`,
+      );
+      return {
+        button: b ? `disabled=${b.disabled}` : "NOT FOUND",
+        inputs: inputs.join(" "),
+        error: document.body.innerText.match(/error|invalid|required/i)?.[0] ?? "none",
+      };
+    })
+    .catch(() => ({ button: "?", inputs: "?", error: "?" }));
   throw new Error(
-    `emulator popup never closed for ${email}\n    at ${where}\n    showing: ${what.replace(/\n+/g, " / ")}`,
+    `emulator popup never closed for ${email}\n` +
+      `    popup console: ${(pop.__errs ?? []).slice(0, 3).join(" | ") || "no errors"}\n` +
+      `    button: ${state.button}\n` +
+      `    inputs: ${state.inputs}\n` +
+      `    error text: ${state.error}\n` +
+      `    at ${pop.url()}`,
   );
-}
-
-// THERE IS NO "SIGN IN AGAIN AS AN EXISTING ACCOUNT" HELPER, and that is a decision worth
-// recording because it looks like an omission.
-//
-// The member appears twice in this suite: once to join, and again later to enrol in
-// mentorship after an organiser has published a mentor. The obvious way to write that is
-// a second sign-in that picks the existing account out of the emulator's chooser. It does
-// not work reliably: the chooser renders each account as a nest of divs with the click
-// handler somewhere up the tree, and neither a Playwright click nor a dispatched one on
-// the leaf reliably selects a row — six attempts, still sitting on the picker.
-//
-// So the member's page is simply KEPT OPEN between the two blocks instead, which is both
-// more reliable and closer to what actually happens: a student does not sign in twice in
-// an afternoon, they come back to a tab that is still signed in.
-
-// WARM THE ROUTES UP BEFORE MEASURING ANYTHING. `next dev` compiles a route the first
-// time it is requested, and this suite is usually the first thing that has ever asked for
-// /onboarding or /dashboard — so the very first client-side redirect into one of them
-// took longer than the assertion waiting for it, and the run failed claiming sign-in had
-// not redirected. It had; the destination was still being built.
-//
-// The tell was that the same run passed on a second attempt with no code change, which is
-// the signature of a warm-up problem rather than a real one. Requesting each route once,
-// up front, moves that cost outside the measurements. It costs a second and it is the
-// difference between a suite you trust and one you re-run.
-for (const r of ["/", "/join", "/onboarding", "/dashboard", "/admin", "/privacy"]) {
-  await fetch(BASE + r).catch(() => {});
 }
 
 const browser = await chromium.launch();
@@ -263,6 +308,9 @@ const ADMIN_MAIL = "organiser@sst.scaler.com";
  *  helpers. The member joins, the organiser publishes a mentor, the member comes back to
  *  enrol, and the organiser looks at who picked whom: four blocks, two sessions. */
 let adminPg = null;
+/** The organiser signs in on its own browser process — see the note where it is created.
+ *  Hoisted so the teardown at the foot of the file can close it. */
+let adminBrowser = null;
 let memberPg = null;
 
 console.log("\nthe join flow, driven in a real browser\n");
@@ -291,41 +339,6 @@ console.log("-- a student signs up --");
       document.querySelector("#apply .rounded-panel").clientWidth,
     ]);
     ok("the sign-in button spans the card", bw / cw > 0.75, `${Math.round(bw)}px in ${cw}px`);
-  }
-
-  // THE WORKING STATE, ASSERTED MID-FLIGHT. It exists for about a second and it is the
-  // difference between a reader waiting and a reader clicking again — and clicking again
-  // is how you get auth/cancelled-popup-request, which then looks like a broken button.
-  {
-    const btn = pg.locator("#apply button.btn-primary");
-    const popping = pg.waitForEvent("popup", { timeout: 15000 });
-    await btn.click();
-    await pg.waitForTimeout(150);
-    ok("the button says what is happening while it happens",
-      /redirecting to google/i.test(await btn.innerText()));
-    // NOT "and cannot be pressed twice". It deliberately can: Firebase takes five to
-    // seven seconds to notice a closed popup, so a button disabled for the duration is
-    // a dead control at exactly the moment somebody wants to pick another account.
-    ok("and stays pressable, so a closed chooser is not a dead end",
-      !(await btn.isDisabled()));
-    ok("while still announcing itself as busy",
-      (await btn.getAttribute("aria-busy")) === "true");
-    ok("with a spinner, not only a label",
-      (await btn.locator("svg.animate-spin").count()) === 1);
-    // Closing the chooser must hand the card back. A `busy` that is set on click and
-    // only cleared on success leaves the one control on the page disabled forever, and
-    // the reader's only way out is a reload.
-    const pop = await popping.catch(() => null);
-    await pop?.close();
-    await pg.waitForTimeout(1200);
-    ok("and pressing it again reopens the chooser rather than doing nothing",
-      await (async () => {
-        const again = pg.waitForEvent("popup", { timeout: 12000 });
-        await btn.click();
-        const p2 = await again.catch(() => null);
-        await p2?.close();
-        return Boolean(p2);
-      })());
   }
 
   // The three links in the card's footer. Google will not publish an OAuth consent
@@ -523,7 +536,13 @@ console.log("\n-- an organiser opens the dashboard --");
     body: JSON.stringify({ fields: { added_by: { stringValue: "console" } } }),
   });
 
-  const pg = await (await browser.newContext({ viewport: { width: 1440, height: 1800 } })).newPage();
+  // A FRESH BROWSER, not just a fresh context. The emulator's popup handler becomes
+  // unresponsive after a couple of successful sign-ins in one browser — the form fills,
+  // the button is enabled, the clicks land, no console error appears, and the account is
+  // simply never created. Contexts are already isolated and did not help; a new browser
+  // process does.
+  adminBrowser = await chromium.launch();
+  const pg = await (await adminBrowser.newContext({ viewport: { width: 1440, height: 1800 } })).newPage();
   // Held open: the member enrols in the next block, and this same page is then refreshed
   // to check the interest list. Closed at the very end.
   adminPg = pg;
@@ -544,11 +563,20 @@ console.log("\n-- an organiser opens the dashboard --");
   await pg.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(4000);
   // innerText is the RENDERED text and .label uppercases via CSS, so compare lowercased.
-  const t = (await pg.locator("main").innerText()).toLowerCase();
+  let t = (await pg.locator("main").innerText()).toLowerCase();
   ok("the dashboard renders for an admin", !t.includes("not for you"));
   ok("it counts the membership", /registered members\s*1\b/.test(t), t.match(/registered members\s*\d+/)?.[0] ?? "");
+  // THE BREAKDOWNS ARE BEHIND A PRESS NOW, and asserting that is the point: they are the
+  // only figures on the page that cannot be counted in the database, because batch and
+  // branch are read out of the address rather than stored. Reading every member to draw
+  // them on every load is what used to exhaust the daily quota.
   const heads = ["by batch", "by year", "by branch", "by hostel", "by route in"];
-  ok("all five breakdowns render", heads.every((h) => t.includes(h)));
+  ok("the breakdowns are not drawn until asked for", !heads.every((h) => t.includes(h)));
+  await pg.getByRole("button", { name: /load all \d+ members/i }).first().click();
+  await pg.waitForTimeout(3000);
+  t = (await pg.locator("main").innerText()).toLowerCase();
+  ok("and all five render once loaded", heads.every((h) => t.includes(h)),
+    heads.filter((h) => !t.includes(h)).join(", "));
   ok("the member is listed", t.includes(MEMBER_MAIL));
   // THE REPLACEMENT FOR THE TWO REGEXES. Batch, branch and year used to be guessed from a
   // free-text box, with an "Unparsed" bucket for whatever did not match. They are read
@@ -559,7 +587,10 @@ console.log("\n-- an organiser opens the dashboard --");
   await pg.getByLabel("Search members").fill("nobody");
   await pg.waitForTimeout(600);
   const filtered = (await pg.locator("main").innerText()).toLowerCase();
-  ok("search narrows the table", filtered.includes("no member matches"));
+  // After the full scan above, the table covers the whole club, so the empty state is the
+  // plain one. Before a scan it says "no LOADED member matches — load the rest", which is
+  // the honest version when search can only see the pages fetched so far.
+  ok("search narrows the table", /no (loaded )?member matches/.test(filtered), filtered.slice(-90));
   ok("but the counts do not move with the filter", /registered members\s*1\b/.test(filtered));
 
   await pg.getByLabel("Search members").fill("");
@@ -626,7 +657,7 @@ console.log("\n-- an organiser opens the dashboard --");
   await pg.getByLabel("Filter by hostel").selectOption("uniworld-1");
   await pg.waitForTimeout(500);
   ok("two filters combine rather than replace",
-    /no member matches/i.test(await pg.locator("main").innerText()));
+    /no (loaded )?member matches/i.test(await pg.locator("main").innerText()));
 
   await pg.getByRole("button", { name: /^clear 2$/i }).click();
   await pg.waitForTimeout(500);
@@ -805,12 +836,34 @@ console.log("\n-- the organiser sees who picked whom --");
   const pg = adminPg;
   await pg.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   await pg.waitForTimeout(4500);
-  const t = await pg.locator("main").innerText();
-  const lower = t.toLowerCase();
+  let t = await pg.locator("main").innerText();
+  let lower = t.toLowerCase();
 
-  ok("the interest list names the student", t.includes("Asha V Verma"));
-  ok("with the batch read from their address", /2023–27/.test(t));
-  ok("and both preferences", /priya nair/.test(lower) && /arjun rao/.test(lower));
+  // WHAT THE PAGE COSTS TO OPEN, asserted before anything is loaded. The counts and the
+  // demand charts come from aggregate queries — one read each, flat as the club grows —
+  // while the breakdowns and the interest list need every document and wait behind a
+  // press. This block used to read the whole membership on load; the assertion that it no
+  // longer does is the point of the change.
+  ok("the dashboard opens without reading every member",
+    /load all \d+ members/i.test(t), t.match(/Load all \d+ members/i)?.[0] ?? "no scan button");
+  ok("and without reading every enrolment", /load the interest list/i.test(t));
+  ok("the counts are live anyway, from aggregates",
+    /students enrolled\s*1\b/.test(lower), lower.match(/students enrolled\s*\d+/)?.[0] ?? "");
+  ok("and so is the demand per mentor", lower.includes("first preferences"));
+
+  // NOW load it. Three assertions below used to pass against the MEMBERS table at the top
+  // of the page — "Asha V Verma" and both mentor names appear there too — so they were
+  // green while the interest list rendered nothing at all. Scoping them to the panel's own
+  // table is what stops that recurring.
+  await pg.getByRole("button", { name: /load the interest list/i }).click();
+  await pg.waitForTimeout(4000);
+  t = await pg.locator("main").innerText();
+  lower = t.toLowerCase();
+
+  const panelText = await pg.locator("table").last().innerText();
+  ok("the interest list names the student", panelText.includes("Asha V Verma"), panelText.slice(0, 80));
+  ok("with the batch read from their address", /2023–27/.test(panelText));
+  ok("and both preferences", /priya nair/i.test(panelText) && /arjun rao/i.test(panelText));
   ok("the enrolled count is stated", /students enrolled\s*1\b/.test(lower), lower.match(/students enrolled\s*\d+/)?.[0] ?? "");
   ok("the published mentor count is stated", /mentors published\s*3\b/.test(lower), lower.match(/mentors published\s*\d+/)?.[0] ?? "");
   ok("first preferences are counted", lower.includes("first preferences"));
@@ -842,10 +895,77 @@ console.log("\n-- the organiser sees who picked whom --");
   await pg.close();
 }
 
+console.log("\n-- the sign-in button's working state --");
+// LAST, AND THAT PLACEMENT IS THE FIX. These assertions deliberately open a chooser and
+// abandon it, twice. That leaves the AUTH EMULATOR holding a pending handler session, and
+// the next signInWithPopup — in any context, in any page, even after a reload — is then
+// swallowed: the form fills, the button is enabled, no error appears, and the account is
+// never created. Reproduced in isolation, and a separate browser context does NOT fix it,
+// which is what proves the state is server-side rather than in the profile.
+//
+// So nothing that needs to sign in may run after this block. It measures a real behaviour
+// worth keeping — the button must stay pressable, because Firebase takes five to seven
+// seconds to notice a closed window and a disabled control there is a dead end — so it
+// moves rather than goes.
+//
+// WHETHER REAL GOOGLE BEHAVES THIS WAY IS UNVERIFIED from here. It maps onto a real path:
+// close the chooser twice, then sign in properly.
+{
+  // THE WORKING STATE, ASSERTED MID-FLIGHT. It exists for about a second and it is the
+  // difference between a reader waiting and a reader clicking again — and clicking again
+  // is how you get auth/cancelled-popup-request, which then looks like a broken button.
+  //
+  // IN ITS OWN BROWSER CONTEXT, and that is the fix for the worst flakiness in this file.
+  // These assertions deliberately open a chooser and abandon it, twice. signInWithPopup
+  // does not reject promptly when a window closes — five to seven seconds, measured — so
+  // the page is left holding a pending attempt, and the next call on the same context is
+  // swallowed without opening anything. One racy assertion was failing six later ones that
+  // had nothing wrong with them, and no amount of waiting fixed it reliably.
+  //
+  // A throwaway context cannot leak into the real sign-in below, because it is discarded.
+    const churn = await browser.newContext({ viewport: { width: 1440, height: 1600 } });
+    const cp = await churn.newPage();
+    await cp.goto(`${BASE}/join?path=program-track`, { waitUntil: "networkidle" });
+    await cp.waitForTimeout(1200);
+
+    const btn = cp.locator("#apply button.btn-primary");
+    const popping = cp.waitForEvent("popup", { timeout: 20000 });
+    await btn.click();
+    await cp.waitForTimeout(150);
+    ok("the button says what is happening while it happens",
+      /redirecting to google/i.test(await btn.innerText()));
+    // NOT "and cannot be pressed twice". It deliberately can: Firebase takes five to
+    // seven seconds to notice a closed popup, so a button disabled for the duration is
+    // a dead control at exactly the moment somebody wants to pick another account.
+    ok("and stays pressable, so a closed chooser is not a dead end", !(await btn.isDisabled()));
+    ok("while still announcing itself as busy", (await btn.getAttribute("aria-busy")) === "true");
+    ok("with a spinner, not only a label", (await btn.locator("svg.animate-spin").count()) === 1);
+
+    // Closing the chooser must hand the card back. A `busy` that is set on click and only
+    // cleared on success leaves the one control on the page disabled forever, and the
+    // reader's only way out is a reload.
+    const pop = await popping.catch(() => null);
+    await pop?.close();
+    // Wait for Firebase to actually notice, or the next click is cancelled rather than
+    // reopening — which is the behaviour under test, not a flake to paper over.
+    await cp.waitForTimeout(8000);
+    ok("and pressing it again reopens the chooser rather than doing nothing",
+      await (async () => {
+        const again = cp.waitForEvent("popup", { timeout: 20000 });
+        await btn.click();
+        const p2 = await again.catch(() => null);
+        await p2?.close();
+        return Boolean(p2);
+      })());
+
+    await churn.close();
+}
+
 ok("no CSP violations anywhere in the flow", csp.length === 0, csp.slice(0, 2).join(" | "));
 ok("no uncaught page errors", errs.length === 0, errs.slice(0, 2).join(" | "));
 
 await browser.close();
+await adminBrowser?.close().catch(() => {});
 console.log(
   fail === 0
     ? `\n  ${pass} passed. Sign-in, onboarding, the dashboard, mentor publishing and enrolment all work.\n`

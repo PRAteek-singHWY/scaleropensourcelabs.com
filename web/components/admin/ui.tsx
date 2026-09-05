@@ -99,7 +99,9 @@ export function Counts({
   rows,
   loading,
 }: {
-  rows: [string, number][];
+  /** A string value renders as-is — used for "—", the honest answer for a figure that
+   *  needs a full collection scan nobody has asked for yet. */
+  rows: [string, number | string][];
   loading?: boolean;
 }) {
   // LITERAL CLASS NAMES, not `sm:grid-cols-${n}`. Tailwind scans source text for whole

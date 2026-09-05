@@ -214,7 +214,53 @@ export async function withdrawEnrollment(uid: string): Promise<void> {
   await deleteDoc(doc(db, ENROLLMENTS, uid));
 }
 
-/** Every enrollment. Admins only — the rules refuse a list to anybody else. */
+/** How many members have enrolled, without reading them. One read, not one per member. */
+export async function countEnrollments(): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, getCountFromServer } = await import("firebase/firestore");
+  return (await getCountFromServer(collection(db, ENROLLMENTS))).data().count;
+}
+
+/** Demand per mentor, counted on the server.
+ *
+ *  THIS IS THE ONE THAT SCALES. `pickCounts` below does the same arithmetic over an array
+ *  the caller has already read — fine when the array is in memory for another reason, and
+ *  ruinous as a reason to read 500 enrollments on every dashboard load. Two aggregate
+ *  queries per mentor is 20 reads for ten mentors and stays 20 reads at ten thousand
+ *  members, because an aggregate is billed on the size of its result.
+ *
+ *  It is also what the delete guard needs: AdminMentors must know whether ANYBODY picked
+ *  a mentor before offering to delete them, and that is a count, not a list.
+ *
+ *  Every mentor is counted in parallel. Ten mentors is twenty round trips issued at once,
+ *  not twenty in sequence. */
+export async function countDemand(
+  mentorIds: string[],
+): Promise<Map<string, { first: number; second: number; total: number }>> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, getCountFromServer, query, where } = await import("firebase/firestore");
+  const col = collection(db, ENROLLMENTS);
+
+  const rows = await Promise.all(
+    mentorIds.map(async (id) => {
+      const [first, second] = await Promise.all([
+        getCountFromServer(query(col, where("mentor_1", "==", id))),
+        getCountFromServer(query(col, where("mentor_2", "==", id))),
+      ]);
+      const f = first.data().count;
+      const s = second.data().count;
+      return [id, { first: f, second: s, total: f + s }] as const;
+    }),
+  );
+  return new Map(rows);
+}
+
+/** Every enrollment, in one go. One read each.
+ *
+ *  NOT CALLED ON PAGE LOAD. The interest list pages through `readEnrollmentPage`; this
+ *  backs the CSV export and the batch breakdown, which need every row by definition. */
 export async function readAllEnrollments(): Promise<Enrollment[]> {
   const db = await getDb();
   if (!db) throw new Error("Firebase is not configured");
@@ -223,6 +269,32 @@ export async function readAllEnrollments(): Promise<Enrollment[]> {
     query(collection(db, ENROLLMENTS), orderBy("created_at", "desc")),
   );
   return snap.docs.map((d) => ({ ...(d.data() as Enrollment), uid: d.id }));
+}
+
+/** One page of enrollments, newest first. Same snapshot-cursor reasoning as
+ *  readProfilePage — see the note there about ties on created_at. */
+export async function readEnrollmentPage(
+  pageSize = 25,
+  cursor: unknown = null,
+): Promise<{ rows: Enrollment[]; cursor: unknown; more: boolean }> {
+  const db = await getDb();
+  if (!db) throw new Error("Firebase is not configured");
+  const { collection, getDocs, limit, orderBy, query, startAfter } = await import(
+    "firebase/firestore"
+  );
+  const parts = [collection(db, ENROLLMENTS), orderBy("created_at", "desc")] as const;
+  const q = cursor
+    ? query(...parts, startAfter(cursor as never), limit(pageSize + 1))
+    : query(...parts, limit(pageSize + 1));
+  const snap = await getDocs(q);
+
+  const more = snap.docs.length > pageSize;
+  const docs = more ? snap.docs.slice(0, pageSize) : snap.docs;
+  return {
+    rows: docs.map((d) => ({ ...(d.data() as Enrollment), uid: d.id })),
+    cursor: docs.length ? docs[docs.length - 1] : null,
+    more,
+  };
 }
 
 // ----------------------------------------------------------------------- shared

@@ -12,8 +12,13 @@
 // already recorded against them still renders their name. Deleting is only offered for a
 // mentor NOBODY HAS PICKED, because Firestore rules cannot express "no document in another
 // collection references this one" — that needs a query, and rules cannot query. So the
-// guard is here, where the enrollments are already in memory, and the button is replaced
-// by the reason rather than disabled with no explanation. Getting it wrong is cosmetic —
+// guard is here in the client, and the button is replaced by the reason rather than
+// disabled with no explanation.
+//
+// THE GUARD IS A COUNT, NOT A LIST, and that distinction is what made it affordable. It
+// used to be answered by reading every enrollment in the club and tallying; it is now two
+// aggregate queries per mentor, billed on the size of the answer rather than the size of
+// the collection. Same guard, and it costs the same at ten members as at ten thousand. Getting it wrong is cosmetic —
 // the interest list would show a truncated id where a name should be — but it is exactly
 // the kind of cosmetic wrong that nobody can explain six months later.
 //
@@ -22,17 +27,10 @@
 // asks for the thing that actually helps — what they work on and what they are useful
 // for — because "Priya is great" helps nobody choose between two people.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { field, labelOf } from "@/components/admin/ui";
 import { PROGRAMS } from "@/content/join";
-import {
-  deleteMentor,
-  pickCounts,
-  saveMentor,
-  type Enrollment,
-  type Mentor,
-  type MentorInput,
-} from "@/lib/mentorship";
+import { deleteMentor, saveMentor, type Mentor, type MentorInput } from "@/lib/mentorship";
 
 /** A blank mentor, for the add form. `gsoc` because that is the cohort the club runs;
  *  the select is there so a second programme needs no code change. */
@@ -205,21 +203,23 @@ function Editor({
 
 export default function AdminMentors({
   mentors,
-  enrollments,
+  demand,
   onChanged,
 }: {
   mentors: Mentor[] | null;
-  enrollments: Enrollment[] | null;
-  /** Re-reads both collections in the parent, so every panel sees the same data after a
-   *  write rather than each keeping its own idea of the list. */
+  /** Picks per mentor, COUNTED ON THE SERVER by countDemand rather than tallied from
+   *  every enrollment. This panel only ever needed the numbers — how many chose each
+   *  mentor, and whether anybody chose them at all — and reading five hundred documents
+   *  to learn "3" was the single most expensive thing on the page. */
+  demand: Map<string, { first: number; second: number; total: number }>;
+  /** Re-reads the counts in the parent, so every panel sees the same data after a write
+   *  rather than each keeping its own idea of the list. */
   onChanged: () => void;
 }) {
   /** "new" while adding, a mentor id while editing that one, null when neither. */
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  const counts = useMemo(() => pickCounts(enrollments ?? []), [enrollments]);
 
   async function save(input: MentorInput, id?: string) {
     setSaving(true);
@@ -301,7 +301,7 @@ export default function AdminMentors({
         )}
 
         {(mentors ?? []).map((m) => {
-          const c = counts.get(m.id) ?? { first: 0, second: 0, total: 0 };
+          const c = demand.get(m.id) ?? { first: 0, second: 0, total: 0 };
           const picked = c.total > 0;
 
           if (editing === m.id) {
