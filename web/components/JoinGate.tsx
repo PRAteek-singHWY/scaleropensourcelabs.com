@@ -70,6 +70,7 @@
 import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import DevLoginSlot from "@/components/dev/DevLoginSlot";
 import { useAuth } from "@/lib/auth";
 import { DOMAIN } from "@/lib/profile";
 import { LINKS } from "@/content/site";
@@ -385,6 +386,10 @@ function Gate() {
           </div>
         </div>
       </div>
+
+      {/* Renders nothing unless an emulator is configured, and is not in the bundle at all
+          when one is not. See components/dev/DevLoginSlot.tsx. */}
+      <DevLoginSlot />
 
       {/* NO "NO COLLEGE ACCOUNT?" FALLBACK, and this reverses a judgement I made a
           turn earlier. I added an organisers' email here on the reasoning that a closed

@@ -49,6 +49,10 @@ export default function AdminGate({ children }: { children: ReactNode }) {
             ? "You are signed in, but your address is not on the organisers list. If it should be, ask somebody who already has access to add you."
             : "Sign in with your college account first. If you are an organiser, this page will fill in."}
         </p>
+        {/* NO DEV LOGIN HERE, DELIBERATELY. It was on this refusal first — it is the one a
+            developer actually hits, signed in as the test member on /admin — and then it
+            moved to the shell, which renders on this route and every other signed-in one.
+            Two copies on the same screen is worse than the wrong one. */}
       </div>
     );
   }

@@ -25,6 +25,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon from "@/components/Icon";
 import ThemeToggle from "@/components/ThemeToggle";
+import DevLoginSlot from "@/components/dev/DevLoginSlot";
 import { useAuth } from "@/lib/auth";
 import { LINKS } from "@/content/site";
 
@@ -300,7 +301,18 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         )}
 
         <main id="main" className="min-w-0 flex-1 px-4 pb-14 pt-6 sm:px-6 sm:pt-8">
-          <div className="mx-auto max-w-[72rem]">{children}</div>
+          <div className="mx-auto max-w-[72rem]">
+            {children}
+            {/* THE DEV LOGIN LIVES ON THE SHELL, not on the cards that refuse you, and
+                that is the difference between a shortcut and a switch. Put on the sign-in
+                card alone it got you IN as somebody; here it is on all eleven signed-in
+                routes in every state, so swapping from the test member to the test
+                organiser and back is one click from wherever you already are rather than
+                sign out, /join, sign in.
+                Renders nothing unless an emulator is configured, and is not in the bundle
+                at all when one is not — see components/dev/DevLoginSlot.tsx. */}
+            <DevLoginSlot />
+          </div>
         </main>
       </div>
 

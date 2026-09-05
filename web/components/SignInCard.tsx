@@ -131,17 +131,12 @@ export default function SignInCard() {
           to show. If you are running the site locally, see <code>web/.env.example</code>.
           If you are seeing this on the live site, that is a bug — please tell us.
         </p>
-        {/* THE APPLICATION FORM STILL WORKS WITHOUT ANY OF THIS, and saying so is the
-            whole reason the two features were separated. A reader who arrived here trying
-            to join should not conclude the club is closed because the members' door is
-            unwired. */}
-        <p className="measure mt-4 text-body text-haze">
-          Applying does not need any of this, though —{" "}
-          <Link href="/join" className="link-u text-accent">
-            the application form
-          </Link>{" "}
-          asks for no account at all.
-        </p>
+        {/* NO "YOU CAN STILL APPLY" LINE, AND THAT IS A CORRECTION RATHER THAN AN OMISSION.
+            This card used to say the application form needed no account, which was true
+            while /join carried an anonymous form. It does not: joining IS signing in with a
+            college account now, so with sign-in unconfigured there is nothing a reader can
+            do here except tell somebody, which is what the button below is for. Pointing
+            them at /join would send them to a second copy of this same message. */}
         <a href={`mailto:${LINKS.email}`} className="btn btn-secondary mt-6">
           Email the organisers
         </a>
@@ -273,22 +268,19 @@ export default function SignInCard() {
               do not own, and so you have no password to invent or lose. We never see your
               password.
             </p>
-            {/* THE ONE SENTENCE THIS PANEL GAINED IN THE SPLIT, and it is the sentence
-                that makes the closed door defensible. While this card stood in front of
-                the application form, "no other address can register" also meant "nobody
-                else can even ask", which is a different and much harsher claim than the
-                club intends. Now it is only about the members' area, and pointing at the
-                open form is what keeps the restriction honest. */}
-            <p className="mt-3 text-[1.0625rem] leading-relaxed text-haze">
-              Not a member yet? You do not need an account to apply —{" "}
-              <Link href="/join" className="link-u text-accent">
-                the application form
-              </Link>{" "}
-              is open to anyone.
-            </p>
+            {/* THE "YOU CAN APPLY WITHOUT AN ACCOUNT" LINE IS GONE, and its absence is the
+                honest state rather than a loss. It was added when this card stood in front
+                of an anonymous application form, to keep "no other address can register"
+                from reading as "nobody else may even ask". There is no such form now —
+                joining is this button — so the sentence had become a link to a page that
+                would ask the reader for the very account it promised they did not need. */}
           </div>
         </div>
       </div>
+
+      {/* NO DEV LOGIN ON THIS CARD. It is rendered by the app shell instead, which wraps
+          every route this card appears on — including this signed-out state — so putting
+          one here too would show two of them. See components/dev/DevLoginSlot.tsx. */}
 
       {/* NO "NO COLLEGE ACCOUNT?" FALLBACK. A closed door invites a bell, but the door is
           the point here: an @sst.scaler.com address IS the membership test, so somebody
