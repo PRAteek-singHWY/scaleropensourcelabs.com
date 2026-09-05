@@ -75,7 +75,7 @@ export default function Nav() {
       >
         <Link
           href="/"
-          className="-my-3 inline-block shrink-0 py-3 text-sm font-extrabold tracking-tight text-ink transition-colors duration-200 ease-in-out hover:text-accent"
+          className="-my-[12px] inline-block shrink-0 py-[12px] text-sm font-extrabold tracking-tight text-ink transition-colors duration-200 ease-in-out hover:text-accent"
         >
           OSC
         </Link>
@@ -107,7 +107,7 @@ export default function Nav() {
                 <Link
                   href={p.href}
                   aria-current={current ? "page" : undefined}
-                  className={`nav-link -my-3 inline-block whitespace-nowrap py-3 ${
+                  className={`nav-link -my-[12px] inline-block whitespace-nowrap py-[12px] ${
                     current ? "!text-accent" : ""
                   }`}
                 >
@@ -135,7 +135,7 @@ export default function Nav() {
             href={LINKS.github}
             target="_blank"
             rel="noreferrer"
-            className="nav-link -my-3 hidden py-3 lg:inline-block"
+            className="nav-link -my-[12px] hidden py-[12px] lg:inline-block"
           >
             GitHub ↗
           </a>
@@ -185,7 +185,7 @@ export default function Nav() {
               every width. */}
           <Link
             href={DASHBOARD_HREF}
-            className="nav-link -my-3 hidden shrink-0 whitespace-nowrap py-3 sm:inline-block"
+            className="nav-link -my-[12px] hidden shrink-0 whitespace-nowrap py-[12px] sm:inline-block"
           >
             Sign in
           </Link>

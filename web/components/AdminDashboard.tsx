@@ -526,7 +526,7 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       {error && (
-        <p className="card rounded-panel bg-raise p-6 text-[0.9375rem] leading-relaxed text-ember" role="alert">
+        <p className="card rounded-panel bg-raise p-6 text-[1.0625rem] leading-relaxed text-ember" role="alert">
           {error}
         </p>
       )}
@@ -563,7 +563,7 @@ export default function AdminDashboard() {
             const peak = Math.max(1, ...stats.weeks.map(([, x]) => x));
             return (
               <div key={wk} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-                <span className="font-mono text-[0.8125rem] tabular-nums text-haze">{n || ""}</span>
+                <span className="font-mono text-[1rem] tabular-nums text-haze">{n || ""}</span>
                 {/* A minimum height on a zero week, so the axis reads as a row of weeks
                     rather than stopping wherever the data stopped. */}
                 <div
@@ -579,7 +579,7 @@ export default function AdminDashboard() {
           {stats.weeks.map(([wk], i) => (
             <span
               key={wk}
-              className="flex-1 text-center font-mono text-[0.6875rem] text-dust"
+              className="flex-1 text-center font-mono text-[0.9167rem] text-dust"
             >
               {/* Every other label only — eight dates side by side collide below about
                   700px and there is no room for rotation in a 6rem block. */}
@@ -639,7 +639,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <p className="text-[0.9375rem] leading-relaxed text-dust">
+      <p className="text-[1.0625rem] leading-relaxed text-dust">
         Batch, branch and year are read from each member&apos;s college address rather than
         asked for — <span className="font-mono text-haze">23bcs10045</span> is the 2023–27
         batch, branch BCS. An address that does not follow that pattern is counted as{" "}
@@ -770,7 +770,7 @@ export default function AdminDashboard() {
               value={emailList}
               onFocus={(e) => e.currentTarget.select()}
               rows={3}
-              className="w-full resize-y rounded-md border border-seam bg-sunk p-3 font-mono text-[0.8125rem] text-haze"
+              className="w-full resize-y rounded-md border border-seam bg-sunk p-3 font-mono text-[1rem] text-haze"
             />
             <button
               type="button"
@@ -856,7 +856,7 @@ export default function AdminDashboard() {
                           ? `Remove ${r.name || r.email} from the club`
                           : `Admit ${r.name || r.email} to the club`
                       }
-                      className={`tap rounded-full border px-3 py-1 text-[0.8125rem] transition-colors disabled:opacity-50 ${
+                      className={`tap rounded-full border px-3 py-1 text-[1rem] transition-colors disabled:opacity-50 ${
                         isClubMember(r)
                           ? "border-accent/60 text-accent hover:border-accent"
                           : "border-seam text-dust hover:border-accent/60 hover:text-accent"
@@ -865,10 +865,10 @@ export default function AdminDashboard() {
                       {saving === r.uid ? "Saving…" : isClubMember(r) ? "Member" : "Student"}
                     </button>
                   </td>
-                  <td className="py-3 pr-4 font-mono text-[0.8125rem] text-haze">{r.email}</td>
+                  <td className="py-3 pr-4 font-mono text-[1rem] text-haze">{r.email}</td>
                   <td className="whitespace-nowrap py-3 pr-4 text-sm text-haze">
                     {batchBucket(r.email)}
-                    <span className="block text-[0.8125rem] text-dust">{branchBucket(r.email)}</span>
+                    <span className="block text-[1rem] text-dust">{branchBucket(r.email)}</span>
                   </td>
                   <td className="whitespace-nowrap py-3 pr-4 text-sm text-haze">
                     {yearBucket(r.email)}
@@ -877,7 +877,7 @@ export default function AdminDashboard() {
                   <td className="py-3 pr-4 text-sm text-haze">
                     {r.path ? PATHS.find((p) => p.id === r.path)?.name ?? r.path : "—"}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-[0.8125rem] text-haze">
+                  <td className="py-3 pr-4 font-mono text-[1rem] text-haze">
                     {r.github ? (
                       <a
                         href={`https://github.com/${r.github}`}
@@ -891,7 +891,7 @@ export default function AdminDashboard() {
                       "—"
                     )}
                   </td>
-                  <td className="whitespace-nowrap py-3 pr-4 font-mono text-[0.8125rem] text-haze">
+                  <td className="whitespace-nowrap py-3 pr-4 font-mono text-[1rem] text-haze">
                     {fmtDate(r.created_at)}
                   </td>
                 </tr>
@@ -941,7 +941,7 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      <p className="text-[0.9375rem] leading-relaxed text-dust">
+      <p className="text-[1.0625rem] leading-relaxed text-dust">
         This is every member&apos;s own words about themselves, including their college
         address. Treat the export the way you would a class list: it does not go in a
         group chat, and it is not published on the site.

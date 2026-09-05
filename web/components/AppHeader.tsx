@@ -87,7 +87,7 @@ export default function AppHeader() {
                   {name}
                 </span>
                 {batch && (
-                  <span className="block font-mono text-[0.6875rem] uppercase tracking-wider text-dust">
+                  <span className="block font-mono text-[0.9167rem] uppercase tracking-wider text-dust">
                     {batch.label} · {batch.branch}
                   </span>
                 )}

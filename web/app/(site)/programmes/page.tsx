@@ -91,7 +91,7 @@ function ProgrammeField({ p }: { p: ProgrammeInfo }) {
           {/* The tier, stated in words as well as carried by the colour. The
               colour is never the only signal. */}
           <p
-            className={`mt-4 inline-block rounded-md border px-2.5 py-1 font-mono text-[0.8125rem] uppercase tracking-[0.14em] ${
+            className={`mt-4 inline-block rounded-md border px-2.5 py-1 font-mono text-[1rem] uppercase tracking-[0.14em] ${
               paid
                 ? "border-accent/40 text-accent"
                 : "border-seam text-haze"
@@ -434,7 +434,7 @@ export default function Programmes() {
               <thead>
                 <tr className="border-b border-seam">
                   {["Window", "Programme", "Opens", "Start prepping", "What you do first"].map((h) => (
-                    <th key={h} scope="col" className="px-3 py-3 text-left font-mono text-[0.8125rem] font-medium uppercase tracking-[0.14em] text-dust">
+                    <th key={h} scope="col" className="px-3 py-3 text-left font-mono text-[1rem] font-medium uppercase tracking-[0.14em] text-dust">
                       {h}
                     </th>
                   ))}
@@ -560,13 +560,13 @@ export default function Programmes() {
                       // as too small to read on a phone, and it flags every line of
                       // these preview frames. Same fix already applied to the bento
                       // frames further up this file.
-                      className="ml-1.5 font-mono text-[0.8125rem]"
+                      className="ml-1.5 font-mono text-[1rem]"
                       style={{ color: "#94A3B8" }}
                     >
                       {track.preview.title}
                     </span>
                   </div>
-                  <div className="space-y-1 p-3 font-mono text-[0.8125rem] leading-relaxed">
+                  <div className="space-y-1 p-3 font-mono text-[1rem] leading-relaxed">
                     {track.preview.lines.map((l) => (
                       <p
                         key={l.text}

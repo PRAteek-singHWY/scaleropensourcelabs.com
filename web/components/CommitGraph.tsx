@@ -145,7 +145,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
         data-reveal-group
       >
         <li>
-          <p className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-dust">
+          <p className="font-mono text-[1rem] uppercase tracking-[0.16em] text-dust">
             The grey line
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">
@@ -154,7 +154,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
           </p>
         </li>
         <li>
-          <p className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-accent">
+          <p className="font-mono text-[1rem] uppercase tracking-[0.16em] text-accent">
             The blue line
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">
@@ -163,7 +163,7 @@ export default function CommitGraph({ className = "" }: { className?: string }) 
           </p>
         </li>
         <li>
-          <p className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-accent">
+          <p className="font-mono text-[1rem] uppercase tracking-[0.16em] text-accent">
             The filled dot
           </p>
           <p className="mt-2 text-sm leading-relaxed text-haze">

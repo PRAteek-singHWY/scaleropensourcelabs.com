@@ -369,7 +369,7 @@ export default function Roster() {
         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
           <p className="label">On the roster</p>
           {rows !== null && (
-            <p className="font-mono text-[0.8125rem] text-dust">
+            <p className="font-mono text-[1rem] text-dust">
               {actives} active · {owners} {owners === 1 ? "owner" : "owners"}
             </p>
           )}
@@ -407,7 +407,7 @@ export default function Roster() {
                       {r.name || r.email}
                       {r.title && <span className="text-haze"> · {r.title}</span>}
                     </p>
-                    <p className="mt-1 break-all font-mono text-[0.75rem] text-dust">
+                    <p className="mt-1 break-all font-mono text-[0.9583rem] text-dust">
                       {r.email}
                       {r.added_at ? ` · added ${fmtDate(r.added_at)}` : ""}
                     </p>

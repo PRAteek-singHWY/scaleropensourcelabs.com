@@ -109,7 +109,7 @@ export default function NumbersStrip() {
             <CountUp className="stat-figure" value={String(m.value)} />
           </dd>
           <dt className="mt-4 text-body font-medium text-ink">{m.label}</dt>
-          <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-dust">{m.note}</p>
+          <p className="mt-1.5 text-[1rem] leading-relaxed text-dust">{m.note}</p>
         </div>
       ))}
     </dl>

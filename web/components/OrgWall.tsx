@@ -69,7 +69,7 @@ export default function OrgWall() {
                     {o.name}
                   </span>
                   {o.region && (
-                    <span className="mt-1.5 text-[0.8125rem] text-dust">{o.region}</span>
+                    <span className="mt-1.5 text-[1rem] text-dust">{o.region}</span>
                   )}
                   {/* Attributed to a person, not to the institution. "OSC
                       contributed to OWASP" would be a claim about a club; "Prateek

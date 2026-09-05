@@ -146,11 +146,11 @@ export default function Console() {
             // A real input rather than a keydown listener on the document: it can
             // be tapped on a phone, it raises a keyboard, and it does not fight
             // the rest of the page for keystrokes.
-            // min-h-10 clears the 40px touch floor. A bare inline input in a
+            // min-h-[40px] clears the 40px touch floor. A bare inline input in a
             // mono row is 20px tall, which is a fine mouse target and half of a
             // usable one on a phone — the height is invisible here because the
             // background is transparent, so it costs nothing to make it tappable.
-            className="min-h-10 min-w-0 flex-1 bg-transparent outline-none placeholder:text-[#64748B]"
+            className="min-h-[40px] min-w-0 flex-1 bg-transparent outline-none placeholder:text-[#64748B]"
             style={{ color: "#E2E8F0", caretColor: "#4ADE80" }}
             placeholder="help"
           />

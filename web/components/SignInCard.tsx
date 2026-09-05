@@ -211,13 +211,13 @@ export default function SignInCard() {
 
       {error && (
         <div className="mt-5" role="alert">
-          <p className="text-[0.9375rem] leading-relaxed text-ember">{error}</p>
+          <p className="text-[1.0625rem] leading-relaxed text-ember">{error}</p>
           {/* A REFUSAL USED TO BE A DEAD END. Somebody signed into a personal Gmail on a
               shared laptop was told their address was wrong and left looking at the same
               button, with no hint that the fix is to pick another account. The button
               above now says so, and this line names what to look for. */}
           {wrongAccount && (
-            <p className="mt-2 text-[0.9375rem] leading-relaxed text-dust">
+            <p className="mt-2 text-[1.0625rem] leading-relaxed text-dust">
               You signed in as{" "}
               <span className="font-mono text-haze">{wrongAccount}</span>. Press the button
               again and pick your college account from the list — Google will ask which one
@@ -232,7 +232,7 @@ export default function SignInCard() {
       <div className="mt-8 flex items-center gap-3" aria-hidden>
         <span className="h-px flex-1 bg-seam" />
         <span
-          className={`${PLATE} rounded-full bg-pop px-3 py-1 font-mono text-[0.8125rem] font-bold uppercase tracking-wider text-black`}
+          className={`${PLATE} rounded-full bg-pop px-3 py-1 font-mono text-[1rem] font-bold uppercase tracking-wider text-black`}
         >
           @{DOMAIN}
         </span>
@@ -263,12 +263,12 @@ export default function SignInCard() {
                 it was the only one on the route. The visual weight is carried by the
                 classes, not the tag, so nothing on screen changes. */}
             <h2 className="font-semibold text-ink">Who can sign in</h2>
-            <p className="mt-2 text-[0.9375rem] leading-relaxed text-haze">
+            <p className="mt-2 text-[1.0625rem] leading-relaxed text-haze">
               Students with an <strong className="text-ink">@{DOMAIN}</strong> address. No
               other address can register, and that is the whole check — no fee, no
               interview, no prior experience.
             </p>
-            <p className="mt-3 text-[0.9375rem] leading-relaxed text-haze">
+            <p className="mt-3 text-[1.0625rem] leading-relaxed text-haze">
               We use Google rather than a password so nobody can register an address they
               do not own, and so you have no password to invent or lose. We never see your
               password.
@@ -279,7 +279,7 @@ export default function SignInCard() {
                 else can even ask", which is a different and much harsher claim than the
                 club intends. Now it is only about the members' area, and pointing at the
                 open form is what keeps the restriction honest. */}
-            <p className="mt-3 text-[0.9375rem] leading-relaxed text-haze">
+            <p className="mt-3 text-[1.0625rem] leading-relaxed text-haze">
               Not a member yet? You do not need an account to apply —{" "}
               <Link href="/join" className="link-u text-accent">
                 the application form
@@ -313,7 +313,7 @@ export default function SignInCard() {
             is a rule, and a rule drawn as text has to meet a text contrast bar it was never
             trying to meet. Drawn as a 1px border it is a rule, the checker treats it as
             one, and it looks the same. */}
-        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[0.9375rem]">
+        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[1.0625rem]">
           <Link href="/privacy#what-we-store" className="tap link-u text-haze">
             Privacy
           </Link>
@@ -329,7 +329,7 @@ export default function SignInCard() {
         {/* The club, not the university. The club runs this site and owns what is on it;
             SST is where its members study, and signing their name to a student project
             would be claiming an endorsement nobody gave. */}
-        <p className="mt-3 text-[0.8125rem] text-dust">
+        <p className="mt-3 text-[1rem] text-dust">
           © {new Date().getFullYear()} Scaler Open Source Club, a student club at Scaler
           School of Technology.
         </p>

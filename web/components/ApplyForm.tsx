@@ -97,7 +97,7 @@ function deadlineLabel(): string | null {
 // and it is ADDITIVE to the border recolour rather than a replacement, so the affordance
 // survives a forced-colours mode that flattens shadows.
 const field =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
+  "w-full rounded-md border border-seam bg-sunk min-h-[44px] px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
 
 /** The fields, split out for one mechanical reason: `useSearchParams` needs a Suspense
  *  boundary or `next build` refuses to prerender this route — at BUILD time rather than
@@ -282,7 +282,7 @@ function Fields() {
           {PROGRAMS.map((p, i) => (
             <label
               key={p.value}
-              className="flex cursor-pointer items-center gap-2.5 rounded-md border border-seam bg-sunk px-3.5 py-2.5 transition hover:border-accent/50"
+              className="flex cursor-pointer items-center gap-2.5 rounded-md border border-seam bg-sunk min-h-[44px] px-3.5 py-2.5 transition hover:border-accent/50"
             >
               <input
                 // Only the first box needs the ref: the message belongs to the group and
@@ -430,7 +430,7 @@ export default function ApplyForm() {
         </Suspense>
 
         {deadline && (
-          <p className="text-[0.9375rem] font-medium text-ember">
+          <p className="text-[1.0625rem] font-medium text-ember">
             Applications for this cohort close {deadline}.
           </p>
         )}
@@ -444,7 +444,7 @@ export default function ApplyForm() {
         </button>
 
         {state === "error" && (
-          <p className="text-[0.9375rem] leading-relaxed text-ember" role="alert">
+          <p className="text-[1.0625rem] leading-relaxed text-ember" role="alert">
             {message}{" "}
             <a href={`mailto:${LINKS.email}`} className="underline">
               {LINKS.email}
@@ -456,13 +456,13 @@ export default function ApplyForm() {
             than in a policy page nobody opens. A form that quietly began keeping names,
             emails and hostels without saying so would be the exact behaviour this site
             criticises elsewhere, and it is the applicant's information, not ours. */}
-        <p className="border-t border-seam pt-5 text-[0.9375rem] leading-relaxed text-dust">
+        <p className="border-t border-seam pt-5 text-[1.0625rem] leading-relaxed text-dust">
           What we do with this: your answers go to the club organisers and nowhere else.
           Nothing here is published on the site — the names on it are only there because
           those people were asked and said yes.
         </p>
 
-        <p className="text-[0.9375rem] leading-relaxed text-dust">
+        <p className="text-[1.0625rem] leading-relaxed text-dust">
           Not ready to apply? Turn up to a build day instead — no signup, no form, and
           nobody will ask whether you have contributed before.
         </p>

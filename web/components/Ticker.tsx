@@ -175,11 +175,11 @@ export default function Ticker() {
           // A single 32px button would have been a real defect rather than a
           // reported one — this is the only way to stop the marquee, so it is the
           // last control on the page that should be hard to hit.
-          className="group absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center"
+          className="group absolute right-1 top-1/2 flex h-[44px] w-[44px] -translate-y-1/2 items-center justify-center"
         >
           <span
             aria-hidden
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-seam bg-raise text-[0.8125rem] leading-none text-haze transition-colors duration-200 group-hover:border-accent/60 group-hover:text-accent"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-seam bg-raise text-[1rem] leading-none text-haze transition-colors duration-200 group-hover:border-accent/60 group-hover:text-accent"
           >
             {paused ? "▶" : "❚❚"}
           </span>

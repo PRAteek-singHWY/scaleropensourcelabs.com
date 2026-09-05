@@ -118,7 +118,7 @@ export default function ProofPanel() {
         </div>
       </div>
 
-      <figcaption className="border-t border-seam px-8 py-4 text-[0.9375rem] text-dust sm:px-12">
+      <figcaption className="border-t border-seam px-8 py-4 text-[1.0625rem] text-dust sm:px-12">
         {lead.what} Counted from the public repository — open the link and check.
       </figcaption>
     </figure>

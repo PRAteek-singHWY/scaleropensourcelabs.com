@@ -527,7 +527,7 @@ body::before {
    blocks would be a fairground. */
 .label {
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
+  font-size: 1.0417rem;
   /* Stated, not inherited from the face — see the type note above. */
   font-weight: 600;
   letter-spacing: 0.07em;
@@ -676,7 +676,7 @@ body::before {
      everything beside it. The plate had room at 14px with the nav well short of its
      wrap point; 16px spends most of that margin, so the sm breakpoint is worth a look
      if a seventh link is ever added. */
-  font-size: 0.875rem;
+  font-size: 1.0417rem;
   font-weight: 500;
   letter-spacing: -0.005em;
   transition: color 180ms ease-in-out;
@@ -737,7 +737,7 @@ body::before {
   background: rgb(var(--accent));
   color: rgb(var(--bg));
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.9583rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1436,7 +1436,7 @@ body::before {
   background: rgb(var(--accent));
   color: rgb(var(--bg));
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.8125rem;
+  font-size: 1rem;
   font-weight: 800;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
@@ -1556,7 +1556,7 @@ body::before {
   background: var(--tint-soft);
   color: var(--tint-ink);
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
+  font-size: 1.0417rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
@@ -1580,7 +1580,7 @@ body::before {
      beside it, it has lowercase to be short of, and at 12px Plus Jakarta Sans's
      x-height put it below anything else readable here. The caps-bearing pills stay
      at 0.75rem for the reason given in tailwind.config.ts. */
-  font-size: 0.8125rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.2;
@@ -1887,7 +1887,7 @@ body::before {
   border: 2px solid #000000;
   box-shadow: 3px 3px 0 0 #000000;
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.9583rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -1999,7 +1999,7 @@ body::before {
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.8125rem;
+  font-size: 1rem;
   font-weight: 500;
   line-height: 1.35;
   letter-spacing: 0;
@@ -2074,7 +2074,7 @@ body::before {
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.9583rem;
   font-weight: 500;
   /* The captions above are uppercase and tracked out; this is prose, so it resets
      both — otherwise it inherits the chart's caption feel and reads as another
@@ -2251,7 +2251,7 @@ body::before {
 .person-tip-batch {
   margin-bottom: 0.35rem;
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.6875rem;
+  font-size: 0.9167rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -2307,7 +2307,7 @@ body::before {
   margin: 0.5rem 0 0;
   padding: 0;
   list-style: none;
-  font-size: 0.75rem;
+  font-size: 0.9583rem;
   line-height: 1.5;
   color: rgb(var(--haze));
 }
@@ -2345,7 +2345,7 @@ body::before {
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: 0.9167rem;
   line-height: 1.4;
   opacity: 0;
   transform: translateY(6px);
@@ -2415,7 +2415,7 @@ body::before {
      place on the page where this control comes near a wrap point rather than sitting
      in open space, is being returned to a width that was known to hold one line at
      390px rather than moved somewhere new. */
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2485,7 +2485,7 @@ body::before {
 .btn-compact {
   min-height: 44px;
   padding: 0 16px;
-  font-size: 0.8125rem;
+  font-size: 1rem;
 }
 
 /* The electric-blue indicator on the secondary CTA. A right-aligned bolt in a
@@ -2503,7 +2503,7 @@ body::before {
   border-radius: 5px;
   background: rgb(var(--accent));
   color: rgb(var(--bg));
-  font-size: 0.75rem;
+  font-size: 0.9583rem;
   line-height: 1;
 }
 
@@ -2873,7 +2873,7 @@ body::before {
      exempt from the +2px pass — see the note in tailwind.config.ts for why a uniform
      instruction overrides a per-face one. That pass is reversed and this comes back
      with it, still clear of the 11px floor the QA sweep enforces. */
-  font-size: 0.875rem;
+  font-size: 1.0417rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2885,7 +2885,7 @@ body::before {
   /* --sky rather than --accent: this is a decorative glyph at display weight, not
      a 13px link, so it takes the brighter step. */
   color: rgb(var(--sky));
-  font-size: 0.75rem;
+  font-size: 0.9583rem;
 }
 
 /* Scrolls, but without a bar drawn through the nav's bottom hairline. */

@@ -150,15 +150,15 @@ const config: Config = {
         // it has come down: optical sizing moves in fractions of an em across a 2px
         // step, and re-measuring one step of a scale that was taken from a single
         // source is how the halves of it start disagreeing.
-        "body": ["1.0625rem", { lineHeight: "1.72", letterSpacing: "0.009em" }],
-        "label": ["0.6875rem", { lineHeight: "1.3", letterSpacing: "0.18em" }],
+        "body": ["1.125rem", { lineHeight: "1.72", letterSpacing: "0.009em" }],
+        "label": ["0.9167rem", { lineHeight: "1.3", letterSpacing: "0.18em" }],
         // Tailwind's own `sm`, overridden rather than left at its 0.875rem/1.25rem
         // default. 17 of its 22 uses here are sans — card body copy, form help text,
         // the FAQ answers — so it has the same short-lowercase problem as `body` and
         // needs the same correction. The lineHeight has to be restated: Tailwind's
         // default pairs a FIXED 1.25rem with this step, which at the new size would
         // compute to 1.33 and come out tighter than the value it replaced.
-        "sm": ["0.9375rem", { lineHeight: "1.6" }],
+        "sm": ["1.0625rem", { lineHeight: "1.6" }],
         // `xs` is back at Tailwind's own 0.75rem and stays STATED rather than deleted,
         // which is not redundancy. The size is only half of what this step declares:
         // the leading is a RATIO here, where Tailwind's default pairs a fixed 1rem
@@ -166,7 +166,7 @@ const config: Config = {
         // it is what keeps the step from silently retightening if the size ever moves
         // again — which is precisely what the +2px pass would have done to it, since
         // 1rem on a 14px glyph is 1.14 and that is a 12px step's leading.
-        "xs": ["0.75rem", { lineHeight: "1.3333" }],
+        "xs": ["0.9583rem", { lineHeight: "1.3333" }],
       },
       // -0.015em is Apple's 80px value exactly, so it belongs on display-xl only.
       letterSpacing: { tightest: "-0.015em" },

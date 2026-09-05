@@ -95,7 +95,7 @@ export default function PRTimeline({ className = "" }: { className?: string }) {
               </div>
 
               <div className={last ? "pb-0" : "pb-8"}>
-                <h3 className="font-mono text-[0.8125rem] font-medium uppercase tracking-[0.1em] text-ink">
+                <h3 className="font-mono text-[1rem] font-medium uppercase tracking-[0.1em] text-ink">
                   {s.label}
                 </h3>
                 <p className="measure mt-2.5 text-body text-haze">{s.body}</p>
@@ -105,7 +105,7 @@ export default function PRTimeline({ className = "" }: { className?: string }) {
         })}
       </ol>
 
-      <figcaption className="mt-8 border-t border-seam pt-5 text-[0.8125rem] leading-relaxed text-dust">
+      <figcaption className="mt-8 border-t border-seam pt-5 text-[1rem] leading-relaxed text-dust">
         This is the whole loop. Every open-source contribution anybody has ever made
         went through these five steps, including the ones by people whose names are
         on the projects.

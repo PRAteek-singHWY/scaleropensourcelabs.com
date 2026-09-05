@@ -396,7 +396,7 @@ export default function HowToJoin() {
                       // 11px, not 10: the QA sweep flags anything under 11px as
                       // too small to read on a phone, and a decorative glyph is
                       // not a reason to make an exception nobody can see.
-                      className="mt-0.5 flex h-[1.15rem] w-[1.15rem] shrink-0 items-center justify-center rounded-full border border-haze/40 text-[0.8125rem] leading-none text-haze"
+                      className="mt-0.5 flex h-[1.15rem] w-[1.15rem] shrink-0 items-center justify-center rounded-full border border-haze/40 text-[1rem] leading-none text-haze"
                     >
                       ✕
                     </span>
@@ -635,7 +635,7 @@ export default function HowToJoin() {
                   // small to read on a phone, and a decorative frame is no reason
                   // to make an exception. The comment strings were shortened to
                   // suit, rather than the frame widened into the sentence.
-                  className="hidden w-44 shrink-0 self-start overflow-hidden rounded-xl border border-white/10 p-3 font-mono text-[0.8125rem] leading-relaxed lg:block"
+                  className="hidden w-44 shrink-0 self-start overflow-hidden rounded-xl border border-white/10 p-3 font-mono text-[1rem] leading-relaxed lg:block"
                   style={{ background: "#0F172A" }}
                 >
                   <p style={{ color: "#4ADE80" }}>

@@ -51,7 +51,7 @@ function Stat({
 }) {
   return (
     <div className="card rounded-panel bg-raise px-5 py-4">
-      <p className="font-mono text-[0.6875rem] font-medium uppercase leading-tight tracking-[0.12em] text-haze">
+      <p className="font-mono text-[0.9167rem] font-medium uppercase leading-tight tracking-[0.12em] text-haze">
         {label}
       </p>
       <p className="mt-2 flex flex-wrap items-baseline gap-x-2">
@@ -155,7 +155,7 @@ export default function MemberDashboard() {
 
       {loadError && (
         <p
-          className="card rounded-panel bg-raise p-6 text-[0.9375rem] leading-relaxed text-ember"
+          className="card rounded-panel bg-raise p-6 text-[1.0625rem] leading-relaxed text-ember"
           role="alert"
         >
           {loadError}

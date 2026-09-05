@@ -13,13 +13,13 @@ import type { ReactNode } from "react";
 /** One string for every filter control across the panels, so a dozen selects and inputs
  *  cannot drift apart a class at a time. */
 export const ctl =
-  "rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
+  "rounded-md border border-seam bg-sunk min-h-[44px] px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
 
 /** Same, for the fields in the mentor editor. Matches the `field` const in
  *  ProfileForm.tsx — the focus halo is the 3px accent ring at 18% that `.card` wears on
  *  hover, so a focused field anywhere on the site is the same object. */
 export const field =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
+  "w-full rounded-md border border-seam bg-sunk min-h-[44px] px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
 
 /** Code -> label against one of the content arrays, falling back to the raw code so a
  *  value that drifted out of the list is visible rather than blank. */
@@ -84,7 +84,7 @@ export function Bars({
           </li>
         ))}
       </ul>
-      {footnote && <p className="mt-4 text-[0.8125rem] leading-relaxed text-dust">{footnote}</p>}
+      {footnote && <p className="mt-4 text-[1rem] leading-relaxed text-dust">{footnote}</p>}
     </div>
   );
 }

@@ -96,7 +96,7 @@ function Sources({ cell }: { cell: Cell }) {
           href={s.url}
           target="_blank"
           rel="noreferrer"
-          className="py-3.5 font-mono text-xs text-accent link-u hover:brightness-125"
+          className="py-[14px] font-mono text-xs text-accent link-u hover:brightness-125"
         >
           {s.label} ↗
         </a>
@@ -169,7 +169,7 @@ export default function Home() {
                   </h3>
                   {/* Same reason as the build-day cards: shrink-0 on text from a
                       data file is a viewport overflow waiting for a longer value. */}
-                  <span className="min-w-0 text-right font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-dust">
+                  <span className="min-w-0 text-right font-mono text-[1rem] uppercase tracking-[0.16em] text-dust">
                     {e.language}
                   </span>
                 </div>
