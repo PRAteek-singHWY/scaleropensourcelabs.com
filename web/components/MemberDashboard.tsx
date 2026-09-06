@@ -49,11 +49,11 @@ function Stat({
 }) {
   return (
     <div className="card rounded-panel bg-raise px-5 py-4">
-      <p className="font-mono text-[0.9167rem] font-medium uppercase leading-tight tracking-[0.12em] text-haze">
+      <p className="font-mono text-label font-medium uppercase leading-tight tracking-[0.12em] text-haze">
         {label}
       </p>
       <p className="mt-2 flex flex-wrap items-baseline gap-x-2">
-        <span className="font-display text-[2.125rem] font-bold leading-none tabular-nums tracking-tight">
+        <span className="font-display text-display-md font-bold leading-none tabular-nums tracking-tight">
           {n}
         </span>
         {note && <span className="text-sm font-medium text-ember">{note}</span>}

@@ -246,7 +246,7 @@ const DASHED = "border-dashed border-dust/50";
    It also removes a workaround — with no `.label` specificity to beat, the officer
    tint is a plain `text-accent` rather than an inline style. */
 const CAPTION =
-  "font-label text-[1rem] font-semibold uppercase leading-[1.2] tracking-[0.07em]";
+  "font-label text-sm font-semibold uppercase leading-[1.2] tracking-[0.07em]";
 
 function VLine({
   x,

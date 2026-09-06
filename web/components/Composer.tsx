@@ -194,7 +194,7 @@ export default function Composer() {
               as a limit somebody is about to hit; one that appears at 1000 characters is
               information at the moment it becomes useful. */}
           {body.length > 1000 && (
-            <p className="mt-1 font-mono text-[0.9583rem] text-dust">
+            <p className="mt-1 font-mono text-xs text-dust">
               {2000 - body.length} characters left
             </p>
           )}
@@ -286,12 +286,12 @@ export default function Composer() {
                   <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
                     {post.pinned && <span className="chip">Pinned</span>}
                     {post.archived && <span className="chip chip-quiet">Archived</span>}
-                    <span className="font-mono text-[0.9167rem] uppercase tracking-wider text-haze">
+                    <span className="font-mono text-label uppercase tracking-wider text-haze">
                       {CATEGORIES.find((c) => c.value === (post.category ?? "general"))?.label}
                     </span>
                     {post.title}
                   </p>
-                  <p className="mt-1 font-mono text-[0.9583rem] uppercase tracking-wider text-dust">
+                  <p className="mt-1 font-mono text-xs uppercase tracking-wider text-dust">
                     {fmtDate(post.created_at)} · {post.author_email}
                   </p>
                 </div>

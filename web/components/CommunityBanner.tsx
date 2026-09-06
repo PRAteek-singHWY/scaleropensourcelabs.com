@@ -106,7 +106,7 @@ export default function CommunityBanner() {
               style={{ color: "#0A0A0A" }}
             >
               {stats.total} selected
-              <span className="block text-[1rem] font-medium" style={{ color: "#3F4A5A" }}>
+              <span className="block text-sm font-medium" style={{ color: "#3F4A5A" }}>
                 this cohort
               </span>
             </p>

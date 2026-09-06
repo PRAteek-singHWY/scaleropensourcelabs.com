@@ -88,7 +88,7 @@ export default function Panel({
               inside one). The size is set here rather than inherited because this is the
               mono face doing a heading's job. */}
           <h2
-            className={`truncate font-mono text-[1.0625rem] font-medium uppercase tracking-[0.08em] ${
+            className={`truncate font-mono text-sm font-medium uppercase tracking-[0.08em] ${
               accent ? "" : "text-ink"
             }`}
           >

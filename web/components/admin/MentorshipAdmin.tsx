@@ -148,7 +148,7 @@ function Body() {
       </SectionHead>
 
       {error && (
-        <p className="card rounded-panel bg-raise p-6 text-[1.0625rem] leading-relaxed text-ember" role="alert">
+        <p className="card rounded-panel bg-raise p-6 text-sm leading-relaxed text-ember" role="alert">
           {error}
         </p>
       )}

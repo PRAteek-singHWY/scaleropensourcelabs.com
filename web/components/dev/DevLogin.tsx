@@ -196,7 +196,7 @@ export default function DevLogin() {
     // control on screen is a dev control that looks like it belongs there.
     <div className="mt-8 rounded-tile border border-dashed border-seam bg-sunk p-5">
       <p className="label">Local development only</p>
-      <p className="mt-2 text-[1.0625rem] leading-relaxed text-haze">
+      <p className="mt-2 text-sm leading-relaxed text-haze">
         Sign in against the emulator without the Google popup, which stops responding after
         the first sign-in in a browser. None of this is in a deployed build: the slot around
         it compiles away under <code>next build</code>, and the build then greps its own
@@ -217,14 +217,14 @@ export default function DevLogin() {
       </div>
       {/* The addresses, because which account you are on decides what every screen shows,
           and "test organiser" does not tell you which row to look for in the roster. */}
-      <p className="mt-3 font-mono text-[0.9583rem] leading-relaxed text-dust">
+      <p className="mt-3 font-mono text-xs leading-relaxed text-dust">
         {PEOPLE.member.email} · {PEOPLE.organiser.email}
       </p>
       {error && (
         // The emulator's own message, not a friendly rewrite of it. The reader here is
         // whoever is running the emulators, and EMAIL_EXISTS or ECONNREFUSED tells them
         // what to do; "something went wrong" does not.
-        <p className="mt-3 break-words font-mono text-[0.9583rem] leading-relaxed text-ember" role="alert">
+        <p className="mt-3 break-words font-mono text-xs leading-relaxed text-ember" role="alert">
           {error}
         </p>
       )}

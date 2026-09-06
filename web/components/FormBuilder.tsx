@@ -449,7 +449,7 @@ export default function FormBuilder() {
                       {!f.open && <span className="chip mr-2">Closed</span>}
                       {f.title}
                     </p>
-                    <p className="mt-1 font-mono text-[0.9583rem] uppercase tracking-wider text-dust">
+                    <p className="mt-1 font-mono text-xs uppercase tracking-wider text-dust">
                       {fmtDate(f.created_at)} · {f.author_email} · {f.fields.length}{" "}
                       question{f.fields.length === 1 ? "" : "s"}
                     </p>
@@ -521,7 +521,7 @@ export default function FormBuilder() {
                                   <td className="py-2 pr-4">
                                     <span className="text-ink">{r.name ?? "—"}</span>
                                     <br />
-                                    <span className="break-all font-mono text-[0.9583rem] text-dust">
+                                    <span className="break-all font-mono text-xs text-dust">
                                       {r.email}
                                     </span>
                                   </td>

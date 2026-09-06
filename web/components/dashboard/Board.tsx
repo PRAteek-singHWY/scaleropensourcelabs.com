@@ -108,7 +108,7 @@ export default function Board() {
                   <Icon name={post.pinned ? "pin" : "info"} size="1rem" strokeWidth={1.75} />
                 </span>
                 <div className="min-w-0">
-                  <span className="font-mono text-[0.9167rem] uppercase tracking-wider text-dust">
+                  <span className="font-mono text-label uppercase tracking-wider text-dust">
                     {CATEGORIES.find((c) => c.value === (post.category ?? "general"))?.label}
                   </span>
                   <h3 className="text-body font-semibold text-ink">{post.title}</h3>
@@ -127,7 +127,7 @@ export default function Board() {
                   Open the link
                 </a>
               )}
-              <p className="mt-3 font-mono text-[0.9583rem] uppercase tracking-wider text-dust">
+              <p className="mt-3 font-mono text-xs uppercase tracking-wider text-dust">
                 {fmtDate(post.created_at)} · {post.author_email}
               </p>
             </li>

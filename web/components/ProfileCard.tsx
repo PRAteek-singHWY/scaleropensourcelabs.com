@@ -136,7 +136,7 @@ export default function ProfileCard({
               key={k}
               className="grid grid-cols-[7.5rem_1fr] items-baseline gap-4 py-2.5 first:pt-0"
             >
-              <dt className="font-mono text-[0.9167rem] font-medium uppercase tracking-[0.1em] text-haze">
+              <dt className="font-mono text-label font-medium uppercase tracking-[0.1em] text-haze">
                 {k}
               </dt>
               <dd className="text-sm text-ink">{v}</dd>
@@ -208,13 +208,13 @@ export default function ProfileCard({
         <p className="font-mono text-label uppercase tracking-wider text-black/70">
           Registered
         </p>
-        <p className="mt-1 break-all font-mono text-[1.125rem] font-bold leading-tight">
+        <p className="mt-1 break-all font-mono text-body font-bold leading-tight">
           {p.email}
         </p>
         {/* Only when there is a real timestamp. A "signed up —" line is worse than no
             line: it invites the reader to wonder what went wrong with a date. */}
         {joined && (
-          <p className="mt-2 font-mono text-[1rem] uppercase tracking-wider text-black/80">
+          <p className="mt-2 font-mono text-sm uppercase tracking-wider text-black/80">
             Signed up {fmtDate(p.created_at)}
           </p>
         )}

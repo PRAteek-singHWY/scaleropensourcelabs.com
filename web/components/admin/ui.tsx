@@ -84,7 +84,7 @@ export function Bars({
           </li>
         ))}
       </ul>
-      {footnote && <p className="mt-4 text-[1rem] leading-relaxed text-dust">{footnote}</p>}
+      {footnote && <p className="mt-4 text-sm leading-relaxed text-dust">{footnote}</p>}
     </div>
   );
 }

@@ -165,7 +165,7 @@ export default function Footer() {
         </nav>
 
         <div className="mt-10 flex flex-wrap items-baseline justify-between gap-4">
-          <p className="max-w-[34rem] text-[1rem] leading-relaxed text-haze">
+          <p className="max-w-[34rem] text-sm leading-relaxed text-haze">
             A student club at Scaler School of Technology. This website is one of the
             club&apos;s own open-source projects — if you spot something wrong with
             it, the fix is a pull request away.
@@ -177,7 +177,7 @@ export default function Footer() {
 
         {/* Programme and organisation names appear throughout as plain type, never as
             logos. Stated once, site-wide, rather than repeated per section. */}
-        <p className="mt-8 max-w-[60rem] font-mono text-[1rem] leading-relaxed text-dust">
+        <p className="mt-8 max-w-[60rem] font-mono text-sm leading-relaxed text-dust">
           Programme and organisation names are trademarks of their respective owners.
           Listing a selection or a contribution is a statement of fact about our
           members, not an endorsement by any programme or company.

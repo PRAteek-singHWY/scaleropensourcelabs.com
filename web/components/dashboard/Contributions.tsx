@@ -74,7 +74,7 @@ function StatePill({ state }: { state: string }) {
   const merged = state === "merged";
   return (
     <span
-      className={`shrink-0 rounded-full px-2.5 py-0.5 font-mono text-[0.9167rem] font-medium uppercase tracking-wider ${
+      className={`shrink-0 rounded-full px-2.5 py-0.5 font-mono text-label font-medium uppercase tracking-wider ${
         merged ? "bg-accent-soft text-accent" : "border border-black/70 bg-pop text-black"
       }`}
     >
@@ -209,7 +209,7 @@ export default function Contributions({
     <Frame>
       {/* The handle is stated first, because the whole panel is only true OF that handle
           — see the note at the top about what it does and does not prove. */}
-      <p className="font-mono text-[1rem] text-haze">@{handle}</p>
+      <p className="font-mono text-sm text-haze">@{handle}</p>
 
       {error && (
         <p className="mt-4 text-sm leading-relaxed text-ember" role="alert">
@@ -267,10 +267,10 @@ export default function Contributions({
                     className="tap flex items-center justify-between gap-3 rounded-tile bg-sunk px-4 py-3 transition-colors hover:bg-accent-soft"
                   >
                     <span className="min-w-0">
-                      <span className="block truncate font-mono text-[1rem] text-ink">
+                      <span className="block truncate font-mono text-sm text-ink">
                         {pr.title}
                       </span>
-                      <span className="mt-0.5 block truncate font-mono text-[0.9583rem] text-dust">
+                      <span className="mt-0.5 block truncate font-mono text-xs text-dust">
                         {pr.repo}
                       </span>
                     </span>
@@ -281,7 +281,7 @@ export default function Contributions({
             </ul>
           )}
 
-          <p className="mt-5 font-mono text-[1rem] uppercase tracking-wider text-dust">
+          <p className="mt-5 font-mono text-sm uppercase tracking-wider text-dust">
             Checked {ago(synced)}
           </p>
         </>

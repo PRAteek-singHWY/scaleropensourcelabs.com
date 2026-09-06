@@ -150,7 +150,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div className="flex h-[56px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link
             href="/"
-            className="tap shrink-0 font-display text-[1.0625rem] font-bold tracking-tight text-ink transition-colors hover:text-accent"
+            className="tap shrink-0 font-display text-sm font-bold tracking-tight text-ink transition-colors hover:text-accent"
           >
             {/* THE CRUMB NAMES THE PAGE, and on /onboarding that is not the dashboard —
                 which is the one page a member being gated here cannot reach yet. Saying
@@ -217,7 +217,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 <span className="block text-sm font-bold text-ink">
                   {isAdmin ? "Organiser" : "Learner"}
                 </span>
-                <span className="block truncate font-mono text-[0.9167rem] text-dust">
+                <span className="block truncate font-mono text-xs text-dust">
                   {handle}
                 </span>
               </span>
@@ -246,7 +246,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                183px of the 198px between the button's padding, so it holds one line on
                its own. It stays because .btn uppercases whatever it is given, and the
                next label somebody tries will not be measured first. */
-            className="btn btn-primary mt-6 w-full justify-center whitespace-nowrap text-[1rem]"
+            className="btn btn-primary mt-6 w-full justify-center whitespace-nowrap text-sm"
           >
             {/* `external`, not `plus`. A plus means "create a new thing here", which is
                 exactly the promise the old label made and could not keep; this opens

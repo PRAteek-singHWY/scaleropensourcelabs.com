@@ -108,7 +108,7 @@ function Body() {
       </SectionHead>
 
       {error && (
-        <p className="card rounded-panel bg-raise p-6 text-[1.0625rem] leading-relaxed text-ember" role="alert">
+        <p className="card rounded-panel bg-raise p-6 text-sm leading-relaxed text-ember" role="alert">
           {error}
         </p>
       )}
@@ -132,7 +132,7 @@ function Body() {
         <div className="mt-5 flex items-stretch gap-2" style={{ height: "6.5rem" }}>
           {weeks.map(([wk, n]) => (
             <div key={wk} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-              <span className="font-mono text-[0.9583rem] tabular-nums text-haze">{n || ""}</span>
+              <span className="font-mono text-xs tabular-nums text-haze">{n || ""}</span>
               {/* A minimum height on a zero week, so the axis reads as a row of weeks
                   rather than stopping wherever the data stopped. */}
               <div
@@ -145,7 +145,7 @@ function Body() {
         </div>
         <div className="mt-2 flex gap-2">
           {weeks.map(([wk], i) => (
-            <span key={wk} className="flex-1 text-center font-mono text-[0.9167rem] text-dust">
+            <span key={wk} className="flex-1 text-center font-mono text-xs text-dust">
               {/* Every other label only — eight dates collide below about 700px and there
                   is no room to rotate them in a 6rem block. */}
               {i % 2 === 0 ? wk : ""}
@@ -165,7 +165,7 @@ function Body() {
             <p className="text-body-lg font-semibold text-ink transition-colors group-hover:text-accent">
               {s.title}
             </p>
-            <p className="mt-2 text-[1rem] leading-relaxed text-haze">{s.blurb}</p>
+            <p className="mt-2 text-sm leading-relaxed text-haze">{s.blurb}</p>
           </Link>
         ))}
       </div>

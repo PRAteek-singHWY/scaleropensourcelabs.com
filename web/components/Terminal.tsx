@@ -46,7 +46,7 @@ export default function Terminal({
           <span className="h-2.5 w-2.5 rounded-full bg-seam" />
           <span className="h-2.5 w-2.5 rounded-full bg-seam" />
         </span>
-        <p className="truncate font-mono text-[1rem] text-dust">{title}</p>
+        <p className="truncate font-mono text-sm text-dust">{title}</p>
       </div>
 
       {/* overflow-x-auto on the scroller and not on the <pre>, so the padding stays
@@ -56,7 +56,7 @@ export default function Terminal({
         <pre
           tabIndex={0}
           aria-label={label}
-          className="px-4 py-4 font-mono text-[1rem] leading-relaxed"
+          className="px-4 py-4 font-mono text-sm leading-relaxed"
         >
           {/* A GROUP, so the lines print in sequence as the block arrives rather
               than the whole listing existing at once. This is the one place on the
