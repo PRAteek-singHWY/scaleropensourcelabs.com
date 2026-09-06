@@ -67,7 +67,7 @@ export default function TeamPage() {
             nav link that points here. */}
         <section
           id="team"
-          className="section relative pt-12 sm:pt-16"
+          className="section relative pt-10 sm:pt-14"
           aria-label="Team"
           data-reveal-group
         >
@@ -142,7 +142,7 @@ export default function TeamPage() {
         {publishedMentors().length > 0 && (
           <section
             id="mentors"
-            className="section relative pt-12 sm:pt-16"
+            className="section relative pt-10 sm:pt-14"
             aria-label="Mentors"
             data-reveal-group
           >

@@ -133,7 +133,7 @@ export default function Hero() {
       // Deliberately the utility rather than `.page-top` itself: that class is declared
       // after @tailwind utilities, so it would beat `lg:pt-40` at equal specificity and
       // silently flatten the large-screen air. See the note over .page-top.
-      className="section relative pb-10 pt-24 sm:pb-14 sm:pt-28 lg:pb-32 lg:pt-40"
+      className="section relative pb-10 pt-16 sm:pb-14 sm:pt-28 lg:pb-32 lg:pt-40"
       aria-label="Scaler Open Source Club"
     >
       {/* The ambient lighting. Two orbs rather than one, placed off the diagonal

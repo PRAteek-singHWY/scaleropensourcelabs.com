@@ -120,7 +120,7 @@ export default function Ticker() {
   const [paused, setPaused] = useState(false);
 
   return (
-    <div className="section pt-12 sm:pt-16">
+    <div className="section pt-10 sm:pt-14">
       {/* Inside the measure rather than full-bleed. A band that runs edge to edge
           has to carry the `50% - 50vw` offsets, and every element that carries
           them acquires a correction for anything that pads one side of the page —

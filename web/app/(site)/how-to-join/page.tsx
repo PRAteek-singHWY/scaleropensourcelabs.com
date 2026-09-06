@@ -104,8 +104,8 @@ export default function HowToJoin() {
           id={level === "beginner" ? "beginner-paths" : "intermediate-paths"}
           className={
             levelIndex === 1
-              ? "band section pb-24 pt-24 sm:pb-32 sm:pt-32"
-              : "section pt-20 sm:pt-24"
+              ? "band section pb-16 pt-16 sm:pb-24 sm:pt-24"
+              : "section pt-14 sm:pt-20"
           }
           aria-label={`${LEVEL_LABEL[level]} — entry paths`}
           data-reveal-group
@@ -122,7 +122,7 @@ export default function HowToJoin() {
             />
           </div>
 
-          <div className="mt-12 space-y-4" data-reveal-group>
+          <div className="mt-9 space-y-4" data-reveal-group>
             {PATHS.filter((p) => p.level === level).map((p, i) => (
               <article
                 key={p.id}
@@ -219,7 +219,7 @@ export default function HowToJoin() {
           literally happens when I press the button". */}
       <section
         id="the-loop"
-        className="section pt-24 sm:pt-32"
+        className="section pt-16 sm:pt-24"
         aria-label="What happens to a pull request"
         data-reveal-group
       >
@@ -241,7 +241,7 @@ export default function HowToJoin() {
             across lines is ambiguous about whether the break is a newline — and 24rem is
             384px, so it was silently clipped on desktop with no scrollbar visible to say
             there was more. Half of 1152px is 576px, which fits it. */}
-        <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
           <PRTimeline />
 
           <div>
@@ -290,7 +290,7 @@ export default function HowToJoin() {
             moment it occurs, rather than in an FAQ nobody scrolls to. */}
         <section
           id="looking-for"
-          className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
           aria-label="What the club looks for"
           /* Staggers its own children instead of settling as one block — see
              Reveal.tsx for the two modes and why a section is never both. The
@@ -436,7 +436,7 @@ export default function HowToJoin() {
         {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
         <section
           id="path"
-          className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
           data-reveal-group
         >
           {/* A FLOW note rather than a gutter one, and this is the section that
@@ -536,7 +536,7 @@ export default function HowToJoin() {
         {/* ---- How the club actually runs ----------------------------------- */}
         <section
           id="culture"
-          className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
           data-reveal-group
         >
           {/* The sticky note, in the left gutter beside this section's heading.
@@ -658,7 +658,7 @@ export default function HowToJoin() {
             join makes the invitation read as selective rather than desperate. */}
         <section
           id="who-not-for"
-          className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
           data-reveal-group
         >
           {/* Placed low, level with the end of the list rather than its start —
@@ -708,7 +708,7 @@ export default function HowToJoin() {
         {/* ---- FAQ ---------------------------------------------------------- */}
         <section
           id="faq"
-          className="section relative pt-12 sm:pt-16"
+          className="section relative pt-10 sm:pt-14"
           data-reveal-group
         >
           {/* Beside the answers, where somebody who has run out of them is

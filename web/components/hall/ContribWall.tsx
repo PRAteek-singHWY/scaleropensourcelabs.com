@@ -148,7 +148,7 @@ export default function ContribWall() {
     // which is the one gesture this graphic is a picture of. The cell delay is
     // per COLUMN rather than per cell, so 364 squares resolve in about 0.6s
     // instead of four and a half seconds. See .wall-cell in globals.css.
-    <div aria-hidden className="mt-8 sm:mt-20" data-reveal-group>
+    <div aria-hidden className="mt-8 sm:mt-14" data-reveal-group>
       <div className="flex items-end justify-between gap-4">
         <p className="label">The wall</p>
         {/* Not a disclaimer any more — a hint. It tells you what to do with the

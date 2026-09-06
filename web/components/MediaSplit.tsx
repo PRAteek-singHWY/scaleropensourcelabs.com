@@ -91,7 +91,7 @@ export default function MediaSplit() {
       /* `relative` for the note below and nothing else. A flow note is absolutely
          positioned, so without a positioned ancestor here it would hang off
          whichever section happens to be positioned further up the page. */
-      className="section relative pt-12 sm:pt-16"
+      className="section relative pt-10 sm:pt-14"
       aria-label="What the club runs"
       /* Staggers its own children — the chip, the headline, its drawn rule, the
          standfirst carrying the marker fill, then the split. See Reveal.tsx. */

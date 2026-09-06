@@ -150,14 +150,22 @@ const config: Config = {
         // 1.4.8 floor for a block of text, not a comfortable value, and this page's
         // paragraphs run to a 44em measure. Long lines need more leading than short
         // ones to stop the eye returning to the line it just left.
-        "body-lg": ["clamp(1.1875rem, 1.6vw, 1.5rem)", { lineHeight: "1.62", letterSpacing: "0.008em" }],
+        //
+        // THE TWO BODY STEPS CAME DOWN A NOTCH — 1.72 to 1.6, and 1.62 to 1.5 — when
+        // the root went back to 16px. Those ratios were set against 13.5px and 17.3px
+        // text, where generous leading is what keeps small type readable. At 18px and
+        // 24px the same ratio is 31px and 39px of line box, which reads as gappy
+        // rather than airy and put a third of the home page's height into the gaps
+        // between lines. Leading is relative to size; a ratio tuned at one size does
+        // not survive a third being added to it.
+        "body-lg": ["clamp(1.1875rem, 1.6vw, 1.5rem)", { lineHeight: "1.5", letterSpacing: "0.008em" }],
         // 17px — Apple's body size, and the reference the tracking values above were
         // measured from. It spent a while at 19px and is back. The tracking was
         // deliberately NOT re-derived when it went up and is not re-derived now that
         // it has come down: optical sizing moves in fractions of an em across a 2px
         // step, and re-measuring one step of a scale that was taken from a single
         // source is how the halves of it start disagreeing.
-        "body": ["1.125rem", { lineHeight: "1.72", letterSpacing: "0.009em" }],
+        "body": ["1.125rem", { lineHeight: "1.6", letterSpacing: "0.009em" }],
         // THE BOTTOM THREE STEPS ARE RE-CUT, and it is a spacing fix rather than a
         // resize. They were 0.9167 / 0.9583 / 1.0625rem — 14.7, 15.3 and 17px — three
         // steps inside 2.3px, which is not a hierarchy anybody can see. Worse, the gap

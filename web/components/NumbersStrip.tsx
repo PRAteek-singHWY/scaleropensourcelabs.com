@@ -49,7 +49,7 @@ export default function NumbersStrip() {
 
   if (metrics.length < 2) {
     return (
-      <div className="mt-12 rounded-panel border border-dashed border-seam px-8 py-14">
+      <div className="mt-9 rounded-panel border border-dashed border-seam px-8 py-14">
         <p className="text-display-md font-semibold">
           We are not going to invent numbers here.
         </p>
@@ -75,7 +75,7 @@ export default function NumbersStrip() {
     // Static class strings rather than an interpolated `lg:grid-cols-${n}`, because
     // Tailwind scans source text and would never emit a class it cannot see.
     <dl
-      className={`mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-panel bg-seam ${
+      className={`mt-9 grid grid-cols-1 gap-px overflow-hidden rounded-panel bg-seam ${
         COLS[metrics.length] ?? COLS[4]
       }`}
     >

@@ -217,7 +217,7 @@ export default function Join() {
             colour and every custom class in globals.css is declared after
             @tailwind utilities, so a text-* utility on it silently does
             nothing. See the note on .page-top there. */}
-        <section className="section pb-24 pt-4">
+        <section className="section pb-16 pt-4">
           {/* One column until lg, and lg rather than sm because these are
               30-word paragraphs at display size — the point where two of them
               fit side by side without either dropping to four words a line is

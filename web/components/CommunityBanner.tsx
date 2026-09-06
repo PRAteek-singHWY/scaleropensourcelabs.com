@@ -43,7 +43,7 @@ export default function CommunityBanner() {
   const faces = people.slice(0, FACES);
 
   return (
-    <div className="section pt-12 sm:pt-16">
+    <div className="section pt-10 sm:pt-14">
       <div
         className="rounded-[20px] border-2 border-black px-6 py-6 shadow-[4px_4px_0_0_#000] sm:px-8"
         // #F0F6FF ON BOTH THEMES, and every foreground inside it is fixed to

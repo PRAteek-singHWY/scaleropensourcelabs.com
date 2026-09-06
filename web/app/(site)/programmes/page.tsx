@@ -238,7 +238,7 @@ export default function Programmes() {
           for them and stops. The two things they can do this month go at the top. */}
       <section
         id="open-entry"
-        className="section pt-20 sm:pt-24"
+        className="section pt-14 sm:pt-20"
         aria-label="Open-entry programmes"
         data-reveal-group
       >
@@ -256,7 +256,7 @@ export default function Programmes() {
           fork, branch, review, merge — somewhere the stakes are zero.
         </p>
 
-        <ul className="mt-12 space-y-px overflow-hidden rounded-panel bg-seam">
+        <ul className="mt-9 space-y-px overflow-hidden rounded-panel bg-seam">
           {OPEN_ENTRY.map((p) => (
             <ProgrammeField key={p.key} p={p} />
           ))}
@@ -276,7 +276,7 @@ export default function Programmes() {
         id="paid"
         /* `relative` for the gutter note below — it anchors to this section, so
            it cannot drift when a section above it changes height. */
-        className="band section relative pb-24 pt-24 sm:pb-32 sm:pt-32"
+        className="band section relative pb-16 pt-16 sm:pb-24 sm:pt-24"
         aria-label="Paid, selective programmes"
         data-reveal-group
       >
@@ -328,7 +328,7 @@ export default function Programmes() {
           few months of visible contribution before the window opens.
         </p>
 
-        <ul className="mt-12 space-y-px overflow-hidden rounded-panel bg-seam">
+        <ul className="mt-9 space-y-px overflow-hidden rounded-panel bg-seam">
           {PAID.map((p) => (
             <ProgrammeField key={p.key} p={p} />
           ))}
@@ -374,7 +374,7 @@ export default function Programmes() {
             changes subject. Plain, it reads as its own section again. */}
         <section
           id="calendar"
-          className="section relative pt-12 sm:pt-16"
+          className="section relative pt-10 sm:pt-14"
           data-reveal-group
         >
           {/* Left gutter, beside the argument it compresses. The proverb is the
@@ -471,7 +471,7 @@ export default function Programmes() {
             that the club does not run. */}
         <section
           id="tracks"
-          className="section pt-12 sm:pt-16"
+          className="section pt-10 sm:pt-14"
           data-reveal-group
         >
           <p className="chip">Pick your path</p>

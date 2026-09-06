@@ -126,7 +126,7 @@ function Slide({
           targets end 72px in. */}
       {/* pb-28 below lg is not decoration: it is the landing strip the arrows sit
           in once they drop to the bottom corner. */}
-      <div className="section flex h-full flex-col justify-center pb-28 pt-16 lg:py-0">
+      <div className="section flex h-full flex-col justify-center pb-20 pt-16 lg:py-0">
         {/* Wider than the 46rem it ran at beside a portrait: with the column gone
             the quote has the slide to itself, and 56rem keeps a paragraph to
             about eleven words a line — long enough not to waste the panel, short
@@ -379,7 +379,7 @@ export default function MemberStory() {
       role="group"
       aria-roledescription="carousel"
       aria-label="What members said, in their own words"
-      className="stories mt-12"
+      className="stories mt-9"
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
       // Focus and blur bubble in React, so this covers a Tab landing on any link

@@ -68,7 +68,7 @@ export default function Projects() {
       {/* ---- 1. Build days -------------------------------------------------- */}
       <section
         id="build-days"
-        className="section pt-20 sm:pt-24"
+        className="section pt-14 sm:pt-20"
         aria-label="Build day projects"
         data-reveal-group
       >
@@ -95,7 +95,7 @@ export default function Projects() {
         </p>
 
         {buildDay.length === 0 ? (
-          <div className="mt-12 rounded-tile border border-dashed border-seam px-8 py-14 text-center">
+          <div className="mt-9 rounded-tile border border-dashed border-seam px-8 py-14 text-center">
             <p className="text-display-md font-semibold">
               Nothing listed for this cycle yet.
             </p>
@@ -106,7 +106,7 @@ export default function Projects() {
             </p>
           </div>
         ) : (
-          <ul className="mt-12 grid grid-cols-1 gap-4 lg:grid-cols-2" data-reveal-group>
+          <ul className="mt-9 grid grid-cols-1 gap-4 lg:grid-cols-2" data-reveal-group>
             {buildDay.map((p) => (
               <li
                 key={p.name}
@@ -197,7 +197,7 @@ export default function Projects() {
       {/* ---- 2. Club repositories ------------------------------------------- */}
       <section
         id="club-repos"
-        className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
+        className="band section pb-16 pt-16 sm:pb-24 sm:pt-24"
         aria-label="Club infrastructure and flagship repositories"
         data-reveal-group
       >
@@ -217,7 +217,7 @@ export default function Projects() {
           <span className="mark">somebody you can find in the lab</span>.
         </p>
 
-        <ul className="mt-12 space-y-4" data-reveal-group>
+        <ul className="mt-9 space-y-4" data-reveal-group>
           {clubRepos.map((r) => (
             <li
               key={r.repo}
@@ -317,7 +317,7 @@ export default function Projects() {
       {/* ---- 3. Upstream ---------------------------------------------------- */}
       <section
         id="in-the-wild"
-        className="section pt-24 sm:pt-32"
+        className="section pt-16 sm:pt-24"
         aria-label="Member contributions to external projects"
         data-reveal-group
       >
@@ -345,7 +345,7 @@ export default function Projects() {
         </p>
 
         {upstream.length === 0 ? (
-          <div className="mt-12 rounded-tile border border-dashed border-seam px-8 py-14 text-center">
+          <div className="mt-9 rounded-tile border border-dashed border-seam px-8 py-14 text-center">
             <p className="text-display-md font-semibold">Nothing published yet.</p>
             <p className="measure mx-auto mt-4 text-body text-haze">
               This fills in as members land work upstream. Each entry carries a link to
@@ -361,7 +361,7 @@ export default function Projects() {
                 argument it decorated. */}
             <ProofPanel />
 
-            <ul className="mt-14 grid grid-cols-1 gap-4 lg:grid-cols-2" data-reveal-group>
+            <ul className="mt-10 grid grid-cols-1 gap-4 lg:grid-cols-2" data-reveal-group>
               {upstream.map((p) => (
                 <li
                   key={p.repo}

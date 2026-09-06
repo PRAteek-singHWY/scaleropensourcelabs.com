@@ -34,7 +34,7 @@ export default function Roster() {
   );
 
   return (
-    <div className="section pb-28 pt-10 sm:pb-40">
+    <div className="section pb-20 pt-10 sm:pb-28">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h3 className="text-display-md font-semibold">Every selection</h3>
         <p className="font-mono text-xs text-dust">
