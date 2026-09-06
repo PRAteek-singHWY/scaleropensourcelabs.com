@@ -212,7 +212,7 @@ export default function Programmes() {
         <p className="chip">Paid open source</p>
         <Duo
           as="h1"
-          className="mt-6 max-w-4xl text-display-xl"
+          className="mt-6 max-w-4xl text-display-lg"
           lead="Paid, competitive, and open to beginners."
           trail="Most students never apply because nobody told them these exist."
         />

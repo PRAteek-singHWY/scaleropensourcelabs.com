@@ -53,7 +53,7 @@ export default function Projects() {
         <p className="chip">Upstream work</p>
         <Duo
           as="h1"
-          className="mt-6 max-w-4xl text-display-xl"
+          className="mt-6 max-w-4xl text-display-lg"
           lead="Where our code went."
           trail="Every line links upstream."
         />

@@ -35,7 +35,7 @@ export default function TeamPage() {
         <p className="chip">Who runs this</p>
         <Duo
           as="h1"
-          className="mt-6 max-w-4xl text-display-xl"
+          className="mt-6 max-w-4xl text-display-lg"
           lead="Students, not staff."
           trail="Which is why the handover is built in."
         />

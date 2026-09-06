@@ -136,6 +136,13 @@ const config: Config = {
         // quarters of the sizes measured below — so a 0.75 vw term would now hold the
         // OLD size across most desktop widths while the ends grew, which is the exact
         // failure the note above describes, in reverse.
+        // ONE ELEMENT ON THE SITE WEARS THIS: the home page hero, which is two words.
+        // The four sub-page mastheads used to as well, and at a 12px root that was 63px
+        // and merely large. At 84px a sixteen-word title — "Paid, competitive, and open
+        // to beginners. Most students never apply because nobody told them these
+        // exist." — is four lines that fill a 1440x900 viewport on their own, with the
+        // chip above and the standfirst below and nothing else visible. They take
+        // display-lg now. A step called xl that everything uses is not a step.
         "display-xl": ["clamp(2.75rem, 6.2vw, 5.25rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
         "display-lg": ["clamp(1.9375rem, 3.6vw, 2.9375rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
         // Apple's tracking is POSITIVE below roughly 40px. Measured off

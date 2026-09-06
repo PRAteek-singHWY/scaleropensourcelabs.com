@@ -86,7 +86,7 @@ export default function HowToJoin() {
         <p className="chip">The way in</p>
         <Duo
           as="h1"
-          className="mt-6 max-w-4xl text-display-xl"
+          className="mt-6 max-w-4xl text-display-lg"
           lead="There is no bar to clear."
           trail="There is a first pull request to open."
         />
