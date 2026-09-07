@@ -144,11 +144,11 @@ export default function MediaSplit() {
           move down. */}
       <Note
         place="flow"
-        tone="lilac"
+        tone="sky"
         fold
         title="Laptop open."
         body="People arguing about a codebase, not sitting through slides."
-        tilt={-3.5}
+        tilt={-2.5}
         anchor={51}
         className="top-1"
       />
@@ -169,7 +169,7 @@ export default function MediaSplit() {
 
       <div className="mt-8 grid gap-5 lg:grid-cols-2 lg:gap-6">
         {/* ---- Left: the frame ------------------------------------------- */}
-        <div className="zoom overflow-hidden rounded-[24px] border-2 border-black bg-raise shadow-[4px_4px_0_0_#000]">
+        <div className="zoom overflow-hidden rounded-panel border-2 border-black bg-raise shadow-[4px_4px_0_0_#000]">
           {PHOTO ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -205,14 +205,14 @@ export default function MediaSplit() {
           {FEATURES.map((f) => (
             <div
               key={f.title}
-              className="rounded-[20px] border border-[#F1F5F9] bg-raise p-5 transition-shadow duration-200 ease-in-out hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
+              className="rounded-tile border border-[#F1F5F9] bg-raise p-5 transition-shadow duration-200 ease-in-out hover:shadow-[0_10px_30px_rgba(0,0,0,0.06)]"
             >
               {/* The pastel icon badge. Fixed fill and fixed foreground — a
                   self-contained pair, so it needs no dark-theme variant and its
                   contrast is one number rather than two. */}
               <span
                 aria-hidden
-                className="flex h-10 w-10 items-center justify-center rounded-xl font-mono text-sm font-bold"
+                className="flex h-10 w-10 items-center justify-center rounded-tile font-mono text-sm font-bold"
                 style={{ background: f.fill, color: f.ink }}
               >
                 {f.glyph}

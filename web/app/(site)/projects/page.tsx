@@ -139,7 +139,7 @@ export default function Projects() {
                     {p.stack.map((s) => (
                       <li
                         key={s}
-                        className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-sm text-haze"
+                        className="rounded-inline border border-seam bg-sunk px-2.5 py-1 font-mono text-sm text-haze"
                       >
                         {s}
                       </li>
@@ -277,7 +277,7 @@ export default function Projects() {
                     {r.stack.map((s) => (
                       <li
                         key={s}
-                        className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-sm text-haze"
+                        className="rounded-inline border border-seam bg-sunk px-2.5 py-1 font-mono text-sm text-haze"
                       >
                         {s}
                       </li>
@@ -371,7 +371,7 @@ export default function Projects() {
                     {/* The org, set as type in a bordered plate rather than as a
                         logo. Their trademark, and the site's CSP blocks remote
                         images anyway — see content/projects.ts. */}
-                    <span className="rounded-md border border-seam bg-sunk px-2.5 py-1 font-mono text-sm uppercase tracking-[0.14em] text-haze">
+                    <span className="rounded-inline border border-seam bg-sunk px-2.5 py-1 font-mono text-sm uppercase tracking-[0.14em] text-haze">
                       {p.org}
                     </span>
                     {p.tag ? (

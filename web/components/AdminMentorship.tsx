@@ -328,7 +328,7 @@ export default function AdminMentorship({
               value={emailList}
               onFocus={(e) => e.currentTarget.select()}
               rows={3}
-              className="w-full resize-y rounded-md border border-seam bg-sunk p-3 font-mono text-sm text-haze"
+              className="w-full resize-y rounded-inline border border-seam bg-sunk p-3 font-mono text-sm text-haze"
             />
             <button
               type="button"

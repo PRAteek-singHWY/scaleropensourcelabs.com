@@ -118,7 +118,7 @@ export default function Mentors() {
                     {m.askAbout.map((a) => (
                       <li
                         key={a}
-                        className="rounded-md border border-seam px-2.5 py-1 font-mono text-xs text-haze"
+                        className="rounded-inline border border-seam px-2.5 py-1 font-mono text-xs text-haze"
                       >
                         {a}
                       </li>

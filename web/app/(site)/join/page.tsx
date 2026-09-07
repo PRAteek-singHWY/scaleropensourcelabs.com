@@ -112,12 +112,12 @@ export default function Join() {
               tracks sound like tiers. */}
           <Note
             place="gutter"
-            tone="mint"
+            tone="sky"
             paper="grid"
             fold
             title="No premium tier."
             body="Every session is open to everyone. Repos differ by level, not by rank."
-            tilt={4}
+            tilt={2.5}
             className="-right-40 top-24"
           />
           {/* An even 1fr/1fr split, up from 1fr/26rem. The form was a fixed

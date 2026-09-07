@@ -4,7 +4,7 @@
 //
 // The register is still quiet — a nav's job on a page like this is to be
 // findable, not to announce itself; the hero is doing the announcing — but it is
-// detached: inset from all three edges, rounded, and lifted off the page by a
+// detached: inset from all three edges, rounded-inline, and lifted off the page by a
 // 4%-black shadow. That single change is most of what separates a 2019 site header
 // from a current one, and it costs nothing structurally.
 //
@@ -12,7 +12,7 @@
 // the outline panel. Two rules matter here:
 //
 //   * Its width matches the content measure (88rem), not the viewport. A plate
-//     that runs edge to edge is a bar with rounded corners; one that lines up
+//     that runs edge to edge is a bar with rounded-inline corners; one that lines up
 //     with the copy underneath reads as part of the same layout, and the links
 //     land directly above the text they lead to.
 //
@@ -71,7 +71,7 @@ export default function Nav() {
         // nothing else — see the block in globals.css. It is a scroll-driven
         // pseudo-element, so it costs no state here and browsers without
         // animation-timeline get the bar exactly as it was.
-        className="nav-plate plate mx-auto flex h-[56px] max-w-[88rem] items-center justify-between gap-3 rounded-2xl border border-seam/70 px-3 sm:gap-4 sm:px-6"
+        className="nav-plate plate mx-auto flex h-[56px] max-w-[88rem] items-center justify-between gap-3 rounded-tile border border-seam/70 px-3 sm:gap-4 sm:px-6"
       >
         <Link
           href="/"

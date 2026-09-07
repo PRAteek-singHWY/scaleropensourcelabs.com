@@ -9,7 +9,7 @@
 // content and nothing else.
 //
 // IT REPLACES THE MARKETING CHROME RATHER THAN SITTING INSIDE IT. The site's nav is a
-// floating rounded plate with six links arguing for the club; every reader here has
+// floating rounded-inline plate with six links arguing for the club; every reader here has
 // already joined. See components/ChromeGate.tsx for the suppression, and app/layout.tsx
 // for where it is applied.
 //

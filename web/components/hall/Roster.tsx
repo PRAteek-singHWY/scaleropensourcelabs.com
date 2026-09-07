@@ -46,8 +46,8 @@ export default function Roster() {
           Two nested elements and each does one job: the outer card owns the
           border, the radius and the shadow with `overflow-hidden` so the corners
           actually clip the header row, and the inner div owns the horizontal
-          scroll. Merging them would put `overflow-x: auto` on the rounded box,
-          and a scroll container cannot clip its own rounded corners — the
+          scroll. Merging them would put `overflow-x: auto` on the rounded-inline box,
+          and a scroll container cannot clip its own rounded-inline corners — the
           left-hand cells would square off the moment the table was wider than
           the card, which is the only state that matters on a phone.
 

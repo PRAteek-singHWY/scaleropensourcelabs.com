@@ -426,11 +426,11 @@ export default function Home() {
               through a headline on a 1180px laptop. */}
           <Note
             place="flow"
-            tone="orange"
+            tone="warm"
             paper="ruled"
             title="No fixed podium."
             body="A contest has a set number of winners. This does not."
-            tilt={-4}
+            tilt={-2.5}
             anchor={59}
             className="top-8"
           />

@@ -339,7 +339,7 @@ export default function AdminMentors({
                       </span>
                     )}
                     {!m.active && (
-                      <span className="ml-2 rounded-md border border-seam px-2 py-0.5 font-mono text-label uppercase tracking-wider text-dust">
+                      <span className="ml-2 rounded-inline border border-seam px-2 py-0.5 font-mono text-label uppercase tracking-wider text-dust">
                         hidden
                       </span>
                     )}

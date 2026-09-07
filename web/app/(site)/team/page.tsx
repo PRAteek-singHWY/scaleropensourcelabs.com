@@ -103,11 +103,11 @@ export default function TeamPage() {
               re-measuring, not adjusting by eye. */}
           <Note
             place="flow"
-            tone="orange"
+            tone="warm"
             fold
             title={`${teamSize()} brains, one group chat.`}
             body="All of them trying to make your four years more fun."
-            tilt={3.5}
+            tilt={2.5}
             anchor={49}
             className="top-12"
           />
@@ -156,7 +156,7 @@ export default function TeamPage() {
                 the sentence does. */}
             <Note
               place="flow"
-              tone="lime"
+              tone="yellow"
               fixing="pin"
               paper="ruled"
               title="Two years ahead, not twenty."
@@ -165,7 +165,7 @@ export default function TeamPage() {
                  ran to five lines and put the note 37px through the paragraph
                  below. The band has no give — the copy has to. */
               body="All of them went through one themselves."
-              tilt={-3.5}
+              tilt={-2.5}
               anchor={59}
               className="top-2"
             />

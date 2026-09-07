@@ -373,7 +373,7 @@ function Gate() {
               as the step markers at the top of this card, so the two accent-filled
               objects on the card are one idea rather than two. 36px, not 40: enough to
               read as a tile, small enough not to argue with the heading. */}
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-accent text-bg">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-inline bg-accent text-bg">
             <CapIcon />
           </span>
           <div>

@@ -91,7 +91,7 @@ function ProgrammeField({ p }: { p: ProgrammeInfo }) {
           {/* The tier, stated in words as well as carried by the colour. The
               colour is never the only signal. */}
           <p
-            className={`mt-4 inline-block rounded-md border px-2.5 py-1 font-mono text-sm uppercase tracking-[0.14em] ${
+            className={`mt-4 inline-block rounded-inline border px-2.5 py-1 font-mono text-sm uppercase tracking-[0.14em] ${
               paid
                 ? "border-accent/40 text-accent"
                 : "border-seam text-haze"
@@ -300,11 +300,11 @@ export default function Programmes() {
             a standfirst above its rows, one band deeper than the old one. */}
         <Note
           place="gutter"
-          tone="pink"
+          tone="warm"
           fold
           title="You keep the work."
           body="No boss, no timesheet. Everything you write stays public, and stays yours."
-          tilt={4}
+          tilt={2.5}
           className="-right-40 top-40"
         />
         <div className="border-b border-seam pb-5">
@@ -403,7 +403,7 @@ export default function Programmes() {
             paper="ruled"
             title="Best day: last autumn."
             body="Second best: today. Those are the two options."
-            tilt={-4}
+            tilt={-2.5}
             className="-left-40 top-28"
           />
           {/* The void to the right of this heading is deliberately empty. It held
@@ -548,7 +548,7 @@ export default function Programmes() {
                     this page: a terminal is a terminal. */}
                 <div
                   aria-hidden
-                  className="mt-4 overflow-hidden rounded-xl border border-white/10"
+                  className="mt-4 overflow-hidden rounded-tile border border-white/10"
                   style={{ background: "#0F172A" }}
                 >
                   <div className="flex items-center gap-1.5 border-b border-white/10 px-3 py-2">

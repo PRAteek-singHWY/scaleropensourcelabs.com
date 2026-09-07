@@ -145,7 +145,7 @@ export default function HowToJoin() {
                     <p className="mt-3 text-body text-accent">{p.tagline}</p>
 
                     {p.bring && (
-                      <p className="mt-6 rounded-md border border-seam bg-sunk px-4 py-3 font-mono text-xs leading-relaxed text-haze">
+                      <p className="mt-6 rounded-inline border border-seam bg-sunk px-4 py-3 font-mono text-xs leading-relaxed text-haze">
                         Bring: {p.bring}
                       </p>
                     )}
@@ -196,7 +196,7 @@ export default function HowToJoin() {
                         aside rather than a highlighted callout — it is a
                         clarification about how the thing runs, not a selling point. */}
                     {p.note && (
-                      <p className="flex gap-3 rounded-md border border-seam bg-sunk p-5 text-sm leading-relaxed text-haze">
+                      <p className="flex gap-3 rounded-inline border border-seam bg-sunk p-5 text-sm leading-relaxed text-haze">
                         <span
                           aria-hidden
                           className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-dust"
@@ -303,8 +303,7 @@ export default function HowToJoin() {
               react is a page that fidgets. */}
           <Sticker
             text="Green Wall Loading... 🟩"
-            rotate={-2}
-            tone="mint"
+            rotate={-2.5}
             effect="none"
             className="right-0 bottom-16 min-[1600px]:-right-10"
           />
@@ -456,12 +455,12 @@ export default function HowToJoin() {
               from that step and pointing at nothing. */}
           <Note
             place="flow"
-            tone="pink"
+            tone="warm"
             paper="grid"
             fold
             title="Step 03 is the one."
             body="Show a mentor the patch before a maintainer ever sees it."
-            tilt={4}
+            tilt={2.5}
             anchor={49}
             className="top-56"
           />
@@ -471,8 +470,7 @@ export default function HowToJoin() {
               end — see scripts and the placement note in Note.tsx. */}
           <Sticker
             text="LGTM ✅"
-            rotate={-4}
-            tone="mint"
+            rotate={-2.5}
             effect="bounce"
             className="right-4 bottom-16"
           />
@@ -635,7 +633,7 @@ export default function HowToJoin() {
                   // small to read on a phone, and a decorative frame is no reason
                   // to make an exception. The comment strings were shortened to
                   // suit, rather than the frame widened into the sentence.
-                  className="hidden w-44 shrink-0 self-start overflow-hidden rounded-xl border border-white/10 p-3 font-mono text-sm leading-relaxed lg:block"
+                  className="hidden w-44 shrink-0 self-start overflow-hidden rounded-tile border border-white/10 p-3 font-mono text-sm leading-relaxed lg:block"
                   style={{ background: "#0F172A" }}
                 >
                   <p style={{ color: "#4ADE80" }}>
@@ -672,20 +670,19 @@ export default function HowToJoin() {
               40px off it. */}
           <Note
             place="flow"
-            tone="mint"
+            tone="sky"
             paper="ruled"
             fold
             title="Read all four and still here?"
             body="Then it is probably for you. That was the whole test."
-            tilt={-4}
+            tilt={-2.5}
             anchor={52}
             className="bottom-28"
           />
           {/* Head of the same column, where the note is at the foot of it. */}
           <Sticker
             text="// TODO: decide"
-            rotate={3}
-            tone="violet"
+            rotate={2.5}
             effect="wobble"
             className="right-4 top-12"
           />
@@ -723,13 +720,13 @@ export default function HowToJoin() {
             paper="ruled"
             title="Not on the list?"
             body="Ask us. If we answer it twice, it ends up here."
-            tilt={3.5}
+            tilt={2.5}
             anchor={52}
             className="top-64"
           />
           <Sticker
             text="ask, don't guess 💬"
-            rotate={-3}
+            rotate={-2.5}
             effect="bounce"
             className="right-4 bottom-16"
           />

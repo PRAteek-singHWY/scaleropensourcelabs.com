@@ -163,16 +163,19 @@ export default function ContribWall() {
             grid was the line least likely to be seen. A hint that goes unread is
             just clutter.
 
-            Mint specifically, out of the four fills, because it is the wall's own
-            green — the caption and the thing it is about are visibly the same
-            object, which no amount of extra size would have achieved. 8.3:1.
+            IT WAS MINT, matching the wall's own green so that the caption and the
+            thing it is about read as one object. That argument was sound and the
+            colour did not survive the palette pass: decorative mint was one of the
+            fills that made the site's stationery drawer wider than its ink, and it
+            is now reserved for the places where the colour is the argument — the
+            "OSC way" / "Old way" pair. The default blue chip carries this instead,
+            and the tilt below is doing the work the colour was.
 
-            And TILTED, so no .chip-true here. Per the note on .chip-violet, the
-            tilt is what separates a label the site applied to itself from a badge
-            asserting a fact; a straight pill next to a grid of green squares is
-            exactly the "this is data" reading the whole component is built to
-            avoid. */}
-        <p className="chip chip-mint">close your eyes 70%</p>
+            TILTED, so no .chip-true here: the tilt is what separates a label the
+            site applied to itself from a badge asserting a fact, and a straight pill
+            next to a grid of green squares is exactly the "this is data" reading the
+            whole component is built to avoid. */}
+        <p className="chip">close your eyes 70%</p>
       </div>
 
       {/* FLUID CELLS, which is what makes the wall run the whole length of its

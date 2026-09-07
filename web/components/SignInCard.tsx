@@ -247,7 +247,7 @@ export default function SignInCard() {
               icon floating in the corner of the box.
               36px, not 40: enough to read as a tile, small enough not to argue with the
               heading beside it. */}
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-accent text-bg">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-inline bg-accent text-bg">
             <CapIcon />
           </span>
           <div>

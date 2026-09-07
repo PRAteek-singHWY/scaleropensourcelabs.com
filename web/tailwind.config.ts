@@ -203,6 +203,24 @@ const config: Config = {
       // -0.015em is Apple's 80px value exactly, so it belongs on display-xl only.
       letterSpacing: { tightest: "-0.015em" },
       borderRadius: {
+        // FOUR RADII, AND FOUR IS THE WHOLE SET. The home page rendered ten — 4, 5, 6,
+        // 8, 9, 10, 12, 18, 20, 24, 28 and the pill — several of which no eye can tell
+        // apart at the sizes they were used. That is not a system, it is what happens
+        // when every component picks its own corner.
+        //
+        //   inline  10px   badges, tags, tooltips, inputs, small controls
+        //   tile    18px   cards
+        //   panel   28px   large panels and feature surfaces
+        //   full           pills and avatars
+        //
+        // The one deliberate exception is the 2px on the contribution-wall cells and
+        // the focus ring, which are not surfaces — a 10px corner on a 10px square is a
+        // circle.
+        //
+        // A radius is proportional to the box it is on, so a badge and a feature panel
+        // genuinely do need different ones; three surface steps is the smallest set
+        // that can say that. Anything past four is drift.
+        inline: "10px",
         // Apple's tiles measured 18px on /store and 28px on /mac — small cards and
         // large feature panels respectively. Ours were 10-14px, which reads as a
         // different, tighter system.

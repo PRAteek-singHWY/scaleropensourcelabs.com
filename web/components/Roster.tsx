@@ -33,7 +33,7 @@ import {
 /** One string for every control, so four inputs cannot drift apart a class at a time.
  *  Lifted from AdminDashboard's `ctl` for exactly that reason. */
 const ctl =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent disabled:opacity-60";
+  "w-full rounded-inline border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent disabled:opacity-60";
 
 const BLANK = {
   name: "",

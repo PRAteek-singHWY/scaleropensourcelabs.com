@@ -35,14 +35,20 @@ export default function Sticker({
   rotate: number;
   /** "blue" is the bare `.chip` — was called "lime" until the badge itself turned
       electric blue, and a tone named after a colour it no longer is costs more
-      than a rename. No call site passed it explicitly; all three stickers on the
-      page either take the default or ask for violet/mint. */
-  tone?: "blue" | "violet" | "mint";
+      than a rename.
+
+      VIOLET AND MINT ARE GONE. A sticker is decoration, and decoration is where a
+      palette leaks: those two were the only violet and the only decorative mint on
+      the site, so three stickers carried two colours nothing else used. Blue is the
+      ink here and yellow is the one thing louder than it; a sticker gets one of
+      those or it gets the default. The mint that remains is semantic — the "OSC
+      way" / "Old way" pair and "OSC club" — and it stays because it is saying
+      something rather than decorating. */
+  tone?: "blue" | "pop";
   effect?: "wobble" | "bounce" | "none";
   className?: string;
 }) {
-  const toneClass =
-    tone === "violet" ? "chip-violet" : tone === "mint" ? "chip-mint" : "";
+  const toneClass = tone === "pop" ? "chip-pop" : "";
 
   return (
     <span

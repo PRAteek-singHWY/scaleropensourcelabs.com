@@ -111,8 +111,7 @@ export default function HallOfFame() {
                 the chip beside it is short at every width there is. */}
             <Sticker
               text="git push --force 🚀"
-              rotate={4}
-              tone="violet"
+              rotate={2.5}
               effect="bounce"
               className="right-0 top-14 min-[1600px]:-right-4"
             />
@@ -154,7 +153,7 @@ export default function HallOfFame() {
               paper="ruled"
               title="Start early"
               body="These names were contributing months before they applied."
-              tilt={-4}
+              tilt={-2.5}
               className="-left-40 top-44"
             />
             <p className="flex items-center gap-2">

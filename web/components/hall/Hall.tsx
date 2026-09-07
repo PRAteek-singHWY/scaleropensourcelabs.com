@@ -269,7 +269,7 @@ export default function Hall() {
                   then the row is carrying a fact worth a second line, not a note
                   saying there is nothing to show. */}
               <p className="mt-5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
-                <span className="chip chip-violet chip-true">
+                <span className="chip chip-true">
                   {PROGRAMME_SHORT[p.programme]} {p.year}
                 </span>
                 {p.org ? (
@@ -386,7 +386,7 @@ export default function Hall() {
                   reading as an image that failed to load. */}
               <span
                 aria-hidden
-                className="absolute inset-3 rounded-[20px] border-2 border-dashed border-black/25"
+                className="absolute inset-3 rounded-tile border-2 border-dashed border-black/25"
               />
               {/* A plus at the same scale as Portrait's monogram, in the same
                   container-query unit, so the glyph in this cell is the same size as

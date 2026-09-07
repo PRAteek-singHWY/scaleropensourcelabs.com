@@ -91,7 +91,7 @@ function FloatingBadges() {
           aria-hidden
           className="absolute -top-5 right-4 z-10 hidden animate-float lg:block"
         >
-          <span className="chip chip-violet chip-true shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
+          <span className="chip chip-true shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
             🟣 {merged.label}
           </span>
         </span>
