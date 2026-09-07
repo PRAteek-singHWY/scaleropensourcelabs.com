@@ -2936,6 +2936,46 @@ body::before {
   background: linear-gradient(90deg, transparent, rgb(var(--seam)) 12%, rgb(var(--seam)) 88%, transparent);
 }
 
+/* A HORIZONTALLY SCROLLING TABLE, AND SOMETHING THAT SAYS SO.
+   The members table is wider than its column — 1151px into 1102 at 1440, and far
+   more than that on a laptop — and it scrolled with no affordance whatsoever: the
+   GitHub column was simply cut off mid-header, and nothing on screen suggested
+   there was anything to the right of it. An organiser reading the roster had no
+   reason to think the table was not complete.
+
+   The mask fades the content itself rather than laying a gradient over it, for the
+   reason the nav strip uses one: these tables sit on cards whose ground is --raise
+   in light and something else in dark, so an overlay in a fixed colour is a visible
+   block on one of the two themes.
+
+   `animation-timeline: scroll(self inline)` retracts the fade as you reach the end,
+   so it stops claiming there is more once there is not. Browsers without
+   scroll-driven animations keep a static fade, which is the honest fallback: the
+   table does scroll, and the only thing lost is the fade going away at the end. */
+.table-scroll {
+  overflow-x: auto;
+  --fade: 2rem;
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+}
+@supports (animation-timeline: scroll()) {
+  @keyframes table-fade-out {
+    to {
+      --fade: 0rem;
+    }
+  }
+  @property --fade {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 2rem;
+  }
+  .table-scroll {
+    animation: table-fade-out linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: contain 80% contain 100%;
+  }
+}
+
 ::selection {
   background: color-mix(in srgb, rgb(var(--accent)) 28%, transparent);
   color: rgb(var(--ink));

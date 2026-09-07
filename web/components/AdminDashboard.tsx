@@ -738,7 +738,7 @@ export default function AdminDashboard() {
           </p>
         )}
 
-        <div className="mt-5 overflow-x-auto">
+        <div className="table-scroll mt-5">
           <table className="w-full min-w-[56rem] border-collapse text-left">
             <thead>
               <tr className="border-b border-seam">

@@ -342,7 +342,7 @@ export default function AdminMentorship({
 
         {/* Scrolls inside its own box so a wide table never makes the page scroll
             sideways — the QA sweep asserts no horizontal overflow on every route. */}
-        <div className="mt-5 overflow-x-auto">
+        <div className="table-scroll mt-5">
           <table className="w-full min-w-[56rem] border-collapse text-left">
             <thead>
               <tr className="border-b border-seam">
