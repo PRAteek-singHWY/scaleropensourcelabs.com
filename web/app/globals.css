@@ -678,6 +678,20 @@ body::before {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
+/* THE SAME PLATE, OPAQUE, for the mobile menu panel.
+   The bar can be 80% and frosted because what shows through it is a page scrolling
+   under a 56px strip — the translucency is the effect. A panel of eight links is
+   not that: it COVERS content, and at 0.8 the headline and the hero's yellow
+   highlight behind it read straight through the list, which is unreadable and looks
+   like a rendering fault rather than a material. Same border, same shadow, same
+   corner; only the ground is solid.
+   The blur stays for the edges of the shadow to sit on, and costs nothing once the
+   background behind it is opaque. */
+.plate-solid {
+  background: rgb(var(--raise));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
 /* Nav links. Charcoal at rest, azure on hover, and the transition is the 180ms
    ease-in-out the brief asks for site-wide.
 

@@ -154,17 +154,32 @@ for (const [name, engine] of Object.entries(ENGINES)) {
     };
   });
 
-  // The nav fade, checked at a width where it must be active.
+  // THE PHONE NAV. This used to check that the link strip scrolled and that the fade
+  // marking it as scrollable was applied. Both were true and the arrangement was still
+  // broken: measured at 390px the strip was a 187px window onto 407px of links, so four
+  // of six destinations sat off-screen behind that fade, reachable only by dragging a
+  // strip most readers never think to drag.
+  //
+  // The strip is md+ now and a disclosure button takes its place below that, so what
+  // this asserts is the thing that actually matters on a phone: every route is
+  // reachable, and the control that reaches them is a real touch target.
   await pg.setViewportSize({ width: 390, height: 844 });
   await pg.waitForTimeout(400);
+  // The click and the measurement are separate steps because React renders the panel
+  // on the next tick — reading the DOM in the same evaluate that clicks reports zero
+  // links, which looks like the menu is empty rather than like the check is early.
+  await pg.locator('button[aria-controls="nav-menu"]').click().catch(() => {});
+  await pg.waitForTimeout(200);
   const fade = await pg.evaluate(() => {
-    const ul = document.querySelector('nav[aria-label="Main"] ul');
-    if (!ul) return null;
-    const cs = getComputedStyle(ul);
-    const mask = cs.maskImage && cs.maskImage !== "none" ? cs.maskImage : cs.webkitMaskImage;
+    const btn = document.querySelector('button[aria-controls="nav-menu"]');
+    if (!btn) return null;
+    const r = btn.getBoundingClientRect();
+    const panel = document.getElementById("nav-menu");
+    const strip = document.querySelector('nav[aria-label="Main"] ul');
     return {
-      scrollable: ul.scrollWidth > ul.clientWidth + 1,
-      applied: !!mask && mask !== "none" && mask.includes("gradient"),
+      target: Math.min(Math.round(r.width), Math.round(r.height)),
+      links: panel ? panel.querySelectorAll("a").length : 0,
+      stripHidden: !strip || getComputedStyle(strip).display === "none",
     };
   });
   await pg.setViewportSize({ width: 1440, height: 900 });
@@ -214,12 +229,13 @@ for (const [name, engine] of Object.entries(ENGINES)) {
       : hall.emptyPanel,
   );
   line(
-    "nav fade at 390px",
-    fade ? `scrollable=${fade.scrollable} applied=${fade.applied}` : "MISSING",
-    // Only meaningful while the strip actually overflows; if it does, the fade must
-    // be there, because it is the only thing telling a phone user there are more
-    // pages.
-    fade ? !fade.scrollable || fade.applied : false,
+    "nav menu at 390px",
+    fade
+      ? `target=${fade.target}px links=${fade.links} strip-hidden=${fade.stripHidden}`
+      : "MISSING",
+    // 6 routes + Sign in + GitHub, behind a control at or above the 44px touch floor,
+    // and the horizontal strip out of the way so it cannot hide anything.
+    fade ? fade.target >= 44 && fade.links >= 8 && fade.stripHidden : false,
   );
   if (errs.length) { if (counts) failures++; console.log(`    ${counts ? "FAIL" : "warn"} page errors: ${errs.slice(0,2).join(" | ")}`); }
   await b.close();

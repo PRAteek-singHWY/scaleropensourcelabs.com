@@ -9,7 +9,7 @@
 // content and nothing else.
 //
 // IT REPLACES THE MARKETING CHROME RATHER THAN SITTING INSIDE IT. The site's nav is a
-// floating rounded-inline plate with six links arguing for the club; every reader here has
+// floating rounded plate with six links arguing for the club; every reader here has
 // already joined. See components/ChromeGate.tsx for the suppression, and app/layout.tsx
 // for where it is applied.
 //
@@ -61,7 +61,13 @@ const NAV: NavItem[] = [
   // between them, and a member — or an organiser reading their own dashboard — has no use
   // for six admin links in a bar about their week.
   { label: "Members", href: "/admin/members", icon: "grid", adminOnly: true, adminArea: true },
-  { label: "Mentorship", href: "/admin/mentorship", icon: "compass", adminOnly: true, adminArea: true },
+  // "MENTORS", NOT "MENTORSHIP". There was a second nav item three rows down with
+  // that exact label, the same compass icon and a different destination — the member's
+  // own mentorship page — and inside /admin both rendered, adjacent, identical. A
+  // reader had no way to tell which was which except by clicking. This one is where an
+  // organiser publishes mentors and reads the interest list; the other is where a
+  // member picks one. Naming them for what they do makes the collision impossible.
+  { label: "Mentors", href: "/admin/mentorship", icon: "megaphone", adminOnly: true, adminArea: true },
   { label: "Notices", href: "/admin/notices", icon: "megaphone", adminOnly: true, adminArea: true },
   { label: "Sessions", href: "/admin/sessions", icon: "grid", adminOnly: true, adminArea: true },
   { label: "Forms", href: "/admin/forms", icon: "folder", adminOnly: true, adminArea: true },
@@ -137,6 +143,20 @@ export default function Shell({ children }: { children: React.ReactNode }) {
   const handle = user?.email?.split("@")[0] ?? "";
   const onAdmin = pathname.startsWith("/admin");
 
+  /** What the app bar says after "OSC /".
+   *
+   *  DERIVED FROM THE NAV RATHER THAN A SECOND LIST, so a route cannot be renamed in
+   *  one place and keep its old name in the other — which is exactly the drift that
+   *  left every /admin route claiming to be the dashboard. The two roots that are not
+   *  in NAV under their own label are named here; everything else finds itself. */
+  const crumb =
+    bare
+      ? "FINISH JOINING"
+      : pathname === "/dashboard"
+        ? "DASHBOARD"
+        : (NAV.find((n) => n.href === pathname)?.label ?? (onAdmin ? "ORGANISERS" : "DASHBOARD"))
+            .toUpperCase();
+
   return (
     <div className="flex min-h-screen flex-col bg-bg">
       {/* ------------------------------------------------------------- top bar
@@ -152,11 +172,13 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             href="/"
             className="tap shrink-0 font-display text-sm font-bold tracking-tight text-ink transition-colors hover:text-accent"
           >
-            {/* THE CRUMB NAMES THE PAGE, and on /onboarding that is not the dashboard —
-                which is the one page a member being gated here cannot reach yet. Saying
-                DASHBOARD over a form that stands between them and it is the chrome
-                contradicting the flow. */}
-            OSC <span className="text-dust">/</span> {bare ? "FINISH JOINING" : "DASHBOARD"}
+            {/* THE CRUMB NAMES THE PAGE, and it now reads the route to do it.
+                It was the literal "DASHBOARD" on everything except /onboarding, so all
+                seven organiser routes said "OSC / DASHBOARD" while showing the members
+                table, the mentor list or the roster. A breadcrumb that names the wrong
+                page is worse than no breadcrumb: it is the one piece of chrome a reader
+                trusts to tell them where they are. */}
+            OSC <span className="text-dust">/</span> {crumb}
           </Link>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {/* THE VIEW SWITCH, AND IT LIVES IN THE BAR RATHER THAN ONLY IN THE SIDEBAR.

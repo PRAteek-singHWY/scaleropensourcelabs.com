@@ -4,7 +4,7 @@
 //
 // The register is still quiet — a nav's job on a page like this is to be
 // findable, not to announce itself; the hero is doing the announcing — but it is
-// detached: inset from all three edges, rounded-inline, and lifted off the page by a
+// detached: inset from all three edges, rounded, and lifted off the page by a
 // 4%-black shadow. That single change is most of what separates a 2019 site header
 // from a current one, and it costs nothing structurally.
 //
@@ -12,7 +12,7 @@
 // the outline panel. Two rules matter here:
 //
 //   * Its width matches the content measure (88rem), not the viewport. A plate
-//     that runs edge to edge is a bar with rounded-inline corners; one that lines up
+//     that runs edge to edge is a bar with rounded corners; one that lines up
 //     with the copy underneath reads as part of the same layout, and the links
 //     land directly above the text they lead to.
 //
@@ -48,14 +48,61 @@
 // animates for attention on every page reads as desperate, and this one does not
 // need to.
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Outline from "@/components/Outline";
 import ThemeToggle from "@/components/ThemeToggle";
 import { DASHBOARD_HREF, JOIN_HREF, LINKS, PAGES } from "@/content/site";
 
+/** The hamburger, and its open state. Three lines because a nav is a list.
+ *  aria-hidden: the button carries the accessible name. */
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 20 20"
+      className="h-5 w-5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+    >
+      {open ? (
+        <>
+          <path d="M5 5l10 10" />
+          <path d="M15 5L5 15" />
+        </>
+      ) : (
+        <>
+          <path d="M3 6h14" />
+          <path d="M3 10h14" />
+          <path d="M3 14h14" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export default function Nav() {
   const pathname = usePathname();
+  const [menu, setMenu] = useState(false);
+
+  // Close on navigation. Next keeps this component mounted across a client-side
+  // route change, so without this the panel stays open over the page it just took
+  // you to — which reads as the tap having done nothing.
+  useEffect(() => setMenu(false), [pathname]);
+
+  // Escape closes it, because a thing that covers the page has to be dismissible
+  // without hunting for the control that opened it.
+  useEffect(() => {
+    if (!menu) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenu(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [menu]);
 
   return (
     <header className="fixed inset-x-0 top-3 z-50 px-3 sm:top-4 sm:px-6">
@@ -80,23 +127,24 @@ export default function Nav() {
           OSC
         </Link>
 
-        {/* Six links plus a logo, a toggle and a filled button do not fit across
-            390px, and the failure mode used to be silent: they overflowed, the body's
-            overflow-x:hidden clipped them, and the last items simply were not there.
-            Nothing reported an overflow because nothing could scroll.
+        {/* THE STRIP IS md+ ONLY NOW, AND BELOW THAT THERE IS A MENU.
+            It used to scroll horizontally at every width, with a mask fading its right
+            edge to say "there is more this way". That was a reasonable answer to "six
+            links do not fit across 390px" and it did not work: measured at 390, the
+            list was a 187px-wide window onto 407px of links, so four of the six
+            destinations — Hall of Fame, Team, How to Join, and most of Programmes —
+            were off-screen behind the fade, reachable only by dragging a strip most
+            readers will not think to drag. A site whose nav hides two-thirds of itself
+            on the commonest phone size does not have a nav on phones.
 
-            So the strip scrolls, and the affordance for that is EXPLICIT rather than
-            left to chance. An earlier version relied on a partially-cut last item to
-            say "there is more this way", which is only true when a word boundary
-            happens to fall in the right place — measured across widths it was false
-            at 390px, the single most common phone size, where the strip looked like
-            it simply ended.
+            So: the inline strip at md+, where all six genuinely fit, and a disclosure
+            below it. The panel is the same list, stacked, with the two items the bar
+            drops on small screens — GitHub and Sign in — put back, since they have
+            nowhere else to be at that width.
 
-            The fade is mask-image rather than an overlaid gradient because the nav is
-            a translucent plate: a solid gradient in --bg would be a visible block
-            sitting over the blur, whereas a mask fades the links themselves and works
-            over any backdrop. Removed at md, where there is room for all six. */}
-        <ul className="scroll-strip flex min-w-0 flex-1 items-center gap-4 overflow-x-auto [mask-image:linear-gradient(to_right,#000_calc(100%-1.75rem),transparent)] sm:gap-5 md:[mask-image:none] lg:flex-none lg:justify-center">
+            The mask stays for the md→lg band, where the strip is inline but can still
+            run tight against the right-hand group. */}
+        <ul className="scroll-strip hidden min-w-0 flex-1 items-center gap-4 overflow-x-auto [mask-image:linear-gradient(to_right,#000_calc(100%-1.75rem),transparent)] md:flex md:[mask-image:none] lg:flex-none lg:justify-center">
           {PAGES.map((p) => {
             // Exact match for "/", prefix match for the rest — so /projects marks
             // itself and "/" does not mark itself on every page.
@@ -192,8 +240,80 @@ export default function Nav() {
           <Link href={JOIN_HREF} className="btn btn-pop btn-compact shrink-0">
             Join
           </Link>
+
+          {/* AFTER the Join button in source order, and that is deliberate: Join is
+              the bar's one job, so it keeps the position closest to the thumb on a
+              right-handed grip. The menu is the secondary control. */}
+          <button
+            type="button"
+            onClick={() => setMenu((v) => !v)}
+            aria-expanded={menu}
+            aria-controls="nav-menu"
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-inline text-ink transition-colors hover:text-accent md:hidden"
+          >
+            <span className="sr-only">{menu ? "Close menu" : "Open menu"}</span>
+            <MenuIcon open={menu} />
+          </button>
         </div>
       </nav>
+
+      {/* THE PANEL, a sibling of the plate rather than a child of it. The plate is a
+          flex row with a fixed 56px height and `overflow` behaviour of its own; a
+          dropdown inside it would either stretch it or be clipped by it.
+
+          Not a full-screen overlay: at this size the plate is 6px from the top of the
+          viewport, so a panel hanging directly under it reads as belonging to the bar,
+          and the page staying visible behind it is what tells a reader they have opened
+          something rather than navigated. */}
+      {menu && (
+        <div
+          id="nav-menu"
+          className="plate-solid mt-2 rounded-tile border border-seam/70 p-2 md:hidden"
+        >
+          <ul className="flex flex-col">
+            {PAGES.map((p) => {
+              const current =
+                p.href === "/" ? pathname === "/" : pathname.startsWith(p.href);
+              return (
+                <li key={p.href}>
+                  <Link
+                    href={p.href}
+                    aria-current={current ? "page" : undefined}
+                    // py-3 on a 24px line box is 48px — the row IS the target, so no
+                    // `.tap` and no negative margin. Same reasoning as the dashboard
+                    // sidebar's rows, and for the same reason: these paint a hover
+                    // fill, so padding added by `.tap` would be visible and its
+                    // matching negative margin would overlap the neighbouring row.
+                    className={`block rounded-inline px-3 py-3 text-sm font-semibold transition-colors hover:bg-sunk ${
+                      current ? "text-accent" : "text-ink"
+                    }`}
+                  >
+                    {p.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+          {/* The two the bar drops below sm. They have nowhere else to be at this
+              width, and "Sign in" in particular is the returning member's only door. */}
+          <div className="mt-2 flex flex-col border-t border-seam pt-2">
+            <Link
+              href={DASHBOARD_HREF}
+              className="block rounded-inline px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunk"
+            >
+              Sign in
+            </Link>
+            <a
+              href={LINKS.github}
+              target="_blank"
+              rel="noreferrer"
+              className="block rounded-inline px-3 py-3 text-sm font-semibold text-ink transition-colors hover:bg-sunk"
+            >
+              GitHub ↗
+            </a>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
