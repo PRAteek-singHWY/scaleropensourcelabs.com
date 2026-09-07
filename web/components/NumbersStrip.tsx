@@ -49,7 +49,7 @@ export default function NumbersStrip() {
 
   if (metrics.length < 2) {
     return (
-      <div className="mt-12 rounded-panel border border-dashed border-seam px-8 py-14">
+      <div className="mt-9 rounded-panel border border-dashed border-seam px-8 py-14">
         <p className="text-display-md font-semibold">
           We are not going to invent numbers here.
         </p>
@@ -75,7 +75,7 @@ export default function NumbersStrip() {
     // Static class strings rather than an interpolated `lg:grid-cols-${n}`, because
     // Tailwind scans source text and would never emit a class it cannot see.
     <dl
-      className={`mt-12 grid grid-cols-1 gap-px overflow-hidden rounded-panel bg-seam ${
+      className={`mt-9 grid grid-cols-1 gap-px overflow-hidden rounded-panel bg-seam ${
         COLS[metrics.length] ?? COLS[4]
       }`}
     >
@@ -105,11 +105,11 @@ export default function NumbersStrip() {
               digits change width as they cycle, so an uncounted 3 growing to 24
               visibly breathes and nudges its own label. CountUp sets it for
               exactly this reason. */}
-          <dd className="text-[clamp(2.25rem,3.375vw,3.25rem)] font-semibold leading-none tracking-tightest text-accent">
+          <dd className="text-display-lg font-semibold leading-none tracking-tightest text-accent">
             <CountUp className="stat-figure" value={String(m.value)} />
           </dd>
           <dt className="mt-4 text-body font-medium text-ink">{m.label}</dt>
-          <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-dust">{m.note}</p>
+          <p className="mt-1.5 text-sm leading-relaxed text-dust">{m.note}</p>
         </div>
       ))}
     </dl>

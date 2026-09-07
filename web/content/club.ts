@@ -118,7 +118,7 @@ export const TRACKS: Track[] = [
     name: { lead: "Mentored", trail: "contribution" },
     summary: "Where almost everyone starts.",
     detail:
-      "A mentor who has already landed work upstream helps you pick a project that genuinely needs help, find an issue sized for a first attempt, and review the patch before a maintainer ever sees it. The goal is your second contribution — once you know a codebase, the next one is much faster.",
+      "A mentor who has already landed work upstream helps you pick a project that needs help, find an issue sized for a first attempt, and review the patch before a maintainer sees it. The goal is your second contribution.",
     tint: "blue",
     // "Beginner" rather than "Beginner friendly": three pills have to hold ONE line
     // at a third of an 80rem grid, and the longer phrase wrapped — which pushed this
@@ -139,7 +139,7 @@ export const TRACKS: Track[] = [
     name: { lead: "AI", trail: "security" },
     summary: "Higher difficulty. The work most likely to get you noticed.",
     detail:
-      "Open-source AI tooling shipped fast and is now load-bearing. Members find real weaknesses — credentials committed into model configs, checkpoints that execute code on load, agent frameworks letting untrusted input reach a shell — and land the fix upstream through the project's own coordinated disclosure process.",
+      "Open-source AI tooling shipped fast and is now load-bearing. Members find real weaknesses — credentials in model configs, checkpoints that execute code on load, agent frameworks letting untrusted input reach a shell — and land the fix upstream.",
     tint: "mint",
     tags: ["Disclosure", "Model configs", "Harder"],
     preview: {
@@ -638,7 +638,7 @@ export const PROGRAMMES: ProgrammeInfo[] = [
     pays:
       "No stipend. Certificates, swag and a leaderboard — plus mentors, which is the part that is actually worth having.",
     weDo:
-      "Nothing to prepare. Register when it opens and pick a project in a language you can already run. Use it to learn the mechanics — fork, branch, PR, review, merge — so the paid programmes below are not your first time using Git in anger.",
+      "Nothing to prepare. Register when it opens and pick a project in a language you can already run. Use it to learn the mechanics — fork, branch, PR, review, merge — before the paid programmes below.",
     ours:
       "30+ students participated in GSSoC '26. Top contributor from SST: Bhumi N Deshpande.",
     url: "https://gssoc.girlscript.tech/",
@@ -687,7 +687,7 @@ export const OPEN_ENTRY = PROGRAMMES.filter((p) => p.tier === "open");
 export const OUTCOMES: { title: string; body: string }[] = [
   {
     title: "A maintainer who knows your name",
-    body: "You spend a summer being reviewed by someone senior at a real project. They remember who ships. That relationship does not expire when the programme ends — it is the single most valuable thing here, and it is not the money.",
+    body: "You spend a summer being reviewed by someone senior at a real project. They remember who ships, and that relationship does not expire when the programme ends. It is worth more than the money.",
   },
   {
     title: "A public record an employer can read",
@@ -781,7 +781,7 @@ export const COMPARISON: Comparison[] = [
     axis: "How many can win",
     cp: {
       stat: "3",
-      line: "Only one team from a given institution may advance to the World Finals. Three students, per college, per year. Ten Indian teams reached Baku in 2025 — thirty students, for the entire country. They earned every place; the door is simply that narrow by design.",
+      line: "Only one team per institution may advance to the World Finals: three students, per college, per year. Ten Indian teams reached Baku in 2025 — thirty students for the entire country. The door is that narrow by design.",
       sources: [
         {
           label: "ICPC Regional Rules",
@@ -860,7 +860,7 @@ export const COMPARISON: Comparison[] = [
       line: "A metric on a held-out set. Objective and immediate, and indifferent to everything a number cannot see — including whether anybody but you can run the code.",
     },
     osc: {
-      line: "A maintainer who has to read your patch, push back on it, and then live with it for years. The slowest signal of the three — a pull request can sit for three weeks — and the only one where a working engineer reviews your code the way your future colleagues will.",
+      line: "A maintainer who has to read your patch, push back on it, then live with it for years. The slowest of the three, and the only one where a working engineer reviews you the way a colleague will.",
     },
   },
   {

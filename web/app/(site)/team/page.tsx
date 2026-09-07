@@ -35,7 +35,7 @@ export default function TeamPage() {
         <p className="chip">Who runs this</p>
         <Duo
           as="h1"
-          className="mt-6 max-w-4xl text-display-xl"
+          className="mt-6 max-w-4xl text-display-lg"
           lead="Students, not staff."
           trail="Which is why the handover is built in."
         />
@@ -67,7 +67,7 @@ export default function TeamPage() {
             nav link that points here. */}
         <section
           id="team"
-          className="section relative pt-12 sm:pt-16"
+          className="section relative pt-10 sm:pt-14"
           aria-label="Team"
           data-reveal-group
         >
@@ -103,11 +103,11 @@ export default function TeamPage() {
               re-measuring, not adjusting by eye. */}
           <Note
             place="flow"
-            tone="orange"
+            tone="warm"
             fold
             title={`${teamSize()} brains, one group chat.`}
             body="All of them trying to make your four years more fun."
-            tilt={3.5}
+            tilt={2.5}
             anchor={49}
             className="top-12"
           />
@@ -142,7 +142,7 @@ export default function TeamPage() {
         {publishedMentors().length > 0 && (
           <section
             id="mentors"
-            className="section relative pt-12 sm:pt-16"
+            className="section relative pt-10 sm:pt-14"
             aria-label="Mentors"
             data-reveal-group
           >
@@ -156,7 +156,7 @@ export default function TeamPage() {
                 the sentence does. */}
             <Note
               place="flow"
-              tone="lime"
+              tone="yellow"
               fixing="pin"
               paper="ruled"
               title="Two years ahead, not twenty."
@@ -165,7 +165,7 @@ export default function TeamPage() {
                  ran to five lines and put the note 37px through the paragraph
                  below. The band has no give — the copy has to. */
               body="All of them went through one themselves."
-              tilt={-3.5}
+              tilt={-2.5}
               anchor={59}
               className="top-2"
             />

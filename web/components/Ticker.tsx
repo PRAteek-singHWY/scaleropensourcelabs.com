@@ -120,7 +120,7 @@ export default function Ticker() {
   const [paused, setPaused] = useState(false);
 
   return (
-    <div className="section pt-12 sm:pt-16">
+    <div className="section pt-10 sm:pt-14">
       {/* Inside the measure rather than full-bleed. A band that runs edge to edge
           has to carry the `50% - 50vw` offsets, and every element that carries
           them acquires a correction for anything that pads one side of the page —
@@ -175,11 +175,11 @@ export default function Ticker() {
           // A single 32px button would have been a real defect rather than a
           // reported one — this is the only way to stop the marquee, so it is the
           // last control on the page that should be hard to hit.
-          className="group absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center"
+          className="group absolute right-1 top-1/2 flex h-[44px] w-[44px] -translate-y-1/2 items-center justify-center"
         >
           <span
             aria-hidden
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-seam bg-raise text-[0.8125rem] leading-none text-haze transition-colors duration-200 group-hover:border-accent/60 group-hover:text-accent"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-seam bg-raise text-sm leading-none text-haze transition-colors duration-200 group-hover:border-accent/60 group-hover:text-accent"
           >
             {paused ? "▶" : "❚❚"}
           </span>

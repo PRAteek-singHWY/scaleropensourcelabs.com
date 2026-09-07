@@ -67,14 +67,14 @@ export default function NextSessions() {
               {/* The date as its own block, in the accent, so a member scanning the panel
                   reads WHEN before what — which is the question they opened it with. */}
               <span className="shrink-0 text-center">
-                <span className="block font-mono text-[0.75rem] font-medium uppercase tracking-wider text-accent">
+                <span className="block font-mono text-xs font-medium uppercase tracking-wider text-accent">
                   {when.day}
                 </span>
-                <span className="block font-mono text-[0.75rem] text-dust">{when.time}</span>
+                <span className="block font-mono text-xs text-dust">{when.time}</span>
               </span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium text-ink">{s.title}</span>
-                <span className="block truncate text-[0.8125rem] text-haze">
+                <span className="block truncate text-sm text-haze">
                   {[s.speaker, s.location].filter(Boolean).join(" · ") || "Details to come"}
                 </span>
               </span>

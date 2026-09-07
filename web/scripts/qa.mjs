@@ -172,11 +172,20 @@ for (const vp of VIEWPORTS) {
         }
 
         // 2. Text too small to read comfortably on a phone.
+        //
+        // THE FLOOR IS 12, WHICH IS WHAT THIS FILE'S HEADER ALWAYS CLAIMED. It had been
+        // lowered to 11 at some point, and the site's smallest text was 11.0004px —
+        // passing by four ten-thousandths of a pixel. So this check reported clean on a
+        // site whose body copy was 13.5px and whose eyebrows were 11px, and "0 issues
+        // across 96 combinations" was taken as evidence the typography was fine.
+        //
+        // A floor moved to fit the thing it is measuring is not a floor. If this fails,
+        // the answer is to raise the type, not to lower this number again.
         for (const el of document.querySelectorAll("p,span,li,a,dd,dt,td,th")) {
           const t = (el.textContent || "").trim();
           if (!t || el.children.length) continue;
           const size = parseFloat(getComputedStyle(el).fontSize);
-          if (size && size < 11) add("tiny-text", `${size}px "${t.slice(0, 34)}"`, el);
+          if (size && size < 12) add("tiny-text", `${size}px "${t.slice(0, 34)}"`, el);
         }
 
         // 3. Tap targets. 44px is the accessibility floor for a touch device.
@@ -371,6 +380,26 @@ for (const vp of VIEWPORTS) {
     // Cheap: there are only ever a handful, and it converts a silent false pass
     // into a real number. The marker fills most of its own box behind short text,
     // so the modal colour in that box IS the painted background.
+    //
+    // FIXED OVERLAYS COME OUT FIRST, AND WITHOUT THIS THE PASS MEASURES THE WRONG
+    // THING. A locator screenshot scrolls to its own target, so an element can land
+    // underneath the nav plate or the outline panel — both `position: fixed`, both
+    // frosted — and what gets captured is the element seen THROUGH them.
+    //
+    // It cost a real diagnosis: an orange sticky note reported 1.63:1 on "painted
+    // rgb(60,47,39)" in exactly one of eight combinations, `desktop+outline` in dark.
+    // The note is black on #fdba74, 12.4:1, and every other combination said so. The
+    // one that differed was the one with a frosted panel open in the corner the note
+    // scrolls into. A checker that reports a number this confidently has to be
+    // measuring the element and nothing in front of it.
+    // Removed again below, because the reference screenshot at the foot of this
+    // loop is meant to show the page as a reader sees it, nav and all.
+    const overlayMask = result.deferred.length
+      ? await page.addStyleTag({
+          content:
+            "header, #page-outline { visibility: hidden !important }",
+        })
+      : null;
     for (const d of result.deferred) {
       let png;
       try {
@@ -407,6 +436,7 @@ for (const vp of VIEWPORTS) {
         });
       }
     }
+    await overlayMask?.evaluate((el) => el.remove());
 
     const tag = `${route.name}-${vp.name}-${theme}`;
     // fullPage, unlike before. A viewport-sized shot of a 6,000px page is evidence

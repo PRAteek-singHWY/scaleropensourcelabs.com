@@ -73,7 +73,7 @@ export default function Privacy() {
           </p>
         </div>
 
-        <div className="mt-14 space-y-12">
+        <div className="mt-10 space-y-12">
           <Part id="what-we-store" n="01" title="What we store">
             <p>
               Signing in tells us three things, and Google is the one that tells us: the
@@ -184,7 +184,7 @@ export default function Privacy() {
           </Part>
         </div>
 
-        <p className="mt-14 border-t border-seam pt-6 text-[0.9375rem] leading-relaxed text-dust">
+        <p className="mt-10 border-t border-seam pt-6 text-sm leading-relaxed text-dust">
           Something here wrong, or out of date against the code? This site is one of the
           club&apos;s own repositories —{" "}
           <a href={LINKS.repo} target="_blank" rel="noreferrer" className="link-u text-accent">

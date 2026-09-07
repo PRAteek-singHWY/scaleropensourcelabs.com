@@ -86,7 +86,7 @@ export default function HowToJoin() {
         <p className="chip">The way in</p>
         <Duo
           as="h1"
-          className="mt-6 max-w-4xl text-display-xl"
+          className="mt-6 max-w-4xl text-display-lg"
           lead="There is no bar to clear."
           trail="There is a first pull request to open."
         />
@@ -104,8 +104,8 @@ export default function HowToJoin() {
           id={level === "beginner" ? "beginner-paths" : "intermediate-paths"}
           className={
             levelIndex === 1
-              ? "band section pb-24 pt-24 sm:pb-32 sm:pt-32"
-              : "section pt-20 sm:pt-24"
+              ? "band section pb-16 pt-16 sm:pb-24 sm:pt-24"
+              : "section pt-14 sm:pt-20"
           }
           aria-label={`${LEVEL_LABEL[level]} — entry paths`}
           data-reveal-group
@@ -122,7 +122,7 @@ export default function HowToJoin() {
             />
           </div>
 
-          <div className="mt-12 space-y-4" data-reveal-group>
+          <div className="mt-9 space-y-4" data-reveal-group>
             {PATHS.filter((p) => p.level === level).map((p, i) => (
               <article
                 key={p.id}
@@ -145,7 +145,7 @@ export default function HowToJoin() {
                     <p className="mt-3 text-body text-accent">{p.tagline}</p>
 
                     {p.bring && (
-                      <p className="mt-6 rounded-md border border-seam bg-sunk px-4 py-3 font-mono text-xs leading-relaxed text-haze">
+                      <p className="mt-6 rounded-inline border border-seam bg-sunk px-4 py-3 font-mono text-xs leading-relaxed text-haze">
                         Bring: {p.bring}
                       </p>
                     )}
@@ -196,7 +196,7 @@ export default function HowToJoin() {
                         aside rather than a highlighted callout — it is a
                         clarification about how the thing runs, not a selling point. */}
                     {p.note && (
-                      <p className="flex gap-3 rounded-md border border-seam bg-sunk p-5 text-sm leading-relaxed text-haze">
+                      <p className="flex gap-3 rounded-inline border border-seam bg-sunk p-5 text-sm leading-relaxed text-haze">
                         <span
                           aria-hidden
                           className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-dust"
@@ -219,7 +219,7 @@ export default function HowToJoin() {
           literally happens when I press the button". */}
       <section
         id="the-loop"
-        className="section pt-24 sm:pt-32"
+        className="section pt-16 sm:pt-24"
         aria-label="What happens to a pull request"
         data-reveal-group
       >
@@ -241,7 +241,7 @@ export default function HowToJoin() {
             across lines is ambiguous about whether the break is a newline — and 24rem is
             384px, so it was silently clipped on desktop with no scrollbar visible to say
             there was more. Half of 1152px is 576px, which fits it. */}
-        <div className="mt-14 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
+        <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-2 lg:gap-16">
           <PRTimeline />
 
           <div>
@@ -290,7 +290,7 @@ export default function HowToJoin() {
             moment it occurs, rather than in an FAQ nobody scrolls to. */}
         <section
           id="looking-for"
-          className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
           aria-label="What the club looks for"
           /* Staggers its own children instead of settling as one block — see
              Reveal.tsx for the two modes and why a section is never both. The
@@ -303,8 +303,7 @@ export default function HowToJoin() {
               react is a page that fidgets. */}
           <Sticker
             text="Green Wall Loading... 🟩"
-            rotate={-2}
-            tone="mint"
+            rotate={-2.5}
             effect="none"
             className="right-0 bottom-16 min-[1600px]:-right-10"
           />
@@ -396,7 +395,7 @@ export default function HowToJoin() {
                       // 11px, not 10: the QA sweep flags anything under 11px as
                       // too small to read on a phone, and a decorative glyph is
                       // not a reason to make an exception nobody can see.
-                      className="mt-0.5 flex h-[1.15rem] w-[1.15rem] shrink-0 items-center justify-center rounded-full border border-haze/40 text-[0.8125rem] leading-none text-haze"
+                      className="mt-0.5 flex h-[1.15rem] w-[1.15rem] shrink-0 items-center justify-center rounded-full border border-haze/40 text-sm leading-none text-haze"
                     >
                       ✕
                     </span>
@@ -436,7 +435,7 @@ export default function HowToJoin() {
         {/* ---- The path. Numbered because it genuinely is a sequence. ------- */}
         <section
           id="path"
-          className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
           data-reveal-group
         >
           {/* A FLOW note rather than a gutter one, and this is the section that
@@ -456,12 +455,12 @@ export default function HowToJoin() {
               from that step and pointing at nothing. */}
           <Note
             place="flow"
-            tone="pink"
+            tone="warm"
             paper="grid"
             fold
             title="Step 03 is the one."
             body="Show a mentor the patch before a maintainer ever sees it."
-            tilt={4}
+            tilt={2.5}
             anchor={49}
             className="top-56"
           />
@@ -471,8 +470,7 @@ export default function HowToJoin() {
               end — see scripts and the placement note in Note.tsx. */}
           <Sticker
             text="LGTM ✅"
-            rotate={-4}
-            tone="mint"
+            rotate={-2.5}
             effect="bounce"
             className="right-4 bottom-16"
           />
@@ -536,7 +534,7 @@ export default function HowToJoin() {
         {/* ---- How the club actually runs ----------------------------------- */}
         <section
           id="culture"
-          className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
           data-reveal-group
         >
           {/* The sticky note, in the left gutter beside this section's heading.
@@ -635,7 +633,7 @@ export default function HowToJoin() {
                   // small to read on a phone, and a decorative frame is no reason
                   // to make an exception. The comment strings were shortened to
                   // suit, rather than the frame widened into the sentence.
-                  className="hidden w-44 shrink-0 self-start overflow-hidden rounded-xl border border-white/10 p-3 font-mono text-[0.8125rem] leading-relaxed lg:block"
+                  className="hidden w-44 shrink-0 self-start overflow-hidden rounded-tile border border-white/10 p-3 font-mono text-sm leading-relaxed lg:block"
                   style={{ background: "#0F172A" }}
                 >
                   <p style={{ color: "#4ADE80" }}>
@@ -658,7 +656,7 @@ export default function HowToJoin() {
             join makes the invitation read as selective rather than desperate. */}
         <section
           id="who-not-for"
-          className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+          className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
           data-reveal-group
         >
           {/* Placed low, level with the end of the list rather than its start —
@@ -672,20 +670,19 @@ export default function HowToJoin() {
               40px off it. */}
           <Note
             place="flow"
-            tone="mint"
+            tone="sky"
             paper="ruled"
             fold
             title="Read all four and still here?"
             body="Then it is probably for you. That was the whole test."
-            tilt={-4}
+            tilt={-2.5}
             anchor={52}
             className="bottom-28"
           />
           {/* Head of the same column, where the note is at the foot of it. */}
           <Sticker
             text="// TODO: decide"
-            rotate={3}
-            tone="violet"
+            rotate={2.5}
             effect="wobble"
             className="right-4 top-12"
           />
@@ -708,7 +705,7 @@ export default function HowToJoin() {
         {/* ---- FAQ ---------------------------------------------------------- */}
         <section
           id="faq"
-          className="section relative pt-12 sm:pt-16"
+          className="section relative pt-10 sm:pt-14"
           data-reveal-group
         >
           {/* Beside the answers, where somebody who has run out of them is
@@ -723,13 +720,13 @@ export default function HowToJoin() {
             paper="ruled"
             title="Not on the list?"
             body="Ask us. If we answer it twice, it ends up here."
-            tilt={3.5}
+            tilt={2.5}
             anchor={52}
             className="top-64"
           />
           <Sticker
             text="ask, don't guess 💬"
-            rotate={-3}
+            rotate={-2.5}
             effect="bounce"
             className="right-4 bottom-16"
           />

@@ -129,8 +129,22 @@ const config: Config = {
         // type would change at the two extremes and hold across the middle of the
         // range, which is most desktop widths. The offset has to ride the interpolated
         // term to be a real 2px everywhere rather than at the endpoints only.
-        "display-xl": ["clamp(2.75rem, 4.65vw, 5.25rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
-        "display-lg": ["clamp(1.9375rem, 2.7vw, 2.9375rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
+        // THE vw TERMS ARE BACK AT THEIR FULL VALUE. They were multiplied by 0.75 to
+        // ride the `html { font-size: 75% }` that used to sit in globals.css, so that
+        // headings shrank across the middle of the viewport range along with the rem
+        // ends. That root is gone — it was making the whole site render at three
+        // quarters of the sizes measured below — so a 0.75 vw term would now hold the
+        // OLD size across most desktop widths while the ends grew, which is the exact
+        // failure the note above describes, in reverse.
+        // ONE ELEMENT ON THE SITE WEARS THIS: the home page hero, which is two words.
+        // The four sub-page mastheads used to as well, and at a 12px root that was 63px
+        // and merely large. At 84px a sixteen-word title — "Paid, competitive, and open
+        // to beginners. Most students never apply because nobody told them these
+        // exist." — is four lines that fill a 1440x900 viewport on their own, with the
+        // chip above and the standfirst below and nothing else visible. They take
+        // display-lg now. A step called xl that everything uses is not a step.
+        "display-xl": ["clamp(2.75rem, 6.2vw, 5.25rem)", { lineHeight: "1.12", letterSpacing: "-0.015em" }],
+        "display-lg": ["clamp(1.9375rem, 3.6vw, 2.9375rem)", { lineHeight: "1.22", letterSpacing: "-0.003em" }],
         // Apple's tracking is POSITIVE below roughly 40px. Measured off
         // apple.com/mac: 80px/-1.2px (-0.015em), 48px/-0.144px (-0.003em), then it
         // crosses zero — 32px/+0.128px (+0.004em), 28px/+0.196px (+0.007em),
@@ -138,39 +152,75 @@ const config: Config = {
         // below the hero was being over-tightened. Optical sizing runs the other
         // way at text sizes: large type needs closing up, small type needs opening
         // out, and copying the display value downward is the usual mistake.
-        "display-md": ["clamp(1.375rem, 1.575vw, 1.8125rem)", { lineHeight: "1.32", letterSpacing: "0.006em" }],
+        "display-md": ["clamp(1.375rem, 2.1vw, 1.8125rem)", { lineHeight: "1.32", letterSpacing: "0.006em" }],
         // Body copy gets the same treatment for a different reason: 1.5 is the WCAG
         // 1.4.8 floor for a block of text, not a comfortable value, and this page's
         // paragraphs run to a 44em measure. Long lines need more leading than short
         // ones to stop the eye returning to the line it just left.
-        "body-lg": ["clamp(1.1875rem, 1.2vw, 1.5rem)", { lineHeight: "1.62", letterSpacing: "0.008em" }],
+        //
+        // THE TWO BODY STEPS CAME DOWN A NOTCH — 1.72 to 1.6, and 1.62 to 1.5 — when
+        // the root went back to 16px. Those ratios were set against 13.5px and 17.3px
+        // text, where generous leading is what keeps small type readable. At 18px and
+        // 24px the same ratio is 31px and 39px of line box, which reads as gappy
+        // rather than airy and put a third of the home page's height into the gaps
+        // between lines. Leading is relative to size; a ratio tuned at one size does
+        // not survive a third being added to it.
+        "body-lg": ["clamp(1.1875rem, 1.6vw, 1.5rem)", { lineHeight: "1.5", letterSpacing: "0.008em" }],
         // 17px — Apple's body size, and the reference the tracking values above were
         // measured from. It spent a while at 19px and is back. The tracking was
         // deliberately NOT re-derived when it went up and is not re-derived now that
         // it has come down: optical sizing moves in fractions of an em across a 2px
         // step, and re-measuring one step of a scale that was taken from a single
         // source is how the halves of it start disagreeing.
-        "body": ["1.0625rem", { lineHeight: "1.72", letterSpacing: "0.009em" }],
-        "label": ["0.6875rem", { lineHeight: "1.3", letterSpacing: "0.18em" }],
-        // Tailwind's own `sm`, overridden rather than left at its 0.875rem/1.25rem
-        // default. 17 of its 22 uses here are sans — card body copy, form help text,
-        // the FAQ answers — so it has the same short-lowercase problem as `body` and
-        // needs the same correction. The lineHeight has to be restated: Tailwind's
-        // default pairs a FIXED 1.25rem with this step, which at the new size would
-        // compute to 1.33 and come out tighter than the value it replaced.
-        "sm": ["0.9375rem", { lineHeight: "1.6" }],
-        // `xs` is back at Tailwind's own 0.75rem and stays STATED rather than deleted,
-        // which is not redundancy. The size is only half of what this step declares:
-        // the leading is a RATIO here, where Tailwind's default pairs a fixed 1rem
-        // with it. The ratio is what the default pair described at 12px, and stating
-        // it is what keeps the step from silently retightening if the size ever moves
-        // again — which is precisely what the +2px pass would have done to it, since
-        // 1rem on a 14px glyph is 1.14 and that is a 12px step's leading.
-        "xs": ["0.75rem", { lineHeight: "1.3333" }],
+        "body": ["1.125rem", { lineHeight: "1.6", letterSpacing: "0.009em" }],
+        // THE BOTTOM THREE STEPS ARE RE-CUT, and it is a spacing fix rather than a
+        // resize. They were 0.9167 / 0.9583 / 1.0625rem — 14.7, 15.3 and 17px — three
+        // steps inside 2.3px, which is not a hierarchy anybody can see. Worse, the gap
+        // they left at 1rem was filled by hand: `text-sm` is the single most common
+        // type utility in the codebase, 74 uses, a ninth size with no token.
+        //
+        // 13 / 14 / 16 / 18 gives four steps a reader can actually tell apart, and it
+        // puts a token exactly where those 74 hand-written uses already are.
+        //
+        // THE TRACKING IS ALSO A MERGE. `label` carried 0.18em here while `.label` in
+        // globals.css carried 0.07em — the same name, two values, both in use, because
+        // the CSS class and the Tailwind token were written separately. 0.12em is one
+        // value for one name: still clearly letterspaced small caps, without the gappiness
+        // 0.18em gave a 13px glyph.
+        "label": ["0.8125rem", { lineHeight: "1.3", letterSpacing: "0.12em" }],
+        // 16px. The workhorse: card body copy, form help text, FAQ answers, most UI
+        // labels. It overrides Tailwind's own `sm` (0.875rem paired with a FIXED
+        // 1.25rem), and the lineHeight has to be restated for that reason — a fixed
+        // 1.25rem against a 16px glyph is 1.25, tighter than the 1.6 a block of prose
+        // at this size wants.
+        "sm": ["1rem", { lineHeight: "1.6" }],
+        // 14px, for genuinely secondary text — captions, footnotes, table meta. The
+        // leading stays a RATIO rather than the fixed 1rem Tailwind pairs with its own
+        // `xs`, so the step cannot silently retighten if the size moves again: 1rem on
+        // a 14px glyph is 1.14, which is a caption set solid.
+        "xs": ["0.875rem", { lineHeight: "1.3333" }],
       },
       // -0.015em is Apple's 80px value exactly, so it belongs on display-xl only.
       letterSpacing: { tightest: "-0.015em" },
       borderRadius: {
+        // FOUR RADII, AND FOUR IS THE WHOLE SET. The home page rendered ten — 4, 5, 6,
+        // 8, 9, 10, 12, 18, 20, 24, 28 and the pill — several of which no eye can tell
+        // apart at the sizes they were used. That is not a system, it is what happens
+        // when every component picks its own corner.
+        //
+        //   inline  10px   badges, tags, tooltips, inputs, small controls
+        //   tile    18px   cards
+        //   panel   28px   large panels and feature surfaces
+        //   full           pills and avatars
+        //
+        // The one deliberate exception is the 2px on the contribution-wall cells and
+        // the focus ring, which are not surfaces — a 10px corner on a 10px square is a
+        // circle.
+        //
+        // A radius is proportional to the box it is on, so a badge and a feature panel
+        // genuinely do need different ones; three surface steps is the smallest set
+        // that can say that. Anything past four is drift.
+        inline: "10px",
         // Apple's tiles measured 18px on /store and 28px on /mac — small cards and
         // large feature panels respectively. Ours were 10-14px, which reads as a
         // different, tighter system.

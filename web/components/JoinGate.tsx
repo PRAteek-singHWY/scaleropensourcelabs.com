@@ -70,6 +70,7 @@
 import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import DevLoginSlot from "@/components/dev/DevLoginSlot";
 import { useAuth } from "@/lib/auth";
 import { DOMAIN } from "@/lib/profile";
 import { LINKS } from "@/content/site";
@@ -168,7 +169,7 @@ export function Steps({ at }: { at: 1 | 2 }) {
               <span
                 aria-hidden
                 className={[
-                  "grid h-7 w-7 shrink-0 place-items-center rounded-full font-mono text-[0.75rem] font-bold leading-none",
+                  "grid h-7 w-7 shrink-0 place-items-center rounded-full font-mono text-xs font-bold leading-none",
                   done || live
                     ? "bg-accent text-bg"
                     : // Dashed, not solid: a step you have not reached is not a box that
@@ -327,13 +328,13 @@ function Gate() {
 
       {error && (
         <div className="mt-5" role="alert">
-          <p className="text-[0.9375rem] leading-relaxed text-ember">{error}</p>
+          <p className="text-sm leading-relaxed text-ember">{error}</p>
           {/* A REFUSAL USED TO BE A DEAD END. Somebody signed into a personal Gmail on
               a shared laptop was told their address was wrong and left looking at the
               same button, with no hint that the fix is to pick another account. The
               button above now says so, and this line names what to look for. */}
           {wrongAccount && (
-            <p className="mt-2 text-[0.9375rem] leading-relaxed text-dust">
+            <p className="mt-2 text-sm leading-relaxed text-dust">
               You signed in as{" "}
               <span className="font-mono text-haze">{wrongAccount}</span>. Press the
               button again and pick your college account from the list — Google will
@@ -351,7 +352,7 @@ function Gate() {
           below, which is built to hold it. */}
       <div className="mt-8 flex items-center gap-3" aria-hidden>
         <span className="h-px flex-1 bg-seam" />
-        <span className={`${PLATE} rounded-full bg-pop px-3 py-1 font-mono text-[0.8125rem] font-bold uppercase tracking-wider text-black`}>
+        <span className={`${PLATE} rounded-full bg-pop px-3 py-1 font-mono text-sm font-bold uppercase tracking-wider text-black`}>
           @{DOMAIN}
         </span>
         <span className="h-px flex-1 bg-seam" />
@@ -372,12 +373,12 @@ function Gate() {
               as the step markers at the top of this card, so the two accent-filled
               objects on the card are one idea rather than two. 36px, not 40: enough to
               read as a tile, small enough not to argue with the heading. */}
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-accent text-bg">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-inline bg-accent text-bg">
             <CapIcon />
           </span>
           <div>
             <h3 className="font-semibold text-ink">Who can sign in</h3>
-            <p className="mt-2 text-[0.9375rem] leading-relaxed text-haze">
+            <p className="mt-2 text-sm leading-relaxed text-haze">
               Students with an <strong className="text-ink">@{DOMAIN}</strong> address.
               No other address can register, and that is the whole check — no fee, no
               interview, no prior experience.
@@ -385,6 +386,10 @@ function Gate() {
           </div>
         </div>
       </div>
+
+      {/* Renders nothing unless an emulator is configured, and is not in the bundle at all
+          when one is not. See components/dev/DevLoginSlot.tsx. */}
+      <DevLoginSlot />
 
       {/* NO "NO COLLEGE ACCOUNT?" FALLBACK, and this reverses a judgement I made a
           turn earlier. I added an organisers' email here on the reasoning that a closed
@@ -411,7 +416,7 @@ function Gate() {
             separator is a rule, and a rule drawn as text has to meet a text contrast
             bar it was never trying to meet. Drawn as a 1px border it is a rule, the
             checker treats it as one, and it looks the same. */}
-        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[0.9375rem]">
+        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm">
           <Link href="/privacy#what-we-store" className="tap link-u text-haze">
             Privacy
           </Link>
@@ -427,7 +432,7 @@ function Gate() {
         {/* The club, not the university. The club runs this site and owns what is on
             it; SST is where its members study, and signing their name to a student
             project would be claiming an endorsement nobody gave. */}
-        <p className="mt-3 text-[0.8125rem] text-dust">
+        <p className="mt-3 text-sm text-dust">
           © {new Date().getFullYear()} Scaler Open Source Club, a student club at
           Scaler School of Technology.
         </p>

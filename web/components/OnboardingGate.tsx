@@ -98,7 +98,7 @@ function Body({ user }: { user: User }) {
       </p>
 
       {loadError && (
-        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ember" role="alert">
+        <p className="mt-4 text-sm leading-relaxed text-ember" role="alert">
           {loadError}
         </p>
       )}

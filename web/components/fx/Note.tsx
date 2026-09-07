@@ -106,14 +106,13 @@
 // hearing. Keep it that way when adding one — if a note has nothing to say
 // beyond decoration, it should be a sticker instead.
 
+/** THREE PAPERS, FROM ONE PAD. There were seven; see the block in globals.css for
+ *  why that read as a stationery catalogue rather than as somebody's working wall.
+ *  `yellow` is the site's own --pop and stays the default. */
 const TONE_CLASS = {
   yellow: "",
-  mint: "note-mint",
-  pink: "note-pink",
+  warm: "note-warm",
   sky: "note-sky",
-  lime: "note-lime",
-  orange: "note-orange",
-  lilac: "note-lilac",
 } as const;
 
 const PAPER_CLASS = {
@@ -257,9 +256,9 @@ export default function Note({
           {title}
         </p>
         {body && (
-          <p className="mt-2 text-[0.9375rem] font-medium leading-snug">{body}</p>
+          <p className="mt-2 text-sm font-medium leading-snug">{body}</p>
         )}
-        {children && <div className="mt-2 text-[0.9375rem] font-medium">{children}</div>}
+        {children && <div className="mt-2 text-sm font-medium">{children}</div>}
         {fold && <span aria-hidden className="note-fold" />}
       </div>
     </div>

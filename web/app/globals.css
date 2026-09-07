@@ -38,6 +38,19 @@
 :root {
   color-scheme: light;
 
+  /* THE ANGLE. One number for every object on this site that is PLACED rather than
+     laid out — chips, notes, stickers, the tape across a note's top edge.
+
+     It was five numbers doing the same job: chips at -1.5deg, notes defaulting to
+     -2.5 and overridden at the call site with -4, 4, 3.5 and -3.5, stickers at -4,
+     -3, -2, 3 and 4, and the tape at 3. All of them are "this was put here by hand",
+     and a hand that tilts things nine different amounts is nine hands.
+
+     Signed by the consumer: `rotate(var(--tilt-placed))` leans one way and
+     `rotate(calc(-1 * var(--tilt-placed)))` the other, so a run of notes down a page
+     can alternate without introducing a second magnitude. */
+  --tilt-placed: -2.5deg;
+
   --bg: 250 250 252;          /* page — #FAFAFC, the soft cream-grey */
   /* WHITE, and lighter than the page. The alternating band used to be a warm
      cream a shade DARKER than the page; in a neo-pop system the relationship
@@ -443,30 +456,28 @@ html {
   scroll-padding-top: 80px;
   -webkit-text-size-adjust: 100%;
 
-  /* THE WHOLE PAGE, AT THREE QUARTERS. The design was drawn large enough that a
-     1080p laptop had to be zoomed to 75% before a section fit on screen — which
-     is the browser telling you the root is too big, not the reader. One number
-     here does what that zoom did, at every reader's default zoom, on the site and
-     in the dashboard alike: 75% of 16px is a 12px root, and every rem on the page
-     — type scale, spacing, radii, the nav plate, the container caps — is a
-     multiple of it.
+  /* NO ROOT SCALING. There is deliberately no `font-size` here, and the absence is
+     the fix rather than an omission.
 
-     A PERCENTAGE RATHER THAN `font-size: 12px`, and the difference matters. A
-     percentage resolves against whatever the reader set as their browser's
-     default text size, so somebody running 20px because they need to still gets
-     their proportional increase (15px here). A hard px value would overrule that
-     preference outright, which is the accessibility failure this looks like but
-     is not.
+     This carried `font-size: 75%` for a long time, on the reasoning that "a 1080p
+     laptop had to be zoomed to 75% before a section fit on screen — which is the
+     browser telling you the root is too big". The observation was real. The
+     diagnosis was not: what did not fit was the SECTION, and a section is mostly
+     padding, leading and empty runs. Shrinking the root shrank the type as well,
+     and the type was never the thing at fault.
 
-     WHAT IT DOES NOT SCALE, deliberately: the px in this file. Hairlines, borders
-     and the 44px minimum touch targets are physical constants — a 0.75px rule is
-     a blurry rule, and a thumb does not get smaller because the type did. Type
-     was the part that had to move, so `text-[13px]`-style utilities were all
-     rewritten in rem to come with it, and the vw terms in the fluid clamps came
-     down by the same quarter — leave those in px and the headings would hold
-     their old size across the middle of the viewport range while everything
-     around them shrank. */
-  font-size: 75%;
+     What it cost, measured: a 12px root put body copy at 13.5px and eyebrow labels
+     at 11px, against the 18px and 14.7px every token in tailwind.config.ts was
+     written for — those values are Apple's, measured, and the comments there say
+     so. It also multiplied a clean rem scale into fractional pixels (11.4996px,
+     12.5004px, gaps of 4.2px and 12.3375px), which is a large part of why the site
+     looked muddy rather than merely small.
+
+     And it did not even work. With the root at 75% the home page was still
+     10,566px — about twelve screens. The height was in the padding all along.
+
+     So the type is back at its designed size and the space it needed came out of
+     the spacing, not the letters. If a section does not fit, cut the section. */
 }
 
 body {
@@ -525,12 +536,17 @@ body::before {
    now, so it belongs to the same voice as the buttons and chips. Section eyebrows
    use .chip instead; this is for the ones inside cards, where fourteen yellow
    blocks would be a fairground. */
+/* SAME SIZE AND TRACKING AS THE `label` TOKEN, and that is the whole point of these
+   two lines. This class and Tailwind's `text-label` are the same name for the same
+   thing, written in two files, and they had drifted to two different sizes (1.0417rem
+   here, 0.9167rem there) and two different trackings (0.07em / 0.18em) with both in
+   active use. Change one, change the other. */
 .label {
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
+  font-size: 0.8125rem; /* text-label */
   /* Stated, not inherited from the face — see the type note above. */
   font-weight: 600;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.12em; /* text-label */
   text-transform: uppercase;
   color: rgb(var(--dust));
   line-height: 1.2;
@@ -662,6 +678,20 @@ body::before {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
 
+/* THE SAME PLATE, OPAQUE, for the mobile menu panel.
+   The bar can be 80% and frosted because what shows through it is a page scrolling
+   under a 56px strip — the translucency is the effect. A panel of eight links is
+   not that: it COVERS content, and at 0.8 the headline and the hero's yellow
+   highlight behind it read straight through the list, which is unreadable and looks
+   like a rendering fault rather than a material. Same border, same shadow, same
+   corner; only the ground is solid.
+   The blur stays for the edges of the shadow to sit on, and costs nothing once the
+   background behind it is opaque. */
+.plate-solid {
+  background: rgb(var(--raise));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
 /* Nav links. Charcoal at rest, azure on hover, and the transition is the 180ms
    ease-in-out the brief asks for site-wide.
 
@@ -676,7 +706,7 @@ body::before {
      everything beside it. The plate had room at 14px with the nav well short of its
      wrap point; 16px spends most of that margin, so the sm breakpoint is worth a look
      if a seventh link is ever added. */
-  font-size: 0.875rem;
+  font-size: 1rem; /* text-sm */
   font-weight: 500;
   letter-spacing: -0.005em;
   transition: color 180ms ease-in-out;
@@ -737,12 +767,12 @@ body::before {
   background: rgb(var(--accent));
   color: rgb(var(--bg));
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.875rem; /* text-xs */
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   line-height: 1;
-  transform: rotate(-1.5deg);
+  transform: rotate(var(--tilt-placed));
 }
 
 /* THE FLOAT, and .chip-true is the switch that decides who gets it.
@@ -826,10 +856,12 @@ body::before {
    and no tilt — see .chip-true below. A reader should be able to tell at a glance
    which badges are labels the site applied to itself and which are facts about a
    person. 11.5:1. */
-.chip-violet {
-  background: #ddd6fe;
-  color: #4c1d95;
-}
+/* .chip-violet IS GONE. It was the only violet on the site, worn by two badges and
+   a sticker, and a colour that appears three times is a colour nobody reads as
+   meaning anything — it just widens the palette. Those three take the default blue
+   chip now. The variants that remain are the ones SAYING something: quiet for a
+   neutral label, pop for the primary action, and the mint/red pair where the colour
+   is the argument. */
 
 /* Mint and neutral, for the two headers of the "what we look for" pair. The
    colour IS the argument there — one card is the answer and one is the thing
@@ -855,7 +887,7 @@ body::before {
    action instead of the violet the credentials wear.
 
    #FFD600 with pitch black on it, the same 14.9:1 pair .btn-pop uses, and stated
-   as literals for the same reason .chip-violet is: these fills do not invert. A
+   as literals because these fills do not invert. A
    yellow badge is yellow on both grounds, and pinning the foreground to #000
    rather than rgb(var(--ink)) is what stops the dark theme putting near-white on
    it. */
@@ -976,7 +1008,7 @@ body::before {
   white-space: nowrap;
   vertical-align: middle;
   padding: 4px 12px;
-  border-radius: 8px;
+  border-radius: 10px; /* rounded-inline */
   font-weight: 700;
   /* Keeps the pill from dragging the line box open in a tight display leading. */
   line-height: 1.15;
@@ -1127,7 +1159,7 @@ body::before {
   color: #000000;
   padding: 2px 6px;
   margin-block: -2px;
-  border-radius: 4px;
+  border-radius: 10px; /* rounded-inline */
   font-weight: 700;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
@@ -1385,7 +1417,7 @@ body::before {
   --bento-edge: #f1f5f9;
   background: rgb(var(--raise));
   border: 2px solid var(--bento-edge);
-  border-radius: 20px;
+  border-radius: 18px; /* rounded-tile */
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
   transition:
     box-shadow 200ms ease-in-out,
@@ -1436,7 +1468,7 @@ body::before {
   background: rgb(var(--accent));
   color: rgb(var(--bg));
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.8125rem;
+  font-size: 0.875rem; /* text-xs */
   font-weight: 800;
   letter-spacing: 0.04em;
   font-variant-numeric: tabular-nums;
@@ -1552,11 +1584,11 @@ body::before {
   min-width: 2.25rem;
   height: 2.25rem;
   padding: 0 0.5rem;
-  border-radius: 10px;
+  border-radius: 10px; /* rounded-inline */
   background: var(--tint-soft);
   color: var(--tint-ink);
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.875rem;
+  font-size: 1rem; /* text-sm */
   font-weight: 800;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
@@ -1580,7 +1612,7 @@ body::before {
      beside it, it has lowercase to be short of, and at 12px Plus Jakarta Sans's
      x-height put it below anything else readable here. The caps-bearing pills stay
      at 0.75rem for the reason given in tailwind.config.ts. */
-  font-size: 0.8125rem;
+  font-size: 0.875rem; /* text-xs */
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.2;
@@ -1681,33 +1713,33 @@ body::before {
   }
 }
 
-.note-mint {
-  --note-fill: #86efac;
-  --note-tape: 124 58 237;
-}
-.note-pink {
-  --note-fill: #f9a8d4;
-  --note-tape: 15 118 110;
+/* ---- Paper stocks: THREE, FROM ONE PAD ------------------------------------
+   There were six — mint #86efac, pink #f9a8d4, sky #7dd3fc, lime #bef264,
+   orange #fdba74, lilac #c4b5fd — plus the yellow default. Each was picked for
+   the section it landed in and each took "a tape from a different corner of the
+   wheel to its own fill", so eleven notes across the site carried seven papers
+   and seven tapes between them.
+
+   Every one of those was a defensible choice on its own and the set was the
+   problem: a wall with six colours of paper on it does not read as somebody's
+   working wall, it reads as a stationery catalogue. The site's own ink is blue
+   and yellow, and none of those six were either.
+
+   So: the yellow default (--pop), a warm cream, and a soft blue drawn off the
+   accent. Three papers from one pad, and the tape is the same warm grey on all
+   of them — one roll, as there would be on a real wall. Colour is still doing
+   work (a run of notes down a page alternates rather than repeating) but it is
+   doing it inside a family.
+
+   Black on each, measured: 18.3:1 on cream, 15.6:1 on the blue, 14.9:1 on the
+   yellow. The `.note` rule sets `color: #000000` for all three. */
+.note-warm {
+  --note-fill: #fde8c8;
+  --note-tape: 120 113 108;
 }
 .note-sky {
-  --note-fill: #7dd3fc;
-  --note-tape: 180 83 9;
-}
-/* Three more, measured the same way as the first four: 16.1:1 (lime), 12.4:1
-   (orange) and 11.3:1 (lilac) with black on them. Each takes a tape from a
-   different corner of the wheel to its own fill, because tape the same hue as
-   the paper reads as printed on rather than stuck on. */
-.note-lime {
-  --note-fill: #bef264;
-  --note-tape: 219 39 119;
-}
-.note-orange {
-  --note-fill: #fdba74;
-  --note-tape: 30 64 175;
-}
-.note-lilac {
-  --note-fill: #c4b5fd;
-  --note-tape: 21 128 61;
+  --note-fill: #cfe0fd;
+  --note-tape: 120 113 108;
 }
 
 /* ---- Paper stock ----------------------------------------------------------
@@ -1777,7 +1809,9 @@ body::before {
   left: 50%;
   width: 5.5rem;
   height: 1.4rem;
-  transform: translateX(-50%) rotate(3deg);
+  /* The tape leans the OTHER way from the note it is holding down, which is what
+     stops the pair reading as one rigid object. Same magnitude, negated. */
+  transform: translateX(-50%) rotate(calc(-1 * var(--tilt-placed)));
   background: rgb(var(--note-tape) / 0.85);
   border: 1px solid rgb(0 0 0 / 0.35);
 }
@@ -1887,7 +1921,7 @@ body::before {
   border: 2px solid #000000;
   box-shadow: 3px 3px 0 0 #000000;
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.875rem; /* text-xs */
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
@@ -1992,14 +2026,14 @@ body::before {
   max-width: 15rem;
   transform: translateX(-50%) translateY(4px);
   padding: 0.4rem 0.7rem;
-  border-radius: 8px;
+  border-radius: 10px; /* rounded-inline */
   /* Fixed dark fill with light text, not tokens: a tooltip is a floating object
      that should look the same on both themes, and one opaque pair is one contrast
      pair to prove (14.6:1) instead of two. */
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.8125rem;
+  font-size: 0.875rem; /* text-xs */
   font-weight: 500;
   line-height: 1.35;
   letter-spacing: 0;
@@ -2070,11 +2104,11 @@ body::before {
      of that rule this cannot express on its own. */
   width: min(24rem, 34vw);
   padding: 0.7rem 0.85rem;
-  border-radius: 10px;
+  border-radius: 10px; /* rounded-inline */
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-sans), system-ui, sans-serif;
-  font-size: 0.75rem;
+  font-size: 0.875rem; /* text-xs */
   font-weight: 500;
   /* The captions above are uppercase and tracked out; this is prose, so it resets
      both — otherwise it inherits the chart's caption feel and reads as another
@@ -2251,7 +2285,7 @@ body::before {
 .person-tip-batch {
   margin-bottom: 0.35rem;
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem; /* text-label */
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
@@ -2307,7 +2341,7 @@ body::before {
   margin: 0.5rem 0 0;
   padding: 0;
   list-style: none;
-  font-size: 0.75rem;
+  font-size: 0.875rem; /* text-xs */
   line-height: 1.5;
   color: rgb(var(--haze));
 }
@@ -2341,11 +2375,11 @@ body::before {
   bottom: 0.5rem;
   z-index: 20;
   padding: 0.5rem 0.7rem;
-  border-radius: 10px;
+  border-radius: 10px; /* rounded-inline */
   background: #0f172a;
   color: #e2e8f0;
   font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem; /* text-label */
   line-height: 1.4;
   opacity: 0;
   transform: translateY(6px);
@@ -2373,7 +2407,7 @@ body::before {
   min-width: 2.4rem;
   height: 1.9rem;
   padding: 0 0.5rem;
-  border-radius: 6px;
+  border-radius: 10px; /* rounded-inline */
   background: rgb(var(--accent));
   /* --bg, not white. The accent inverts between themes — #0038FF is dark, its
      dark-theme step #5C82FF is light — so a hardcoded white measured 6.98:1 on one
@@ -2381,7 +2415,7 @@ body::before {
      and lands at 6.98 light / 5.63 dark, which is why .btn-primary uses it too. */
   color: rgb(var(--bg));
   font-family: var(--font-label), system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: 0.875rem; /* text-xs */
   font-weight: 700;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
@@ -2407,7 +2441,7 @@ body::before {
      system control. */
   min-height: 44px;
   padding: 11px 21px;
-  border-radius: 10px;
+  border-radius: 10px; /* rounded-inline */
   font-family: var(--font-label), system-ui, sans-serif;
   /* 15px/700, back down with the rest of the page after the +2px pass took it to 17.
      15 is where this step sat under Plus Jakarta Sans, which runs about a third wider
@@ -2415,7 +2449,7 @@ body::before {
      place on the page where this control comes near a wrap point rather than sitting
      in open space, is being returned to a width that was known to hold one line at
      390px rather than moved somewhere new. */
-  font-size: 0.9375rem;
+  font-size: 1rem; /* text-sm */
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2485,7 +2519,7 @@ body::before {
 .btn-compact {
   min-height: 44px;
   padding: 0 16px;
-  font-size: 0.8125rem;
+  font-size: 0.875rem; /* text-xs */
 }
 
 /* The electric-blue indicator on the secondary CTA. A right-aligned bolt in a
@@ -2500,10 +2534,10 @@ body::before {
   margin-left: 0.55rem;
   height: 1.25rem;
   width: 1.25rem;
-  border-radius: 5px;
+  border-radius: 10px; /* rounded-inline */
   background: rgb(var(--accent));
   color: rgb(var(--bg));
-  font-size: 0.75rem;
+  font-size: 0.8125rem; /* text-label */
   line-height: 1;
 }
 
@@ -2873,7 +2907,7 @@ body::before {
      exempt from the +2px pass — see the note in tailwind.config.ts for why a uniform
      instruction overrides a per-face one. That pass is reversed and this comes back
      with it, still clear of the 11px floor the QA sweep enforces. */
-  font-size: 0.875rem;
+  font-size: 0.875rem; /* text-xs */
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -2885,7 +2919,7 @@ body::before {
   /* --sky rather than --accent: this is a decorative glyph at display weight, not
      a 13px link, so it takes the brighter step. */
   color: rgb(var(--sky));
-  font-size: 0.75rem;
+  font-size: 0.8125rem; /* text-label */
 }
 
 /* Scrolls, but without a bar drawn through the nav's bottom hairline. */
@@ -2900,6 +2934,46 @@ body::before {
 .seam-fade {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgb(var(--seam)) 12%, rgb(var(--seam)) 88%, transparent);
+}
+
+/* A HORIZONTALLY SCROLLING TABLE, AND SOMETHING THAT SAYS SO.
+   The members table is wider than its column — 1151px into 1102 at 1440, and far
+   more than that on a laptop — and it scrolled with no affordance whatsoever: the
+   GitHub column was simply cut off mid-header, and nothing on screen suggested
+   there was anything to the right of it. An organiser reading the roster had no
+   reason to think the table was not complete.
+
+   The mask fades the content itself rather than laying a gradient over it, for the
+   reason the nav strip uses one: these tables sit on cards whose ground is --raise
+   in light and something else in dark, so an overlay in a fixed colour is a visible
+   block on one of the two themes.
+
+   `animation-timeline: scroll(self inline)` retracts the fade as you reach the end,
+   so it stops claiming there is more once there is not. Browsers without
+   scroll-driven animations keep a static fade, which is the honest fallback: the
+   table does scroll, and the only thing lost is the fade going away at the end. */
+.table-scroll {
+  overflow-x: auto;
+  --fade: 2rem;
+  mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+}
+@supports (animation-timeline: scroll()) {
+  @keyframes table-fade-out {
+    to {
+      --fade: 0rem;
+    }
+  }
+  @property --fade {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 2rem;
+  }
+  .table-scroll {
+    animation: table-fade-out linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: contain 80% contain 100%;
+  }
 }
 
 ::selection {

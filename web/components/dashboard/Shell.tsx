@@ -25,13 +25,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Icon from "@/components/Icon";
 import ThemeToggle from "@/components/ThemeToggle";
+import DevLoginSlot from "@/components/dev/DevLoginSlot";
 import { useAuth } from "@/lib/auth";
 import { LINKS } from "@/content/site";
 
 type NavItem = {
   label: string;
   href: string;
-  icon: "grid" | "folder" | "settings" | "megaphone";
+  icon: "grid" | "folder" | "settings" | "megaphone" | "compass";
+  /** Shown only while the reader is inside /admin. Six organiser links in a sidebar about
+   *  a member's week would be six links most readers can never use. */
+  adminArea?: boolean;
   /** Only rendered for an admin. A convenience, never a gate: /admin ships its markup to
    *  anybody who asks for it, and what refuses a non-admin is firestore.rules, which
    *  denies every read the page depends on. */
@@ -52,18 +56,41 @@ const NAV: NavItem[] = [
   // breaks nothing, fails no test, and is only found by asking "how does an organiser
   // actually get there".
   { label: "Organisers", href: "/admin", icon: "megaphone", adminOnly: true },
+  // THE ORGANISER SECTIONS, listed only while an organiser is inside them. /admin was one
+  // route with six panels; splitting it into six means the sidebar has to be the way
+  // between them, and a member — or an organiser reading their own dashboard — has no use
+  // for six admin links in a bar about their week.
+  { label: "Members", href: "/admin/members", icon: "grid", adminOnly: true, adminArea: true },
+  // "MENTORS", NOT "MENTORSHIP". There was a second nav item three rows down with
+  // that exact label, the same compass icon and a different destination — the member's
+  // own mentorship page — and inside /admin both rendered, adjacent, identical. A
+  // reader had no way to tell which was which except by clicking. This one is where an
+  // organiser publishes mentors and reads the interest list; the other is where a
+  // member picks one. Naming them for what they do makes the collision impossible.
+  { label: "Mentors", href: "/admin/mentorship", icon: "megaphone", adminOnly: true, adminArea: true },
+  { label: "Notices", href: "/admin/notices", icon: "megaphone", adminOnly: true, adminArea: true },
+  { label: "Sessions", href: "/admin/sessions", icon: "grid", adminOnly: true, adminArea: true },
+  { label: "Forms", href: "/admin/forms", icon: "folder", adminOnly: true, adminArea: true },
+  { label: "Team", href: "/admin/team", icon: "settings", adminOnly: true, adminArea: true },
   // PULL REQUESTS IS GONE FOR NOW. It anchored to the GitHub panel, which cannot say
   // anything until the contribution sync is deployed and members have handles on their
   // profiles — so it was a nav item leading to a card that reads "tell us where to look".
   // The panel itself stays, and still carries id="open-source", so restoring this is one
   // line when there is something behind it.
   { label: "Projects", href: "/projects", icon: "folder" },
+  // MENTORSHIP IS A ROUTE NOW rather than the last panel on the overview. It is the club's
+  // headline activity and the reason most people join, and it was below four weekly panels
+  // on a page about the week — buried, and mixed in with things it has nothing to do with.
+  { label: "Mentorship", href: "/dashboard/mentorship", icon: "compass" },
   // "MY DETAILS", NOT "SETTINGS". The design's word promised a settings page — notification
   // preferences, account options — and there are none: the only thing a member can change
   // about themselves is their profile. A label that names a page which does not exist is
   // the kind of thing a reader clicks once, finds nothing, and stops trusting the nav over.
   // If anything genuinely settings-shaped ever arrives, it earns the name back.
-  { label: "My details", href: "/dashboard#details", icon: "settings", anchor: true },
+  // AN ANCHOR NO LONGER. `/dashboard#details` scrolled to a panel in the right-hand
+  // column, which is the kind of nav item somebody presses once, watches the page jump,
+  // and stops trusting. It is a page, so the link goes somewhere.
+  { label: "My details", href: "/dashboard/details", icon: "settings" },
 ];
 
 /** The sidebar's link styling.
@@ -101,9 +128,34 @@ const NAV_CLASS =
 export default function Shell({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
   const pathname = usePathname();
+  /** ONBOARDING GETS THE BAR AND THE FOOTER AND NOTHING ELSE.
+   *
+   *  Finishing the profile is a gate: an incomplete one is sent here and the dashboard is
+   *  not reachable until it is done. A sidebar offering Good first issues, Projects and My
+   *  details next to that form is three invitations to leave the one screen the member has
+   *  to finish — and two of them lead to a dashboard that would bounce them straight back.
+   *
+   *  The bar stays, because sign-out has to remain reachable from every signed-in page.
+   *  Somebody who lands here with the wrong Google account needs a way out that is not the
+   *  back button. */
+  const bare = pathname === "/onboarding";
 
   const handle = user?.email?.split("@")[0] ?? "";
   const onAdmin = pathname.startsWith("/admin");
+
+  /** What the app bar says after "OSC /".
+   *
+   *  DERIVED FROM THE NAV RATHER THAN A SECOND LIST, so a route cannot be renamed in
+   *  one place and keep its old name in the other — which is exactly the drift that
+   *  left every /admin route claiming to be the dashboard. The two roots that are not
+   *  in NAV under their own label are named here; everything else finds itself. */
+  const crumb =
+    bare
+      ? "FINISH JOINING"
+      : pathname === "/dashboard"
+        ? "DASHBOARD"
+        : (NAV.find((n) => n.href === pathname)?.label ?? (onAdmin ? "ORGANISERS" : "DASHBOARD"))
+            .toUpperCase();
 
   return (
     <div className="flex min-h-screen flex-col bg-bg">
@@ -118,9 +170,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
         <div className="flex h-[56px] items-center justify-between gap-4 px-4 sm:px-6">
           <Link
             href="/"
-            className="tap shrink-0 font-display text-[0.9375rem] font-bold tracking-tight text-ink transition-colors hover:text-accent"
+            className="tap shrink-0 font-display text-sm font-bold tracking-tight text-ink transition-colors hover:text-accent"
           >
-            OSC <span className="text-dust">/</span> DASHBOARD
+            {/* THE CRUMB NAMES THE PAGE, and it now reads the route to do it.
+                It was the literal "DASHBOARD" on everything except /onboarding, so all
+                seven organiser routes said "OSC / DASHBOARD" while showing the members
+                table, the mentor list or the roster. A breadcrumb that names the wrong
+                page is worse than no breadcrumb: it is the one piece of chrome a reader
+                trusts to tell them where they are. */}
+            OSC <span className="text-dust">/</span> {crumb}
           </Link>
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             {/* THE VIEW SWITCH, AND IT LIVES IN THE BAR RATHER THAN ONLY IN THE SIDEBAR.
@@ -169,6 +227,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             below that the dashboard is simply one column — which is what the content
             wants anyway, since every panel is full width there. The sign-out and theme
             controls live in the bar above, so nothing is lost by its absence. */}
+        {!bare && (
         <aside className="hidden w-60 shrink-0 flex-col border-r border-seam bg-sunk/60 px-4 py-6 lg:flex">
           {/* Who you are, which the top bar no longer has room for. */}
           {user && (
@@ -180,7 +239,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                 <span className="block text-sm font-bold text-ink">
                   {isAdmin ? "Organiser" : "Learner"}
                 </span>
-                <span className="block truncate font-mono text-[0.6875rem] text-dust">
+                <span className="block truncate font-mono text-xs text-dust">
                   {handle}
                 </span>
               </span>
@@ -209,7 +268,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
                183px of the 198px between the button's padding, so it holds one line on
                its own. It stays because .btn uppercases whatever it is given, and the
                next label somebody tries will not be measured first. */
-            className="btn btn-primary mt-6 w-full justify-center whitespace-nowrap text-[0.8125rem]"
+            className="btn btn-primary mt-6 w-full justify-center whitespace-nowrap text-sm"
           >
             {/* `external`, not `plus`. A plus means "create a new thing here", which is
                 exactly the promise the old label made and could not keep; this opens
@@ -224,7 +283,15 @@ export default function Shell({ children }: { children: React.ReactNode }) {
               // Admin-only items for admins, and never the page you are already on: an
               // item that navigates nowhere is not worth the row it sits in. Anchors are
               // exempt because they scroll somewhere real on this same page.
-              .filter((item) => (!item.adminOnly || isAdmin) && (item.anchor || item.href !== pathname))
+              // `adminArea` items appear only inside /admin — see the note on the field.
+              // The current page is filtered out rather than styled as current: a link to
+              // where you already are is the one dead item in a sidebar.
+              .filter(
+                (item) =>
+                  (!item.adminOnly || isAdmin) &&
+                  (!item.adminArea || pathname.startsWith("/admin")) &&
+                  (item.anchor || item.href !== pathname),
+              )
               .map((item) => (
                 <Link key={item.label} href={item.href} className={NAV_CLASS}>
                   <Icon name={item.icon} size="1.0625rem" strokeWidth={1.75} />
@@ -253,9 +320,21 @@ export default function Shell({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </aside>
+        )}
 
         <main id="main" className="min-w-0 flex-1 px-4 pb-14 pt-6 sm:px-6 sm:pt-8">
-          <div className="mx-auto max-w-[72rem]">{children}</div>
+          <div className="mx-auto max-w-[72rem]">
+            {children}
+            {/* THE DEV LOGIN LIVES ON THE SHELL, not on the cards that refuse you, and
+                that is the difference between a shortcut and a switch. Put on the sign-in
+                card alone it got you IN as somebody; here it is on all eleven signed-in
+                routes in every state, so swapping from the test member to the test
+                organiser and back is one click from wherever you already are rather than
+                sign out, /join, sign in.
+                Renders nothing unless an emulator is configured, and is not in the bundle
+                at all when one is not — see components/dev/DevLoginSlot.tsx. */}
+            <DevLoginSlot />
+          </div>
         </main>
       </div>
 

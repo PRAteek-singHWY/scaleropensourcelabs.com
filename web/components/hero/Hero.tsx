@@ -91,7 +91,7 @@ function FloatingBadges() {
           aria-hidden
           className="absolute -top-5 right-4 z-10 hidden animate-float lg:block"
         >
-          <span className="chip chip-violet chip-true shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
+          <span className="chip chip-true shadow-[0_8px_20px_rgba(0,0,0,0.12)]">
             🟣 {merged.label}
           </span>
         </span>
@@ -133,7 +133,7 @@ export default function Hero() {
       // Deliberately the utility rather than `.page-top` itself: that class is declared
       // after @tailwind utilities, so it would beat `lg:pt-40` at equal specificity and
       // silently flatten the large-screen air. See the note over .page-top.
-      className="section relative pb-10 pt-24 sm:pb-14 sm:pt-28 lg:pb-32 lg:pt-40"
+      className="section relative pb-10 pt-16 sm:pb-14 sm:pt-28 lg:pb-32 lg:pt-40"
       aria-label="Scaler Open Source Club"
     >
       {/* The ambient lighting. Two orbs rather than one, placed off the diagonal
@@ -215,7 +215,7 @@ export default function Hero() {
               only where the type never wraps — and this wraps to two lines below
               about 1150px, which is most phones. At 0.95 "OPEN" and "SOURCE" stacked
               with the O's very nearly touching. */}
-          <h1 className="mt-4 font-display text-[clamp(2.75rem,4.875vw,5.5rem)] font-bold uppercase leading-[1.02] tracking-[-0.03em] text-ink">
+          <h1 className="mt-4 font-display text-display-xl font-bold uppercase leading-[1.02] tracking-[-0.03em] text-ink">
             Open <span className="text-accent">Source</span>
           </h1>
 

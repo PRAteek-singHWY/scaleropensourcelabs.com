@@ -34,7 +34,7 @@ import {
 import { fmtDate } from "@/lib/profile";
 
 const ctl =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
+  "w-full rounded-inline border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
 
 const TYPES: { value: FieldType; label: string }[] = [
   { value: "short", label: "Short answer" },
@@ -449,7 +449,7 @@ export default function FormBuilder() {
                       {!f.open && <span className="chip mr-2">Closed</span>}
                       {f.title}
                     </p>
-                    <p className="mt-1 font-mono text-[0.75rem] uppercase tracking-wider text-dust">
+                    <p className="mt-1 font-mono text-xs uppercase tracking-wider text-dust">
                       {fmtDate(f.created_at)} · {f.author_email} · {f.fields.length}{" "}
                       question{f.fields.length === 1 ? "" : "s"}
                     </p>
@@ -521,7 +521,7 @@ export default function FormBuilder() {
                                   <td className="py-2 pr-4">
                                     <span className="text-ink">{r.name ?? "—"}</span>
                                     <br />
-                                    <span className="break-all font-mono text-[0.75rem] text-dust">
+                                    <span className="break-all font-mono text-xs text-dust">
                                       {r.email}
                                     </span>
                                   </td>

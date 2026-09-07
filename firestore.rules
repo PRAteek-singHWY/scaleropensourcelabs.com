@@ -662,63 +662,10 @@ service cloud.firestore {
      *  LEVELS array with LEVEL_LABEL. Deployed as it was, it would have refused every real
      *  application while looking perfectly correct. `npm run rules` now diffs all four of
      *  these sets against the content. */
-    function isWellFormedApplication(d) {
-      return
-        d.keys().hasOnly([
-          'name', 'email', 'year_branch', 'hostel', 'github',
-          'level', 'path', 'programs', 'programs_other', 'submitted_at'
-        ])
-        && d.keys().hasAll([
-          'name', 'email', 'year_branch', 'hostel', 'level', 'path',
-          'programs', 'submitted_at'
-        ])
-
-        // Required strings, bounded. The form's maxlength is a courtesy to the reader;
-        // these are the real limits, because a direct SDK call never sees the form.
-        && d.name is string && d.name.size() > 0 && d.name.size() <= 120
-        && d.email is string && d.email.size() > 3 && d.email.size() <= 200
-        // NOT restricted to the college domain, deliberately, and this is the one place
-        // that differs from every other rule here. Somebody applying from a personal
-        // address is an applicant to talk to, not a forgery to reject — the domain rule
-        // belongs on MEMBERSHIP rather than on the act of asking.
-        && d.email.matches('^[^@\\s]+@[^@\\s]+[.][^@\\s]+$')
-        && d.year_branch is string && d.year_branch.size() > 0 && d.year_branch.size() <= 120
-
-        && (!('github' in d) || (d.github is string && d.github.size() > 0 && d.github.size() <= 100))
-
-        && d.hostel in ['uniworld-1', 'uniworld-2']
-        && d.level in ['beginner', 'intermediate']
-        && d.path in ['build-day', 'first-contribution', 'fast-track', 'program-track']
-
-        // Programmes are REQUIRED and must be non-empty, which is the form's rule too —
-        // the browser refuses the submit without a tick. Enforced here as well because a
-        // direct SDK call never sees the form, and an application with an empty list would
-        // read as a UI bug to whoever opens it rather than as the forgery it is.
-        && d.programs is list
-        && d.programs.size() > 0
-        && d.programs.size() <= 10
-        && d.programs.hasOnly([
-             'gsoc', 'lfx', 'outreachy', 'sok', 'hacktoberfest', 'sob',
-             'gssoc', 'ssoc', 'esoc', 'other'
-           ])
-        // 'other' and its free text are a pair, checked in BOTH directions: no bare
-        // 'other' with nothing to explain it, and no stray text without the tick that is
-        // supposed to have produced it.
-        && (!d.programs.hasAny(['other'])
-            || ('programs_other' in d
-                && d.programs_other is string
-                && d.programs_other.size() > 0))
-        && (!('programs_other' in d)
-            || (d.programs_other is string
-                && d.programs_other.size() > 0
-                && d.programs_other.size() <= 120
-                && d.programs.hasAny(['other'])))
-
-        // The server's clock, not the submitter's. Everything else in this document was
-        // supplied by a stranger; this one field cannot be forged, so submission ORDER
-        // stays trustworthy even when nothing else does.
-        && d.submitted_at == request.time;
-    }
+    // isWellFormedApplication WAS HERE. It validated the anonymous application form's
+    // shape and was the entire boundary on a collection strangers could write to. With
+    // the form gone and create denied, it guarded nothing — and an unused validator on a
+    // sealed collection is an invitation to reopen the collection by deleting one line.
 
     // ---------------------------------------------------------------- members
 
@@ -1087,30 +1034,31 @@ service cloud.firestore {
     // ---------------------------------------------------- legacy applications
 
     match /applications/{id} {
-      // NOT LEGACY, AND THE COMMENT THAT SAID SO COST THE CLUB ITS FRONT DOOR. An upstream
-      // merge took this block as "nothing writes here any more; the profile replaced it"
-      // and denied create — but /join still renders components/ApplyForm.tsx, which writes
-      // exactly here. Every application submitted between that merge and this line was
-      // refused. The form rendered, the applicant filled it in, and the write failed.
+      // SEALED, AND THE COMMENT THIS REPLACES IS THE REASON TO READ CAREFULLY BEFORE
+      // CHANGING IT BACK. It said: "NOT LEGACY, AND THE COMMENT THAT SAID SO COST THE CLUB
+      // ITS FRONT DOOR" — an upstream merge had denied create while /join still rendered
+      // an application form, so every application submitted in between was refused. The
+      // form rendered, the applicant filled it in, the write failed, and nothing in the UI
+      // could have told anybody.
       //
-      // Nothing in the UI could have told anybody: the rules were correct in git, correct
-      // in review, and wrong about which features existed.
+      // Denying create is correct NOW because the form is gone in this same change:
+      // components/ApplyForm.tsx and web/lib/applications.ts are deleted and /join renders
+      // the sign-in gate instead. Membership is an @sst.scaler.com address, which is the
+      // one thing a form could not check — signing in proves it in a tap and leaves a
+      // record nobody had to verify by hand.
       //
-      // CREATE IS OPEN TO STRANGERS, on purpose — see isWellFormedApplication above for
-      // why applying must not require sign-in, and for why that function is therefore the
-      // whole boundary.
-      allow create: if isWellFormedApplication(request.resource.data);
+      // THE TEST BEFORE YOU REOPEN THIS: does anything still WRITE here? If a form comes
+      // back, this line has to move with it, in the same commit. That coupling is the
+      // whole lesson of the incident above.
+      allow create: if false;
 
-      // NOBODY READS THIS FROM A CLIENT, INCLUDING ADMINS. Organisers read applications in
-      // the Firebase console. That is a deliberate floor rather than a missing feature:
-      // these rows hold names, addresses and hostels belonging to people who are not
-      // members yet and never agreed to appear in anything, so the smallest surface that
-      // still lets the club act on them is the right one. An organisers' view would need
-      // its own admin-only rule AND a decision about retention, not a loosened read.
+      // NOBODY READS THIS FROM A CLIENT, INCLUDING ADMINS. The rows already here hold
+      // names, addresses and hostels belonging to people who were not members and never
+      // agreed to appear in anything. Organisers read them in the Firebase console. That
+      // is a deliberate floor rather than a missing feature.
       allow read: if false;
 
-      // Immutable once sent, so the history is intact and an applicant cannot be edited
-      // into somebody else after an organiser has read them.
+      // Immutable, so the history stays intact.
       allow update, delete: if false;
     }
 

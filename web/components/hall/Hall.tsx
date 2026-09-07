@@ -85,7 +85,7 @@ export default function Hall() {
           as two unrelated elements sharing a row. */}
       <div className="mt-7 flex flex-wrap items-end gap-x-5 gap-y-3 border-t border-seam pt-6">
         <p className="flex items-baseline gap-3">
-          <span className="font-display text-[clamp(3.5rem,4.5vw,4.5rem)] font-bold leading-[0.85] tracking-[-0.04em]">
+          <span className="font-display text-display-xl font-bold leading-[0.85] tracking-[-0.04em]">
             {stats.total}
           </span>
           <span className="text-body-lg text-haze">
@@ -150,7 +150,7 @@ export default function Hall() {
           window resizes. Mobile stays at one, unchanged: two 155px cards side by
           side is where the name and the work sentence stop being readable at all. */}
       <ul
-        className="mt-8 grid gap-x-7 gap-y-12 sm:mt-16 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        className="mt-8 grid gap-x-7 gap-y-12 sm:mt-12 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
         data-reveal-group
       >
         {people.map((p, i) => {
@@ -269,7 +269,7 @@ export default function Hall() {
                   then the row is carrying a fact worth a second line, not a note
                   saying there is nothing to show. */}
               <p className="mt-5 flex flex-wrap items-center gap-x-2.5 gap-y-2">
-                <span className="chip chip-violet chip-true">
+                <span className="chip chip-true">
                   {PROGRAMME_SHORT[p.programme]} {p.year}
                 </span>
                 {p.org ? (
@@ -386,7 +386,7 @@ export default function Hall() {
                   reading as an image that failed to load. */}
               <span
                 aria-hidden
-                className="absolute inset-3 rounded-[20px] border-2 border-dashed border-black/25"
+                className="absolute inset-3 rounded-tile border-2 border-dashed border-black/25"
               />
               {/* A plus at the same scale as Portrait's monogram, in the same
                   container-query unit, so the glyph in this cell is the same size as

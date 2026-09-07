@@ -41,7 +41,7 @@ import { fmtDate } from "@/lib/profile";
 /** One string for both inputs and the textarea, so three controls cannot drift apart a
  *  class at a time. Lifted from AdminDashboard's `ctl` for exactly that reason. */
 const ctl =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
+  "w-full rounded-inline border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
 
 export default function Composer() {
   const { user, isAdmin } = useAuth();
@@ -194,7 +194,7 @@ export default function Composer() {
               as a limit somebody is about to hit; one that appears at 1000 characters is
               information at the moment it becomes useful. */}
           {body.length > 1000 && (
-            <p className="mt-1 font-mono text-[0.75rem] text-dust">
+            <p className="mt-1 font-mono text-xs text-dust">
               {2000 - body.length} characters left
             </p>
           )}
@@ -286,12 +286,12 @@ export default function Composer() {
                   <p className="flex flex-wrap items-center gap-2 text-sm font-medium text-ink">
                     {post.pinned && <span className="chip">Pinned</span>}
                     {post.archived && <span className="chip chip-quiet">Archived</span>}
-                    <span className="font-mono text-[0.6875rem] uppercase tracking-wider text-haze">
+                    <span className="font-mono text-label uppercase tracking-wider text-haze">
                       {CATEGORIES.find((c) => c.value === (post.category ?? "general"))?.label}
                     </span>
                     {post.title}
                   </p>
-                  <p className="mt-1 font-mono text-[0.75rem] uppercase tracking-wider text-dust">
+                  <p className="mt-1 font-mono text-xs uppercase tracking-wider text-dust">
                     {fmtDate(post.created_at)} · {post.author_email}
                   </p>
                 </div>

@@ -112,7 +112,7 @@ export const WHAT_IT_IS: { title: string; body: string }[] = [
 export const MAINTAINERS: { title: string; body: string }[] = [
   {
     title: "Often not paid for it",
-    body: "The person who reviews your first pull request is frequently doing it in the evening, after the job that does pay them, because they care about the project. This is the single most useful thing to understand before you open an issue.",
+    body: "The person who reviews your first pull request is often doing it in the evening, after the job that does pay them, because they care about the project.",
   },
   {
     // The original draft of this said the census was run "because nobody could say who
@@ -120,7 +120,7 @@ export const MAINTAINERS: { title: string; body: string }[] = [
     // which packages are most used, not who maintains them — so the claim now matches
     // the source, and the inference that follows is marked as an inference.
     title: "Nobody had even mapped it",
-    body: "The Linux Foundation, the OpenSSF and Harvard's Laboratory for Innovation Science ran a census just to establish which open-source packages the world's software actually depends on. That question needed a research project to answer, which tells you how little of this is centrally organised — nobody is in charge of making sure it keeps working.",
+    body: "The Linux Foundation, the OpenSSF and Harvard ran a census just to establish which packages the world's software depends on. That the question needed research tells you nobody is in charge of keeping it working.",
   },
   {
     title: "Which is why review feels slow",
@@ -223,20 +223,20 @@ export const GLOSSARY: { term: string; meaning: string }[] = [
 export const IMPACT: { title: string; body: string; aside?: string }[] = [
   {
     title: "Your GitHub stops being empty",
-    body: "Right now it holds semester projects nobody asked for. After one merged pull request it holds a change that a maintainer of a real project read, argued about, and accepted. Those are not the same artefact, and anyone technical can tell the difference in about nine seconds.",
+    body: "Right now it holds semester projects nobody asked for. After one merged pull request it holds a change a real maintainer read, argued about and accepted. Anyone technical can tell the difference in nine seconds.",
   },
   {
     title: "Engineers at global companies review your code, for free",
-    body: "The person reviewing your patch to a Kubernetes-adjacent project may well do that work at Google or Red Hat. You do not have to get hired there first to have them read your code and tell you why it is wrong — which is, bluntly, better feedback than most of us get in a semester.",
+    body: "The person reviewing your patch to a Kubernetes-adjacent project may well do that work at Google or Red Hat. You do not have to be hired there to have them read your code and say why it is wrong.",
   },
   {
     title: "It is the most honest signal you can send a recruiter",
-    body: "A certificate says you attended. A CGPA says you did well at exams somebody else set. A merged pull request says a stranger with no reason to be kind to you looked at your work and let it into software other people depend on. That one cannot be bought, padded, or group-projected.",
+    body: "A certificate says you attended. A CGPA says you passed exams somebody else set. A merged pull request says a stranger with no reason to be kind let your work into software other people depend on.",
     aside: "It is also harder to fake than anything else on a resume, which is exactly why it counts.",
   },
   {
     title: "Some of it pays, in your second year",
-    body: "Google Summer of Code, LFX Mentorship and Outreachy pay stipends to people with no professional experience. Not a competition prize — a stipend, for spending a summer being mentored on a real codebase. Most students never apply because nobody told them it existed.",
+    body: "Google Summer of Code, LFX Mentorship and Outreachy pay stipends to people with no professional experience — for a summer being mentored on a real codebase. Most students never apply because nobody told them.",
   },
 ];
 
@@ -282,7 +282,7 @@ export const POSITIONING: Claim[] = [
     },
   },
   {
-    line: "There is no rule capping how many people from your college can get code merged into Kubernetes. Competitive programming is a sport with a fixed number of podium places. Open source is a backlog with an unbounded number of open issues.",
+    line: "No rule caps how many people from your college get code merged into Kubernetes. Competitive programming is a sport with a fixed number of podium places. Open source is an unbounded backlog.",
   },
   {
     stat: "8.4%",
@@ -290,7 +290,7 @@ export const POSITIONING: Claim[] = [
     // statistics post — which is what we link — says 1,280. Citing one figure while
     // linking a source stating another is the exact failure this section exists to
     // avoid, so the number matches the page it points at.
-    line: "GSoC accepted 1,280 people from 15,240 applicants in 2025. This is not the soft option and we will not pretend it is. The difference is what you are left holding if you do not get in — a rating graph, or commits with your name on them.",
+    line: "GSoC accepted 1,280 of 15,240 applicants in 2025 — not the soft option. The difference is what you are left holding if you do not get in: a rating graph, or commits with your name on them.",
     source: {
       label: "Google Open Source Blog",
       url: "https://opensource.googleblog.com/2025/08/google-summer-of-code-2025-contributor-statistics.html",

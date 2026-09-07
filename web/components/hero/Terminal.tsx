@@ -244,7 +244,7 @@ export default function Terminal() {
           ))}
         </span>
         <span
-          className="ml-2 font-mono text-[0.8125rem] tracking-wide"
+          className="ml-2 font-mono text-sm tracking-wide"
           style={{ color: DIM }}
         >
           your-first-contribution — bash

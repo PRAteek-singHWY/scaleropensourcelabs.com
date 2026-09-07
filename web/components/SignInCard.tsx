@@ -7,7 +7,7 @@
 // rather than a tidy-up. On /join it stood in front of the application form, so a
 // stranger could not apply to the club without already holding a college Google account
 // — which inverted the club's own front door and contradicted the headline beside it.
-// Applying is now anonymous (components/ApplyForm.tsx) and this card guards only the
+// Joining is sign-in only (components/JoinGate.tsx on /join) and this card guards only the
 // members' area, which is the one thing that genuinely needs to know who you are.
 //
 // WHAT WENT WITH THE SPLIT, and why its absence is correct:
@@ -110,7 +110,7 @@ export default function SignInCard() {
   // No Firebase project, so there is nothing to sign in to. Says so rather than
   // rendering a button that cannot work.
   //
-  // NOTE THE ASYMMETRY WITH ApplyForm, WHICH IS DELIBERATE. That form renders its fields
+  // NOTE THE ASYMMETRY WITH THE PROFILE FORM, WHICH IS DELIBERATE. That form renders its fields
   // even unconfigured, because a contributor working on its copy or its spacing needs to
   // see them and the fields are the page. Here the button IS the page, and a button that
   // is guaranteed to fail is worse than a sentence explaining why it is absent.
@@ -131,17 +131,12 @@ export default function SignInCard() {
           to show. If you are running the site locally, see <code>web/.env.example</code>.
           If you are seeing this on the live site, that is a bug — please tell us.
         </p>
-        {/* THE APPLICATION FORM STILL WORKS WITHOUT ANY OF THIS, and saying so is the
-            whole reason the two features were separated. A reader who arrived here trying
-            to join should not conclude the club is closed because the members' door is
-            unwired. */}
-        <p className="measure mt-4 text-body text-haze">
-          Applying does not need any of this, though —{" "}
-          <Link href="/join" className="link-u text-accent">
-            the application form
-          </Link>{" "}
-          asks for no account at all.
-        </p>
+        {/* NO "YOU CAN STILL APPLY" LINE, AND THAT IS A CORRECTION RATHER THAN AN OMISSION.
+            This card used to say the application form needed no account, which was true
+            while /join carried an anonymous form. It does not: joining IS signing in with a
+            college account now, so with sign-in unconfigured there is nothing a reader can
+            do here except tell somebody, which is what the button below is for. Pointing
+            them at /join would send them to a second copy of this same message. */}
         <a href={`mailto:${LINKS.email}`} className="btn btn-secondary mt-6">
           Email the organisers
         </a>
@@ -211,13 +206,13 @@ export default function SignInCard() {
 
       {error && (
         <div className="mt-5" role="alert">
-          <p className="text-[0.9375rem] leading-relaxed text-ember">{error}</p>
+          <p className="text-sm leading-relaxed text-ember">{error}</p>
           {/* A REFUSAL USED TO BE A DEAD END. Somebody signed into a personal Gmail on a
               shared laptop was told their address was wrong and left looking at the same
               button, with no hint that the fix is to pick another account. The button
               above now says so, and this line names what to look for. */}
           {wrongAccount && (
-            <p className="mt-2 text-[0.9375rem] leading-relaxed text-dust">
+            <p className="mt-2 text-sm leading-relaxed text-dust">
               You signed in as{" "}
               <span className="font-mono text-haze">{wrongAccount}</span>. Press the button
               again and pick your college account from the list — Google will ask which one
@@ -232,7 +227,7 @@ export default function SignInCard() {
       <div className="mt-8 flex items-center gap-3" aria-hidden>
         <span className="h-px flex-1 bg-seam" />
         <span
-          className={`${PLATE} rounded-full bg-pop px-3 py-1 font-mono text-[0.8125rem] font-bold uppercase tracking-wider text-black`}
+          className={`${PLATE} rounded-full bg-pop px-3 py-1 font-mono text-sm font-bold uppercase tracking-wider text-black`}
         >
           @{DOMAIN}
         </span>
@@ -252,7 +247,7 @@ export default function SignInCard() {
               icon floating in the corner of the box.
               36px, not 40: enough to read as a tile, small enough not to argue with the
               heading beside it. */}
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-accent text-bg">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-inline bg-accent text-bg">
             <CapIcon />
           </span>
           <div>
@@ -263,32 +258,29 @@ export default function SignInCard() {
                 it was the only one on the route. The visual weight is carried by the
                 classes, not the tag, so nothing on screen changes. */}
             <h2 className="font-semibold text-ink">Who can sign in</h2>
-            <p className="mt-2 text-[0.9375rem] leading-relaxed text-haze">
+            <p className="mt-2 text-sm leading-relaxed text-haze">
               Students with an <strong className="text-ink">@{DOMAIN}</strong> address. No
               other address can register, and that is the whole check — no fee, no
               interview, no prior experience.
             </p>
-            <p className="mt-3 text-[0.9375rem] leading-relaxed text-haze">
+            <p className="mt-3 text-sm leading-relaxed text-haze">
               We use Google rather than a password so nobody can register an address they
               do not own, and so you have no password to invent or lose. We never see your
               password.
             </p>
-            {/* THE ONE SENTENCE THIS PANEL GAINED IN THE SPLIT, and it is the sentence
-                that makes the closed door defensible. While this card stood in front of
-                the application form, "no other address can register" also meant "nobody
-                else can even ask", which is a different and much harsher claim than the
-                club intends. Now it is only about the members' area, and pointing at the
-                open form is what keeps the restriction honest. */}
-            <p className="mt-3 text-[0.9375rem] leading-relaxed text-haze">
-              Not a member yet? You do not need an account to apply —{" "}
-              <Link href="/join" className="link-u text-accent">
-                the application form
-              </Link>{" "}
-              is open to anyone.
-            </p>
+            {/* THE "YOU CAN APPLY WITHOUT AN ACCOUNT" LINE IS GONE, and its absence is the
+                honest state rather than a loss. It was added when this card stood in front
+                of an anonymous application form, to keep "no other address can register"
+                from reading as "nobody else may even ask". There is no such form now —
+                joining is this button — so the sentence had become a link to a page that
+                would ask the reader for the very account it promised they did not need. */}
           </div>
         </div>
       </div>
+
+      {/* NO DEV LOGIN ON THIS CARD. It is rendered by the app shell instead, which wraps
+          every route this card appears on — including this signed-out state — so putting
+          one here too would show two of them. See components/dev/DevLoginSlot.tsx. */}
 
       {/* NO "NO COLLEGE ACCOUNT?" FALLBACK. A closed door invites a bell, but the door is
           the point here: an @sst.scaler.com address IS the membership test, so somebody
@@ -313,7 +305,7 @@ export default function SignInCard() {
             is a rule, and a rule drawn as text has to meet a text contrast bar it was never
             trying to meet. Drawn as a 1px border it is a rule, the checker treats it as
             one, and it looks the same. */}
-        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[0.9375rem]">
+        <p className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-sm">
           <Link href="/privacy#what-we-store" className="tap link-u text-haze">
             Privacy
           </Link>
@@ -329,7 +321,7 @@ export default function SignInCard() {
         {/* The club, not the university. The club runs this site and owns what is on it;
             SST is where its members study, and signing their name to a student project
             would be claiming an endorsement nobody gave. */}
-        <p className="mt-3 text-[0.8125rem] text-dust">
+        <p className="mt-3 text-sm text-dust">
           © {new Date().getFullYear()} Scaler Open Source Club, a student club at Scaler
           School of Technology.
         </p>

@@ -34,7 +34,7 @@ export default function Roster() {
   );
 
   return (
-    <div className="section pb-28 pt-10 sm:pb-40">
+    <div className="section pb-20 pt-10 sm:pb-28">
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <h3 className="text-display-md font-semibold">Every selection</h3>
         <p className="font-mono text-xs text-dust">
@@ -95,7 +95,7 @@ export default function Roster() {
                 <th
                   key={h || i}
                   scope="col"
-                  className={`${w} px-3 py-3 text-left font-mono text-[0.8125rem] font-medium uppercase tracking-[0.14em] text-dust`}
+                  className={`${w} px-3 py-3 text-left font-mono text-sm font-medium uppercase tracking-[0.14em] text-dust`}
                 >
                   {h}
                 </th>
@@ -137,7 +137,7 @@ export default function Roster() {
                       and a fifth column of two-character values would widen the
                       table's min-width for very little. */}
                   {s.studyYear && (
-                    <span className="ml-2 font-mono text-[0.8125rem] text-dust">
+                    <span className="ml-2 font-mono text-sm text-dust">
                       {s.studyYear}
                     </span>
                   )}
@@ -169,7 +169,7 @@ export default function Roster() {
         </div>
       </div>
 
-      <p className="mt-4 font-mono text-[0.8125rem] leading-relaxed text-dust">
+      <p className="mt-4 font-mono text-sm leading-relaxed text-dust">
         Programme names are trademarks of their respective organisations. Listing a
         selection is a statement of fact about our members, not an endorsement by{" "}
         {Object.values(PROGRAMME_NAME).slice(0, 3).join(", ")} or any other

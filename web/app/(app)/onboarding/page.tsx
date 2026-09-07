@@ -24,8 +24,8 @@ export const metadata: Metadata = {
 
 export default function Onboarding() {
   return (
-    <main id="main">
-      <section className="section page-top pb-8">
+    <>
+      <section className="section pb-8">
         {/* CENTRED AND NARROW, which the dashboard is not. This is a single task with one
             control at the end of it, and a form column stretched across a 1400px page is
             the layout that makes a sign-up feel like paperwork — the name and GitHub
@@ -58,6 +58,6 @@ export default function Onboarding() {
           </div>
         </div>
       </section>
-    </main>
+    </>
   );
 }

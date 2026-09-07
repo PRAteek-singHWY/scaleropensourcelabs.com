@@ -33,7 +33,7 @@ import {
 } from "@/lib/forms";
 
 const ctl =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
+  "w-full rounded-inline border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
 
 /** The counts, as bars. Same treatment as the organisers' breakdowns — one dimension,
  *  a handful of rows, and the token colours already carry the meaning, so a chart

@@ -111,8 +111,7 @@ export default function HallOfFame() {
                 the chip beside it is short at every width there is. */}
             <Sticker
               text="git push --force 🚀"
-              rotate={4}
-              tone="violet"
+              rotate={2.5}
               effect="bounce"
               className="right-0 top-14 min-[1600px]:-right-4"
             />
@@ -154,7 +153,7 @@ export default function HallOfFame() {
               paper="ruled"
               title="Start early"
               body="These names were contributing months before they applied."
-              tilt={-4}
+              tilt={-2.5}
               className="-left-40 top-44"
             />
             <p className="flex items-center gap-2">
@@ -181,14 +180,14 @@ export default function HallOfFame() {
               measure as every other section.
 
               The `pb` is inherited work, not decoration. A "Every selection"
-              table used to close this section and carried `pb-28 sm:pb-40` as
+              table used to close this section and carried `pb-20 sm:pb-28` as
               the hall's bottom breathing room; removing the table took that with
               it and left 25 cards ending flush, with only the ticker's own
               `pt-12` under them. Kept here at the same values so the boundary
               below the densest block on the page still reads as a boundary.
               Roster.tsx is unmounted, not deleted — it has uncommitted changes
               in it. */}
-          <div className="section pb-28 sm:pb-40">
+          <div className="section pb-20 sm:pb-28">
             <Hall />
           </div>
         </section>

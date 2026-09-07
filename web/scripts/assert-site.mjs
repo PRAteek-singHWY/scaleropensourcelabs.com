@@ -48,6 +48,11 @@ export const ROUTES = [
   // "the dashboard works"; it means the door to it is not broken.
   { path: "/onboarding", name: "onboarding", inNav: false, app: true },
   { path: "/dashboard", name: "dashboard", inNav: false, app: true },
+  // THE SIGNED-IN AREA IS SEVERAL ROUTES NOW, and each one's signed-out state is what a
+  // stranger who guesses the URL sees — so each has to meet the same contrast, tap-target
+  // and overflow bar as everything else. Swept signed out, like the two above.
+  { path: "/dashboard/mentorship", name: "dash-mentorship", inNav: false, app: true },
+  { path: "/dashboard/details", name: "dash-details", inNav: false, app: true },
 ];
 
 const MARKER = "Scaler Open Source Club";

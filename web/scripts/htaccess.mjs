@@ -34,7 +34,22 @@ if (!existsSync(OUT)) {
   process.exit(1);
 }
 
-const headers = securityHeaders({ dev: false });
+// READ .env.local, NOT process.env, and for the same reason scripts/hosting-config.mjs
+// does: this runs as a plain node process, so nothing has inlined NEXT_PUBLIC_* anywhere it
+// can see. Without the two values below the policy falls back to `*.firebaseapp.com` in
+// frame-src and `*.cloudfunctions.net` in connect-src — both functional, both wider than a
+// deployment that knows its own project needs, on a policy whose whole argument is that it
+// is strict. This file was passing neither, so the .htaccess and the firebase.json carried
+// different policies for the same site.
+const ENV = join(here, "..", ".env.local");
+const envFile = existsSync(ENV) ? readFileSync(ENV, "utf8") : "";
+const fromEnvFile = (k) => (envFile.match(new RegExp(`^${k}=(.*)$`, "m"))?.[1] ?? "").trim();
+
+const headers = securityHeaders({
+  dev: false,
+  authDomain: fromEnvFile("NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN"),
+  projectId: fromEnvFile("NEXT_PUBLIC_FIREBASE_PROJECT_ID"),
+});
 
 // Apache needs the value quoted, and none of our values contain a double quote — assert
 // that rather than assume it, because a stray quote would silently truncate a policy and

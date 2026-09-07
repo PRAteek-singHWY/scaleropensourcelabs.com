@@ -57,7 +57,7 @@ export default function NextAction({
   return (
     <section
       aria-label="What to do next"
-      className="band section relative pt-12 pb-12 sm:pt-16 sm:pb-16"
+      className="band section relative pt-10 pb-10 sm:pt-14 sm:pb-14"
     >
       <div className="seam-fade" />
       {children}

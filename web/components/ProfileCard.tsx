@@ -17,7 +17,7 @@
 // ONLY "record" HAS A CALLER TODAY, and the reason is worth knowing before anyone deletes
 // the other half or reaches for it. The receipt existed for the last step of /join while
 // /join was the sign-up flow. It is the anonymous application form again, and the "did
-// that work" moment moved with it — ApplyForm owns its own done state now, with copy about
+// that work" moment moved with it — the sign-in gate owns its own done state now, with copy about
 // an application in a queue rather than about a profile that saved.
 //
 // The receipt cannot simply be pointed at /dashboard instead: the only first-save moment
@@ -136,7 +136,7 @@ export default function ProfileCard({
               key={k}
               className="grid grid-cols-[7.5rem_1fr] items-baseline gap-4 py-2.5 first:pt-0"
             >
-              <dt className="font-mono text-[0.6875rem] font-medium uppercase tracking-[0.1em] text-haze">
+              <dt className="font-mono text-label font-medium uppercase tracking-[0.1em] text-haze">
                 {k}
               </dt>
               <dd className="text-sm text-ink">{v}</dd>
@@ -208,13 +208,13 @@ export default function ProfileCard({
         <p className="font-mono text-label uppercase tracking-wider text-black/70">
           Registered
         </p>
-        <p className="mt-1 break-all font-mono text-[1.0625rem] font-bold leading-tight">
+        <p className="mt-1 break-all font-mono text-body font-bold leading-tight">
           {p.email}
         </p>
         {/* Only when there is a real timestamp. A "signed up —" line is worse than no
             line: it invites the reader to wonder what went wrong with a date. */}
         {joined && (
-          <p className="mt-2 font-mono text-[0.8125rem] uppercase tracking-wider text-black/80">
+          <p className="mt-2 font-mono text-sm uppercase tracking-wider text-black/80">
             Signed up {fmtDate(p.created_at)}
           </p>
         )}

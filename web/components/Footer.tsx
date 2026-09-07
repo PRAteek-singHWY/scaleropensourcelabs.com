@@ -36,8 +36,8 @@ import { DASHBOARD_HREF, INSTITUTIONAL, JOIN_HREF, LINKS, PAGES } from "@/conten
 
 export default function Footer() {
   return (
-    <footer className="inverse mt-24 sm:mt-32">
-      <div className="section pb-16 pt-20">
+    <footer className="inverse mt-16 sm:mt-20">
+      <div className="section pb-16 pt-14">
         {/* THE FOOTER ANIMATES TOO, and until this it was the only large surface on
             the site that did not. That was not a decision — Reveal.tsx observes
             `main > section, header.section` plus anything carrying
@@ -125,7 +125,7 @@ export default function Footer() {
             Both sit at the end rather than among the pages, because neither is one —
             and side by side they read as the pair they are: ask to join, or come back
             in. */}
-        <nav aria-label="All pages" className="mt-16 border-t border-seam pt-7">
+        <nav aria-label="All pages" className="mt-12 border-t border-seam pt-7">
           <ul className="flex flex-wrap gap-x-7 gap-y-1" data-reveal-group>
             {PAGES.map((p) => (
               <li key={p.href}>
@@ -165,7 +165,7 @@ export default function Footer() {
         </nav>
 
         <div className="mt-10 flex flex-wrap items-baseline justify-between gap-4">
-          <p className="max-w-[34rem] text-[0.8125rem] leading-relaxed text-haze">
+          <p className="max-w-[34rem] text-sm leading-relaxed text-haze">
             A student club at Scaler School of Technology. This website is one of the
             club&apos;s own open-source projects — if you spot something wrong with
             it, the fix is a pull request away.
@@ -177,7 +177,7 @@ export default function Footer() {
 
         {/* Programme and organisation names appear throughout as plain type, never as
             logos. Stated once, site-wide, rather than repeated per section. */}
-        <p className="mt-8 max-w-[60rem] font-mono text-[0.8125rem] leading-relaxed text-dust">
+        <p className="mt-8 max-w-[60rem] font-mono text-sm leading-relaxed text-dust">
           Programme and organisation names are trademarks of their respective owners.
           Listing a selection or a contribution is a statement of fact about our
           members, not an endorsement by any programme or company.

@@ -91,7 +91,7 @@ function ProgrammeField({ p }: { p: ProgrammeInfo }) {
           {/* The tier, stated in words as well as carried by the colour. The
               colour is never the only signal. */}
           <p
-            className={`mt-4 inline-block rounded-md border px-2.5 py-1 font-mono text-[0.8125rem] uppercase tracking-[0.14em] ${
+            className={`mt-4 inline-block rounded-inline border px-2.5 py-1 font-mono text-sm uppercase tracking-[0.14em] ${
               paid
                 ? "border-accent/40 text-accent"
                 : "border-seam text-haze"
@@ -212,7 +212,7 @@ export default function Programmes() {
         <p className="chip">Paid open source</p>
         <Duo
           as="h1"
-          className="mt-6 max-w-4xl text-display-xl"
+          className="mt-6 max-w-4xl text-display-lg"
           lead="Paid, competitive, and open to beginners."
           trail="Most students never apply because nobody told them these exist."
         />
@@ -238,7 +238,7 @@ export default function Programmes() {
           for them and stops. The two things they can do this month go at the top. */}
       <section
         id="open-entry"
-        className="section pt-20 sm:pt-24"
+        className="section pt-14 sm:pt-20"
         aria-label="Open-entry programmes"
         data-reveal-group
       >
@@ -256,7 +256,7 @@ export default function Programmes() {
           fork, branch, review, merge — somewhere the stakes are zero.
         </p>
 
-        <ul className="mt-12 space-y-px overflow-hidden rounded-panel bg-seam">
+        <ul className="mt-9 space-y-px overflow-hidden rounded-panel bg-seam">
           {OPEN_ENTRY.map((p) => (
             <ProgrammeField key={p.key} p={p} />
           ))}
@@ -276,7 +276,7 @@ export default function Programmes() {
         id="paid"
         /* `relative` for the gutter note below — it anchors to this section, so
            it cannot drift when a section above it changes height. */
-        className="band section relative pb-24 pt-24 sm:pb-32 sm:pt-32"
+        className="band section relative pb-16 pt-16 sm:pb-24 sm:pt-24"
         aria-label="Paid, selective programmes"
         data-reveal-group
       >
@@ -300,11 +300,11 @@ export default function Programmes() {
             a standfirst above its rows, one band deeper than the old one. */}
         <Note
           place="gutter"
-          tone="pink"
+          tone="warm"
           fold
           title="You keep the work."
           body="No boss, no timesheet. Everything you write stays public, and stays yours."
-          tilt={4}
+          tilt={2.5}
           className="-right-40 top-40"
         />
         <div className="border-b border-seam pb-5">
@@ -328,7 +328,7 @@ export default function Programmes() {
           few months of visible contribution before the window opens.
         </p>
 
-        <ul className="mt-12 space-y-px overflow-hidden rounded-panel bg-seam">
+        <ul className="mt-9 space-y-px overflow-hidden rounded-panel bg-seam">
           {PAID.map((p) => (
             <ProgrammeField key={p.key} p={p} />
           ))}
@@ -374,7 +374,7 @@ export default function Programmes() {
             changes subject. Plain, it reads as its own section again. */}
         <section
           id="calendar"
-          className="section relative pt-12 sm:pt-16"
+          className="section relative pt-10 sm:pt-14"
           data-reveal-group
         >
           {/* Left gutter, beside the argument it compresses. The proverb is the
@@ -403,7 +403,7 @@ export default function Programmes() {
             paper="ruled"
             title="Best day: last autumn."
             body="Second best: today. Those are the two options."
-            tilt={-4}
+            tilt={-2.5}
             className="-left-40 top-28"
           />
           {/* The void to the right of this heading is deliberately empty. It held
@@ -434,7 +434,7 @@ export default function Programmes() {
               <thead>
                 <tr className="border-b border-seam">
                   {["Window", "Programme", "Opens", "Start prepping", "What you do first"].map((h) => (
-                    <th key={h} scope="col" className="px-3 py-3 text-left font-mono text-[0.8125rem] font-medium uppercase tracking-[0.14em] text-dust">
+                    <th key={h} scope="col" className="px-3 py-3 text-left font-mono text-sm font-medium uppercase tracking-[0.14em] text-dust">
                       {h}
                     </th>
                   ))}
@@ -471,7 +471,7 @@ export default function Programmes() {
             that the club does not run. */}
         <section
           id="tracks"
-          className="section pt-12 sm:pt-16"
+          className="section pt-10 sm:pt-14"
           data-reveal-group
         >
           <p className="chip">Pick your path</p>
@@ -548,7 +548,7 @@ export default function Programmes() {
                     this page: a terminal is a terminal. */}
                 <div
                   aria-hidden
-                  className="mt-4 overflow-hidden rounded-xl border border-white/10"
+                  className="mt-4 overflow-hidden rounded-tile border border-white/10"
                   style={{ background: "#0F172A" }}
                 >
                   <div className="flex items-center gap-1.5 border-b border-white/10 px-3 py-2">
@@ -560,13 +560,13 @@ export default function Programmes() {
                       // as too small to read on a phone, and it flags every line of
                       // these preview frames. Same fix already applied to the bento
                       // frames further up this file.
-                      className="ml-1.5 font-mono text-[0.8125rem]"
+                      className="ml-1.5 font-mono text-sm"
                       style={{ color: "#94A3B8" }}
                     >
                       {track.preview.title}
                     </span>
                   </div>
-                  <div className="space-y-1 p-3 font-mono text-[0.8125rem] leading-relaxed">
+                  <div className="space-y-1 p-3 font-mono text-sm leading-relaxed">
                     {track.preview.lines.map((l) => (
                       <p
                         key={l.text}

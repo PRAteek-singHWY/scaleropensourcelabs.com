@@ -30,7 +30,7 @@ export default function OrgWall() {
 
   if (orgs.length === 0) {
     return (
-      <div className="mt-12 rounded-tile border border-dashed border-seam px-8 py-14 text-center">
+      <div className="mt-9 rounded-tile border border-dashed border-seam px-8 py-14 text-center">
         <p className="text-display-md font-semibold">No organisations listed yet.</p>
         <p className="measure mx-auto mt-4 text-body text-haze">
           This fills in as members land work in projects outside the university. Each
@@ -46,7 +46,7 @@ export default function OrgWall() {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <div className="mt-12 space-y-12">
+    <div className="mt-9 space-y-12">
       {groups.map((g) => (
         <div key={g.relation}>
           <div className="flex items-baseline justify-between gap-4 border-b border-seam pb-3">
@@ -69,7 +69,7 @@ export default function OrgWall() {
                     {o.name}
                   </span>
                   {o.region && (
-                    <span className="mt-1.5 text-[0.8125rem] text-dust">{o.region}</span>
+                    <span className="mt-1.5 text-sm text-dust">{o.region}</span>
                   )}
                   {/* Attributed to a person, not to the institution. "OSC
                       contributed to OWASP" would be a claim about a club; "Prateek

@@ -121,7 +121,7 @@ export default function NextUp({ profile }: { profile: Profile }) {
             <>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold">{d.label}</span>
-                <span className="block truncate text-[0.8125rem] opacity-80">{d.hint}</span>
+                <span className="block truncate text-sm opacity-80">{d.hint}</span>
               </span>
               <Icon name={d.external ? "external" : "arrow-right"} size="1rem" />
             </>

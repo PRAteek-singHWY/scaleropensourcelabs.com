@@ -63,12 +63,12 @@ import { LINKS } from "@/content/site";
 // and it is ADDITIVE to the border recolour rather than a replacement, so the affordance
 // survives a forced-colours mode that flattens shadows.
 const field =
-  "w-full rounded-tile border border-seam bg-sunk px-4 py-3.5 text-[1.0625rem] text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
+  "w-full rounded-tile border border-seam bg-sunk min-h-[44px] px-4 py-3.5 text-body text-ink placeholder:text-dust outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_rgb(var(--sky)/0.18)]";
 
 /** A field's label. Sentence case at body size rather than the uppercase mono `.label`
  *  token, which is a data label — right above a table column, wrong above something a
  *  person is about to type their own name into. */
-const legend = "mb-2.5 block text-[0.9375rem] font-semibold text-ink";
+const legend = "mb-2.5 block text-sm font-semibold text-ink";
 
 export default function ProfileForm({
   user,
@@ -167,7 +167,7 @@ export default function ProfileForm({
           </span>
           <div className="min-w-0">
             <p className="label">Signed in as</p>
-            <p className="mt-0.5 break-all font-mono text-[0.9375rem] text-ink">{user.email}</p>
+            <p className="mt-0.5 break-all font-mono text-sm text-ink">{user.email}</p>
           </div>
         </div>
 
@@ -180,13 +180,13 @@ export default function ProfileForm({
               {[batch.label, batch.branch, batch.yearLabel, `Roll ${batch.roll}`].map((v) => (
                 <li
                   key={v}
-                  className="rounded-full border border-seam bg-raise px-3 py-1 font-mono text-[0.8125rem] text-haze"
+                  className="rounded-full border border-seam bg-raise px-3 py-1 font-mono text-sm text-haze"
                 >
                   {v}
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-[0.8125rem] leading-relaxed text-dust">
+            <p className="mt-3 text-sm leading-relaxed text-dust">
               Read from your college address, so we do not have to ask. Wrong? Tell an
               organiser — nobody can edit it here, and nothing depends on it.
             </p>
@@ -195,7 +195,7 @@ export default function ProfileForm({
           // NOT AN ERROR, AND NOT SILENT. Organisers and anybody on an older address land
           // here. Saying so is better than showing nothing, because the alternative is a
           // member wondering later why their batch is blank on the dashboard.
-          <p className="mt-4 text-[0.8125rem] leading-relaxed text-dust">
+          <p className="mt-4 text-sm leading-relaxed text-dust">
             We could not read a batch from this address, which is fine — nothing depends
             on it.
           </p>
@@ -229,7 +229,7 @@ export default function ProfileForm({
           <div className="relative">
             <span
               aria-hidden
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-[1.0625rem] text-dust"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 font-mono text-body text-dust"
             >
               @
             </span>
@@ -259,7 +259,7 @@ export default function ProfileForm({
           {HOSTELS.map((h, i) => (
             <label
               key={h.value}
-              className="flex cursor-pointer items-center gap-3 rounded-tile border border-seam bg-sunk px-4 py-3.5 transition hover:border-accent/50 has-[:checked]:border-accent has-[:checked]:bg-raise"
+              className="flex cursor-pointer items-center gap-3 rounded-tile border border-seam bg-sunk min-h-[44px] px-4 py-3.5 transition hover:border-accent/50 has-[:checked]:border-accent has-[:checked]:bg-raise"
             >
               <input
                 // The id stays on the first radio: it is what the smoke test looks for
@@ -272,11 +272,11 @@ export default function ProfileForm({
                 defaultChecked={profile?.hostel === h.value}
                 className="h-4 w-4 shrink-0 accent-[rgb(var(--accent))]"
               />
-              <span className="text-[1.0625rem] text-ink">{h.label}</span>
+              <span className="text-body text-ink">{h.label}</span>
             </label>
           ))}
         </div>
-        <p className="mt-2.5 text-[0.8125rem] leading-relaxed text-dust">
+        <p className="mt-2.5 text-sm leading-relaxed text-dust">
           Build days and evening sessions get planned around which building people have to
           walk back to. That is the only thing this is used for.
         </p>
@@ -286,7 +286,7 @@ export default function ProfileForm({
           nothing to decide here — but a value being saved that the member cannot see is
           the thing this line exists to avoid. It is changeable on the dashboard. */}
       {effectivePath && (
-        <p className="rounded-tile border border-dashed border-seam px-4 py-3 text-[0.9375rem] leading-relaxed text-dust">
+        <p className="rounded-tile border border-dashed border-seam px-4 py-3 text-sm leading-relaxed text-dust">
           You arrived from{" "}
           <strong className="font-semibold text-haze">
             {PATHS.find((p) => p.id === effectivePath)?.name ?? effectivePath}
@@ -313,7 +313,7 @@ export default function ProfileForm({
       </button>
 
       {state === "error" && (
-        <p className="text-[0.9375rem] leading-relaxed text-ember" role="alert">
+        <p className="text-sm leading-relaxed text-ember" role="alert">
           {message}{" "}
           <a href={`mailto:${LINKS.email}`} className="underline">
             {LINKS.email}
@@ -323,7 +323,7 @@ export default function ProfileForm({
 
       {/* What happens to the data, next to the button rather than in a policy page
           nobody opens. It is the member's information, not ours. */}
-      <p className="border-t border-seam pt-5 text-[0.9375rem] leading-relaxed text-dust">
+      <p className="border-t border-seam pt-5 text-sm leading-relaxed text-dust">
         Your details are visible to you and to the club organisers, and to nobody else.
         Nothing here is published on this site — the names on it are only there because those
         people were asked and said yes. You can edit or correct any of this at any time.

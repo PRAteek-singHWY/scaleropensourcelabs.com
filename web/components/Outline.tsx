@@ -273,7 +273,7 @@ export default function Outline() {
                   <a
                     href={`#${i.id}`}
                     aria-current={current ? "true" : undefined}
-                    className={`block rounded-md px-2 py-1.5 text-[0.9375rem] leading-snug transition-colors duration-200 ease-glide ${
+                    className={`block rounded-inline px-2 py-1.5 text-sm leading-snug transition-colors duration-200 ease-glide ${
                       current
                         ? "bg-sunk font-medium text-ink"
                         : "text-haze hover:text-ink"

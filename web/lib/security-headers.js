@@ -131,10 +131,20 @@ function buildCSP({ dev = isDev, authDomain = "", projectId = "" } = {}) {
 
 /** The full header set as {key, value} pairs, in the shape next.config.js wants.
  *  `dev` is a parameter rather than read from the environment so the .htaccess
- *  generator can force the production policy regardless of how it was invoked. */
-function securityHeaders({ dev = isDev, authDomain = "" } = {}) {
+ *  generator can force the production policy regardless of how it was invoked.
+ *
+ *  `projectId` WAS MISSING FROM THIS SIGNATURE, and buildCSP takes it. Both generators
+ *  passed it in — scripts/hosting-config.mjs and scripts/htaccess.mjs, each with a comment
+ *  explaining that it is what stops connect-src falling back to a `*.cloudfunctions.net`
+ *  wildcard — and an object rest parameter drops what it does not name, silently, so the
+ *  value went nowhere and the wildcard shipped anyway. Nothing failed: the policy is
+ *  looser, not broken, so no check and no page could notice.
+ *
+ *  Anything buildCSP learns to take has to be added here in the same commit, or it is
+ *  ignored in exactly this way. */
+function securityHeaders({ dev = isDev, authDomain = "", projectId = "" } = {}) {
   return [
-    { key: "Content-Security-Policy", value: buildCSP({ dev, authDomain }) },
+    { key: "Content-Security-Policy", value: buildCSP({ dev, authDomain, projectId }) },
     // Two years, subdomains included. Safe here: the domain serves only this site and
     // there is no plaintext service to break.
     {

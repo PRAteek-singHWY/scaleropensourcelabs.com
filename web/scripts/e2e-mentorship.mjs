@@ -102,6 +102,37 @@ async function seedAdmin(email) {
  *  ALWAYS FROM /dashboard. /admin renders a per-panel "not for you" state rather than a
  *  sign-in card, so there is no button there to start from — an organiser signs in like
  *  anybody else and then navigates. */
+/** Addresses the Auth emulator currently holds — the only reliable signal that a sign-in
+ *  landed. The popup closing is a side effect and, under load, a late one. */
+async function authAccounts() {
+  try {
+    const r = await fetch(
+      `http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/${PROJECT}/accounts:query`,
+      { method: "POST", headers: { Authorization: "Bearer owner", "Content-Type": "application/json" }, body: "{}" },
+    );
+    return ((await r.json())?.userInfo ?? []).map((u) => (u.email ?? "").toLowerCase());
+  } catch {
+    return [];
+  }
+}
+
+/** Sign in through the emulator's popup, and do not return until the account exists.
+ *
+ *  THE PREVIOUS VERSION FILLED THE FORM, CLICKED ONCE, AND WAITED FOUR SECONDS. That works
+ *  for the first identity in a run and reliably fails for the second: the emulator's form
+ *  is Angular, and a click dispatched in the same tick as the fill lands before the model
+ *  has updated. The button is NOT disabled when this happens, so the click is delivered to
+ *  a live control and nothing submits — no error, nothing in the console, the popup just
+ *  sits there.
+ *
+ *  It failed silently in the worst possible way here: the member never signed in, so
+ *  /dashboard rendered the sign-in card, and five assertions about the mentorship section
+ *  failed as though the section were missing. Four consecutive runs created an organiser
+ *  account and no member account at all.
+ *
+ *  So: real keystrokes rather than fill(), the submit pressed repeatedly, and the loop
+ *  exits on the ACCOUNT APPEARING rather than on a timer. Ported from e2e-auth.mjs, which
+ *  hit the same thing. */
 async function signIn(ctx, pg, email, name) {
   await pg.goto(`${BASE}/dashboard`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await pg.waitForTimeout(1500);
@@ -109,29 +140,47 @@ async function signIn(ctx, pg, email, name) {
   await pg.getByRole("button", { name: /continue with google/i }).click();
   const pop = await popupP;
   await pop.waitForLoadState("domcontentloaded");
-  await pop.waitForTimeout(600);
+  await pop.waitForTimeout(800);
+
   // A DOM click, scrolled into view: the emulator's picker lists every account made
-  // earlier in the run, so "Add new account" drifts below the fold.
-  const added = await pop.evaluate(() => {
+  // earlier in the run, so "Add new account" drifts below the fold. Absent on a fresh
+  // emulator, where the add form is shown directly — so a miss is not an error.
+  await pop.evaluate(() => {
     const el = [...document.querySelectorAll("button, a, [role=button]")].find((n) =>
       /add new account/i.test(n.innerText || ""),
     );
-    if (!el) return false;
-    el.scrollIntoView({ block: "center" });
-    el.click();
-    return true;
+    el?.scrollIntoView({ block: "center" });
+    el?.click();
   });
-  if (!added) throw new Error("emulator picker: could not find 'Add new account'");
+  await pop.waitForTimeout(900);
+
+  await pop.locator("#email-input").pressSequentially(email, { delay: 8 });
+  await pop.locator("#display-name-input").pressSequentially(name, { delay: 8 });
   await pop.waitForTimeout(700);
-  await pop.locator("#email-input").fill(email);
-  await pop.locator("#display-name-input").fill(name);
-  await pop.evaluate(() => {
-    [...document.querySelectorAll("button")]
-      .find((n) => /sign in with google/i.test(n.innerText))
-      ?.click();
-  });
-  await pg.waitForTimeout(4000);
+
+  const wanted = email.toLowerCase();
+  for (let i = 0; i < 10 && !pop.isClosed(); i++) {
+    await pop
+      .evaluate(() => {
+        const b = [...document.querySelectorAll("button")].find((n) =>
+          /sign in with google/i.test(n.innerText),
+        );
+        b?.click();
+      })
+      .catch(() => {});
+    for (let w = 0; w < 8; w++) {
+      await new Promise((r) => setTimeout(r, 500));
+      if ((await authAccounts()).includes(wanted) || pop.isClosed()) break;
+    }
+    if ((await authAccounts()).includes(wanted)) break;
+  }
+  if (!pop.isClosed()) await pop.close().catch(() => {});
+  if (!(await authAccounts()).includes(wanted)) {
+    throw new Error(`emulator never created an account for ${email} — the popup did not submit`);
+  }
+  await pg.waitForTimeout(3000);
 }
+
 
 await up(`${DOCS}/mentors`, "Firestore");
 await up(AUTH_CLEAR, "Auth");
@@ -178,7 +227,18 @@ ok("it is active, so the picker will offer it", mentors[0]?.fields?.active?.bool
 ok("no uncaught errors on the admin page", orgErrs.length === 0, orgErrs.join(" | "));
 
 console.log("\n-- a member enrols --");
-const ctxB = await browser.newContext({ viewport: { width: 1400, height: 1100 } });
+// A SECOND BROWSER PROCESS, not a second context, and that is not tidiness. The Auth
+// emulator's popup handler stops responding after the first successful sign-in in a
+// browser: the form fills, the button is enabled, the clicks land, no console error
+// appears, and the account is simply never created. Contexts are already isolated and do
+// NOT fix it; a new browser does. Diagnosed at length in scripts/e2e-auth.mjs, which
+// gives its organiser the same treatment.
+//
+// The symptom here was especially misleading: the member never signed in, so /dashboard
+// rendered the sign-in card, and five assertions about the mentorship section failed as
+// though the section were missing.
+const memberBrowser = await chromium.launch({ args: ["--disable-popup-blocking"] });
+const ctxB = await memberBrowser.newContext({ viewport: { width: 1400, height: 1100 } });
 const mem = await ctxB.newPage();
 const memErrs = [];
 mem.on("pageerror", (e) => memErrs.push(e.message.slice(0, 120)));
@@ -187,7 +247,31 @@ mem.on("console", (m) => {
 });
 
 await signIn(ctxB, mem, MEMBER, "Test Member");
+
+// FINISHING THE PROFILE IS A GATE NOW, so this suite has to walk through it rather than
+// landing on /dashboard cold. A member with an incomplete profile is sent to /onboarding
+// and the dashboard renders nothing until they are done — which is the point of the gate,
+// and would otherwise show up here as "the Mentorship section is missing".
 await mem.goto(`${BASE}/dashboard`, { waitUntil: "domcontentloaded", timeout: 60000 });
+// WAIT FOR THE REDIRECT, NOT FOR "either URL". The page starts on /dashboard and moves
+// once the profile read comes back, so a pattern matching /dashboard was satisfied by the
+// starting state and the check ran before the gate had fired — green or red depending on
+// how fast Firestore answered.
+await mem.waitForURL(/\/onboarding/, { timeout: 25000 }).catch(() => {});
+if (/\/onboarding/.test(mem.url())) {
+  ok("a first-time member is sent to finish joining", true, mem.url());
+  await mem.fill("#pf-name", "Test Member").catch(() => {});
+  await mem.check('input[name="hostel"][value="uniworld-1"]').catch(() => {});
+  await mem.getByRole("button", { name: /finish joining/i }).click().catch(() => {});
+  await mem.waitForURL(/\/dashboard/, { timeout: 30000 }).catch(() => {});
+} else {
+  ok("a first-time member is sent to finish joining", false, `stayed on ${mem.url()}`);
+}
+
+// MENTORSHIP IS ITS OWN ROUTE NOW. It was the last panel on the overview, below four
+// weekly panels — buried, and mixed in with things that change every week when it is a
+// decision made once a term.
+await mem.goto(`${BASE}/dashboard/mentorship`, { waitUntil: "domcontentloaded", timeout: 60000 });
 await mem.waitForTimeout(5000);
 
 // REGRESSION 1: the section has to be on the page at all.
@@ -245,6 +329,7 @@ if (enrolments.length) {
 ok("no uncaught errors on the dashboard", memErrs.length === 0, memErrs.join(" | "));
 
 await browser.close();
+await memberBrowser.close();
 console.log(
   fail === 0
     ? `\n  ${pass} passed. An organiser can publish a mentor and a member can enrol.\n`

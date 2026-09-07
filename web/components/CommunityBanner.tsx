@@ -43,9 +43,9 @@ export default function CommunityBanner() {
   const faces = people.slice(0, FACES);
 
   return (
-    <div className="section pt-12 sm:pt-16">
+    <div className="section pt-10 sm:pt-14">
       <div
-        className="rounded-[20px] border-2 border-black px-6 py-6 shadow-[4px_4px_0_0_#000] sm:px-8"
+        className="rounded-tile border-2 border-black px-6 py-6 shadow-[4px_4px_0_0_#000] sm:px-8"
         // #F0F6FF ON BOTH THEMES, and every foreground inside it is fixed to
         // match. This is a self-contained object like the hero terminal — the
         // terminal stays dark on a light page, this stays pale on a dark one —
@@ -106,7 +106,7 @@ export default function CommunityBanner() {
               style={{ color: "#0A0A0A" }}
             >
               {stats.total} selected
-              <span className="block text-[0.8125rem] font-medium" style={{ color: "#3F4A5A" }}>
+              <span className="block text-sm font-medium" style={{ color: "#3F4A5A" }}>
                 this cohort
               </span>
             </p>

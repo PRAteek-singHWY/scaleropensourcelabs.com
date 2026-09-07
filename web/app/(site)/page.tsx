@@ -96,7 +96,7 @@ function Sources({ cell }: { cell: Cell }) {
           href={s.url}
           target="_blank"
           rel="noreferrer"
-          className="py-3.5 font-mono text-xs text-accent link-u hover:brightness-125"
+          className="py-[14px] font-mono text-xs text-accent link-u hover:brightness-125"
         >
           {s.label} ↗
         </a>
@@ -131,7 +131,7 @@ export default function Home() {
             marked phrase — which were reaching four sections out of fourteen. */}
         <section
           id="what-it-is"
-          className="section pt-24 sm:pt-32"
+          className="section pt-16 sm:pt-24"
           aria-label="What open source is"
           data-reveal-group
         >
@@ -145,16 +145,14 @@ export default function Home() {
             trail="Nobody told you that you could change it."
           />
           <p className="measure mt-7 text-body-lg text-haze">
-            Open source is software written in public, by anyone, for everyone to use.
-            Not a niche category — the things below are four of the most widely used
-            pieces of software on earth, and you can read every line of all of them
-            right now.
+            Software written in public, by anyone, for everyone. The four below are
+            among the most used on earth — and you can read every line right now.
           </p>
 
           {/* A group of its own so the four tiles deal themselves out rather than
               arriving as one slab. Nested inside the section's group, which skips it
               as an item — see Reveal.tsx — so the grid does not also slide. */}
-          <ul className="mt-14 grid gap-4 sm:grid-cols-2" data-reveal-group>
+          <ul className="mt-10 grid gap-4 sm:grid-cols-2" data-reveal-group>
             {EVERYDAY.map((e) => (
               <li
                 key={e.name}
@@ -169,7 +167,7 @@ export default function Home() {
                   </h3>
                   {/* Same reason as the build-day cards: shrink-0 on text from a
                       data file is a viewport overflow waiting for a longer value. */}
-                  <span className="min-w-0 text-right font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-dust">
+                  <span className="min-w-0 text-right font-mono text-sm uppercase tracking-[0.16em] text-dust">
                     {e.language}
                   </span>
                 </div>
@@ -200,7 +198,7 @@ export default function Home() {
           </ul>
 
           {/* The definition, arriving after the examples have done the work. */}
-          <div className="mt-20 grid gap-x-14 gap-y-9 sm:grid-cols-3" data-reveal-group>
+          <div className="mt-14 grid gap-x-14 gap-y-9 sm:grid-cols-3" data-reveal-group>
             {WHAT_IT_IS.map((w) => (
               // .rise is the hover for a block whose only furniture is its own
               // hairline: the rule goes accent and the block lifts 2px. There is no
@@ -215,14 +213,14 @@ export default function Home() {
 
           {/* And the mechanic, drawn. This is the one idea that is genuinely hard to
               say in a sentence, which is the test for whether a diagram earns space. */}
-          <div className="lift mt-20 rounded-panel border border-seam bg-raise p-8 sm:p-12">
+          <div className="lift mt-14 rounded-panel border border-seam bg-raise p-8 sm:p-12">
             <p className="label">How a change actually gets in</p>
             <Duo
               className="mt-5 max-w-2xl text-display-md"
               lead="You do not edit the project."
               trail="You propose a change to it."
             />
-            <CommitGraph className="mt-12" />
+            <CommitGraph className="mt-9" />
           </div>
         </section>
 
@@ -235,7 +233,7 @@ export default function Home() {
             as a consequence rather than as the point. */}
         <section
           id="maintainers"
-          className="section pt-24 sm:pt-32"
+          className="section pt-16 sm:pt-24"
           aria-label="Who maintains open source"
           data-reveal-group
         >
@@ -250,7 +248,7 @@ export default function Home() {
             before somebody&apos;s first contribution.
           </p>
 
-          <div className="mt-14 grid gap-x-14 gap-y-10 sm:grid-cols-3" data-reveal-group>
+          <div className="mt-10 grid gap-x-14 gap-y-10 sm:grid-cols-3" data-reveal-group>
             {MAINTAINERS.map((m) => (
               <div key={m.title} className="rise border-t border-seam pt-6">
                 <h3 className="text-body-lg font-semibold">{m.title}</h3>
@@ -279,7 +277,7 @@ export default function Home() {
             says "rebase onto upstream/main and squash before we triage". */}
         <section
           id="vocabulary"
-          className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
+          className="band section pb-16 pt-16 sm:pb-24 sm:pt-24"
           aria-label="The vocabulary of open source"
           data-reveal-group
         >
@@ -296,9 +294,9 @@ export default function Home() {
               that silently goes wrong the first time somebody adds a thirteenth term —
               the same class of drift the numbers strip is built to avoid. */}
           <p className="measure mt-7 text-body-lg text-haze">
-            {GLOSSARY.length} words that get used constantly and explained never. Not
-            knowing them is the most common reason a capable person never opens their
-            first pull request, and every one of us had to work them out{" "}
+            {GLOSSARY.length} words used constantly and explained never. Not knowing
+            them is the commonest reason a capable person never opens a pull request.
+            We all worked them out{" "}
             <span className="mark">by being confused in public</span>.
           </p>
 
@@ -307,7 +305,7 @@ export default function Home() {
           {/* Twelve terms, so the stagger's eight-step cap does the work it was
               added for: the last four share the eighth delay and come up together
               rather than the twelfth waiting 1.2s. See MAX_STAGGER_STEPS. */}
-          <dl className="mt-14 grid gap-x-14 gap-y-px sm:grid-cols-2 lg:gap-x-20" data-reveal-group>
+          <dl className="mt-10 grid gap-x-14 gap-y-px sm:grid-cols-2 lg:gap-x-20" data-reveal-group>
             {GLOSSARY.map((g) => (
               <div key={g.term} className="rise border-t border-seam py-6">
                 <dt className="font-mono text-body-lg text-accent">{g.term}</dt>
@@ -318,7 +316,7 @@ export default function Home() {
         </section>
 
         {/* ---- Thesis ------------------------------------------------------ */}
-        <section className="section pt-12 sm:pt-16" data-reveal-group>
+        <section className="section pt-10 sm:pt-14" data-reveal-group>
           <p className="chip">What this is</p>
           <Duo
             className="mt-4 max-w-4xl text-display-lg"
@@ -362,7 +360,7 @@ export default function Home() {
         {/* ---- 2. How it changes your life ------------------------------------ */}
         <section
           id="impact"
-          className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
+          className="band section pb-16 pt-16 sm:pb-24 sm:pt-24"
           aria-label="How open source changes your career"
           data-reveal-group
         >
@@ -373,13 +371,12 @@ export default function Home() {
             trail="They will read your commits."
           />
           <p className="measure mt-7 text-body-lg text-haze">
-            This is the part that sounds like a pitch and is not. Every line below is a
-            mechanism you can trace, and the reason it works is boring: open source is
-            the only part of your CV that a stranger has already{" "}
+            Every line below is a mechanism you can trace. Open source is the only part
+            of your CV a stranger has already{" "}
             <span className="mark">checked for you</span>.
           </p>
 
-          <div className="mt-14 grid gap-x-14 gap-y-11 sm:grid-cols-2" data-reveal-group>
+          <div className="mt-10 grid gap-x-14 gap-y-11 sm:grid-cols-2" data-reveal-group>
             {IMPACT.map((i) => (
               <div key={i.title} className="rise border-t border-seam pt-7">
                 <h3 className="text-display-md font-semibold leading-tight">
@@ -408,7 +405,7 @@ export default function Home() {
             the half that cites its cells AND stays legible at a glance. */}
         <section
           id="why-us"
-          className="section relative pt-12 sm:pt-16"
+          className="section relative pt-10 sm:pt-14"
           data-reveal-group
         >
           {/* The table below is the argument; this is the one line of it a
@@ -429,11 +426,11 @@ export default function Home() {
               through a headline on a 1180px laptop. */}
           <Note
             place="flow"
-            tone="orange"
+            tone="warm"
             paper="ruled"
             title="No fixed podium."
             body="A contest has a set number of winners. This does not."
-            tilt={-4}
+            tilt={-2.5}
             anchor={59}
             className="top-8"
           />
@@ -566,7 +563,7 @@ export default function Home() {
             filling in. The figures inside count instead. See NumbersStrip. */}
         <section
           id="numbers"
-          className="section pt-24 sm:pt-32"
+          className="section pt-16 sm:pt-24"
           aria-label="The club in numbers"
           data-reveal-group
         >
@@ -576,9 +573,8 @@ export default function Home() {
             lead="Small, new, and counting honestly."
           />
           <p className="measure mt-7 text-body-lg text-haze">
-            Everything here is derived from the other four pages rather than typed in
-            by hand, so it cannot say more than the evidence does. Click through and
-            check any of it.
+            Derived from the other four pages, not typed in by hand — so it cannot say
+            more than the evidence does.
           </p>
           <NumbersStrip />
         </section>
@@ -590,7 +586,7 @@ export default function Home() {
             time somebody adds or pulls a story. */}
         <section
           id="story"
-          className="band section pb-24 pt-24 sm:pb-32 sm:pt-32"
+          className="band section pb-16 pt-16 sm:pb-24 sm:pt-24"
           aria-label="Member stories"
           data-reveal-group
         >

@@ -42,13 +42,20 @@ export default function Duo({
   trail,
   as = "h2",
   className = "",
+  rule,
 }: {
   lead: string;
   trail?: string;
   as?: "h1" | "h2" | "h3";
   className?: string;
+  /** The drawn rule. Defaults to ON for the page's own h1 and OFF for everything
+   *  else — see the note above the <Doodle> below for why that is the whole point
+   *  of the mark. Overridable, because a section that genuinely is the page's
+   *  subject may want it, but the default is the rule. */
+  rule?: boolean;
 }) {
   const Tag = as;
+  const showRule = rule ?? as === "h1";
   return (
     <>
       <Tag
@@ -67,8 +74,18 @@ export default function Duo({
         <span className="text-ink">{lead}</span>
         {trail ? <span className="tone"> {trail}</span> : null}
       </Tag>
-      {/* The hand-drawn rule under every section title.
-          Rendered HERE rather than at each call site, so no section can forget it
+      {/* THE HAND-DRAWN RULE, ON THE PAGE'S PRIMARY HEADING AND NOTHING ELSE.
+          It used to render under all 34 of these — every page title and every
+          section heading on the site — and a mark that appears under everything
+          marks nothing. It cost a real hierarchy: with the sub-page mastheads
+          moved down to display-lg, a page title and the first section heading
+          beneath it were the same size, the same black-and-blue, and both
+          underlined, so there was no way to tell which was the page.
+          Restricting it restores the distinction without a third heading size.
+          It also gives the mark back its meaning: one drawn line per page, under
+          the sentence the page is actually about.
+
+          Rendered HERE rather than at each call site, so no page can forget it
           and none can drift to a different width — the same argument that put the
           caps rule in this component.
 
@@ -113,11 +130,13 @@ export default function Duo({
           stroke to 2.88px, which lands on their 3px by construction.
           The LENGTH is still fixed rather than matched to the text — see the note
           above for why that distinction is the whole point of the device. */}
-      <Doodle
-        kind="underline"
-        draw
-        className="mt-3 inline-block h-3 w-36 align-top text-accent"
-      />
+      {showRule && (
+        <Doodle
+          kind="underline"
+          draw
+          className="mt-3 inline-block h-3 w-36 align-top text-accent"
+        />
+      )}
     </>
   );
 }

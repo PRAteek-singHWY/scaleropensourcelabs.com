@@ -32,7 +32,7 @@ import {
 } from "@/lib/sessions";
 
 const ctl =
-  "w-full rounded-md border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
+  "w-full rounded-inline border border-seam bg-sunk px-3.5 py-2.5 text-sm text-ink placeholder:text-dust outline-none transition focus:border-accent";
 
 function Row({
   s,
@@ -49,20 +49,20 @@ function Row({
   return (
     <tr className={`border-t border-seam align-top ${past ? "opacity-60" : ""}`}>
       <td className="py-3 pr-4">
-        <span className="block font-mono text-[0.75rem] font-medium uppercase tracking-wider text-accent">
+        <span className="block font-mono text-xs font-medium uppercase tracking-wider text-accent">
           {when.day}
         </span>
-        <span className="block font-mono text-[0.75rem] text-dust">{when.time}</span>
+        <span className="block font-mono text-xs text-dust">{when.time}</span>
       </td>
       <td className="py-3 pr-4">
         <span className="block text-sm font-medium text-ink">{s.title}</span>
         {s.location && (
-          <span className="block text-[0.8125rem] text-haze">{s.location}</span>
+          <span className="block text-sm text-haze">{s.location}</span>
         )}
       </td>
       {/* "TBA" is the design's word for an unbooked speaker, and it is more honest than
           an empty cell — it says the slot exists and nobody is in it yet. */}
-      <td className="py-3 pr-4 font-mono text-[0.8125rem] text-haze">{s.speaker || "TBA"}</td>
+      <td className="py-3 pr-4 font-mono text-sm text-haze">{s.speaker || "TBA"}</td>
       <td className="py-3">
         <div className="flex flex-wrap gap-3">
           <button
@@ -209,7 +209,7 @@ export default function Sessions() {
           <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
             <Icon name="calendar" size="1rem" strokeWidth={1.75} />
           </span>
-          <h2 className="truncate font-mono text-[0.9375rem] font-medium uppercase tracking-[0.08em] text-ink">
+          <h2 className="truncate font-mono text-sm font-medium uppercase tracking-[0.08em] text-ink">
             Upcoming sessions
           </h2>
         </div>
@@ -332,7 +332,7 @@ export default function Sessions() {
                   {["Date", "Session", "Speaker", "Action"].map((h) => (
                     <th
                       key={h}
-                      className="pb-2 pr-4 font-mono text-[0.6875rem] font-medium uppercase tracking-[0.1em] text-haze"
+                      className="pb-2 pr-4 font-mono text-label font-medium uppercase tracking-[0.1em] text-haze"
                     >
                       {h}
                     </th>

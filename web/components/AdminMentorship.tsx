@@ -25,23 +25,53 @@ import { useMemo, useState } from "react";
 import { Bars, Counts, ctl } from "@/components/admin/ui";
 import { batchBucket, batchFromEmail } from "@/lib/batch";
 import { fmtDate, type Profile } from "@/lib/profile";
-import { mentorLabel, mentorNames, pickCounts, type Enrollment, type Mentor } from "@/lib/mentorship";
+import { mentorLabel, mentorNames, type Enrollment, type Mentor } from "@/lib/mentorship";
 
 export default function AdminMentorship({
   profiles,
   mentors,
+  demand: counts,
   enrollments,
+  enrolledTotal,
+  scanning,
+  onLoadAll,
+  enrolRows,
+  enrolProfiles,
+  enrolMore,
+  enrolPaging,
+  enrolCursor,
+  onLoadEnrolPage,
 }: {
+  /** Every member — only present after a full scan, which the export and the batch chart
+   *  need. The interest list no longer waits for it: it pages, and joins each page to
+   *  just the profiles that page names. */
   profiles: Profile[] | null;
   mentors: Mentor[] | null;
+  /** Picks per mentor, counted on the server. The three headline numbers and both demand
+   *  charts are built from this, so they are live on page load without a single
+   *  enrollment document having been read. */
+  demand: Map<string, { first: number; second: number; total: number }>;
   enrollments: Enrollment[] | null;
+  enrolledTotal: number | null;
+  scanning: boolean;
+  onLoadAll: () => void;
+  /** THE PAGED PATH, and the one the list actually uses. `enrolRows` is a page of
+   *  enrollments; `enrolProfiles` holds exactly the members those rows name, fetched in a
+   *  single batched query rather than by scanning the membership. At 1,500 enrolments the
+   *  scan cost ~3,000 reads and rendered 1,500 rows into the DOM; a page costs about 50
+   *  and renders 25. */
+  enrolRows: Enrollment[] | null;
+  enrolProfiles: Map<string, Profile>;
+  enrolMore: boolean;
+  enrolPaging: boolean;
+  enrolCursor: unknown;
+  onLoadEnrolPage: (cursor: unknown) => void;
 }) {
   const [q, setQ] = useState("");
   const [mentor, setMentor] = useState("");
   const [firstOnly, setFirstOnly] = useState(false);
 
   const names = useMemo(() => mentorNames(mentors ?? []), [mentors]);
-  const counts = useMemo(() => pickCounts(enrollments ?? []), [enrollments]);
 
   /** One row per enrollment, joined to the profile the parent already loaded.
    *
@@ -50,8 +80,13 @@ export default function AdminMentorship({
    *  rather than vanishing. An enrollment that does not appear in this list because its
    *  member is missing is the worst outcome: somebody signed up and nobody can see it. */
   const rows = useMemo(() => {
-    const byUid = new Map((profiles ?? []).map((p) => [p.uid, p]));
-    return (enrollments ?? []).map((e) => {
+    // A full scan wins when somebody has paid for one — export and the batch chart need
+    // it anyway, and paging through memory at that point would save nothing.
+    const source = enrollments ?? enrolRows ?? [];
+    const byUid = profiles
+      ? new Map(profiles.map((p) => [p.uid, p]))
+      : enrolProfiles;
+    return source.map((e) => {
       const p = byUid.get(e.uid);
       return {
         enrollment: e,
@@ -61,7 +96,7 @@ export default function AdminMentorship({
         batch: batchFromEmail(e.email),
       };
     });
-  }, [profiles, enrollments]);
+  }, [profiles, enrollments, enrolRows, enrolProfiles]);
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -86,14 +121,21 @@ export default function AdminMentorship({
 
   const activeFilters = [q, mentor, firstOnly ? "1" : ""].filter(Boolean).length;
 
+  // EVERYTHING EXCEPT THE BATCH CHART IS BUILT FROM SERVER-SIDE COUNTS, so the headline
+  // numbers and both demand charts are correct on page load without a single enrollment
+  // document having been read. `enrolledTotal` is one aggregate query; `counts` is two per
+  // mentor. Only the two that genuinely need the rows — how many declined a second
+  // preference, and the batch split, which is derived from an address and therefore not
+  // queryable — wait for the full scan.
   const stats = useMemo(() => {
     const all = enrollments ?? [];
     const ms = mentors ?? [];
     const named = (id: string) => mentorLabel(names, id);
     return {
-      total: all.length,
+      total: enrolledTotal ?? 0,
       mentors: ms.length,
-      firstOnly: all.filter((e) => e.first_only).length,
+      /** null until the rows are here, so the tile can say "—" instead of a confident 0. */
+      firstOnly: enrollments ? all.filter((e) => e.first_only).length : null,
       // Largest first, and only mentors somebody picked — the ones nobody picked are
       // listed by name below instead, where a zero is legible.
       demand: ms
@@ -114,14 +156,19 @@ export default function AdminMentorship({
         return [...m].sort((a, b) => a[0].localeCompare(b[0]));
       })(),
     };
-  }, [enrollments, mentors, counts, names]);
+  }, [enrollments, enrolledTotal, mentors, counts, names]);
 
   /** Every address in the current filter, for pasting into a mail client — the action an
    *  organiser wants after narrowing to "everybody who picked Priya". Same clipboard
    *  fallback as the membership table: the point is the addresses, not the API. */
   const [copied, setCopied] = useState("");
   const [emailList, setEmailList] = useState("");
+  /** BOTH LOAD EVERYTHING FIRST, and that is correctness rather than courtesy. They act
+   *  on `filtered`, which before a full scan is only the pages loaded so far — so pressing
+   *  Export with 1,500 enrolments would have written a CSV of 25 and looked entirely
+   *  successful. Anything that claims to hand over "the list" loads the list. */
   async function copyEmails() {
+    if (!enrollments) { onLoadAll(); return; }
     const list = filtered.map((r) => r.email).filter(Boolean).join(", ");
     try {
       await navigator.clipboard.writeText(list);
@@ -136,6 +183,7 @@ export default function AdminMentorship({
   }
 
   function exportCsv() {
+    if (!enrollments) { onLoadAll(); return; }
     const cols = [
       "name", "email", "batch", "branch", "year", "hostel", "github",
       "programme", "first_preference", "second_preference", "enrolled",
@@ -174,7 +222,10 @@ export default function AdminMentorship({
     URL.revokeObjectURL(url);
   }
 
-  const loading = enrollments === null || mentors === null;
+  // The panel is ready once the COUNTS are in. The rows arrive later, or never — the
+  // interest list is gated on the full scan and says so, rather than the whole panel
+  // hanging on a spinner for data it deliberately has not fetched.
+  const loading = mentors === null || enrolledTotal === null;
 
   return (
     <div className="space-y-8">
@@ -183,17 +234,23 @@ export default function AdminMentorship({
         rows={[
           ["Students enrolled", stats.total],
           ["Mentors published", stats.mentors],
-          ["No second preference", stats.firstOnly],
+          ["No second preference", stats.firstOnly ?? "—"],
         ]}
       />
 
-      {/* ------------------------------------------------------- the interest list */}
+      {/* ------------------------------------------------------- the interest list
+          BEHIND THE SAME SCAN AS THE BREAKDOWNS, and for a reason that is not really
+          about cost: every row here needs a NAME, and a name lives on the member's
+          profile, not on the enrollment. So this table is a join between two collections
+          and there is no version of it that reads less than both. The counts and the
+          demand charts around it do not need names, which is why they are live. */}
+      {enrollments || enrolRows ? (
       <div className="card rounded-panel bg-raise p-6">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h3 className="label">Who has enrolled</h3>
             <p className="mt-1 text-sm text-haze">
-              {filtered.length} of {stats.total} shown
+              {filtered.length} of {enrollments ? stats.total : rows.length} shown
               {activeFilters > 0 && (
                 <span className="text-dust">
                   {" "}
@@ -271,7 +328,7 @@ export default function AdminMentorship({
               value={emailList}
               onFocus={(e) => e.currentTarget.select()}
               rows={3}
-              className="w-full resize-y rounded-md border border-seam bg-sunk p-3 font-mono text-[0.8125rem] text-haze"
+              className="w-full resize-y rounded-inline border border-seam bg-sunk p-3 font-mono text-sm text-haze"
             />
             <button
               type="button"
@@ -285,7 +342,7 @@ export default function AdminMentorship({
 
         {/* Scrolls inside its own box so a wide table never makes the page scroll
             sideways — the QA sweep asserts no horizontal overflow on every route. */}
-        <div className="mt-5 overflow-x-auto">
+        <div className="table-scroll mt-5">
           <table className="w-full min-w-[56rem] border-collapse text-left">
             <thead>
               <tr className="border-b border-seam">
@@ -308,14 +365,14 @@ export default function AdminMentorship({
               {filtered.map((r) => (
                 <tr key={r.enrollment.uid} className="border-b border-seam/60 align-top">
                   <td className="py-3 pr-4 text-sm text-ink">{r.name}</td>
-                  <td className="py-3 pr-4 font-mono text-[0.8125rem] text-haze">{r.email}</td>
+                  <td className="py-3 pr-4 font-mono text-sm text-haze">{r.email}</td>
                   <td className="whitespace-nowrap py-3 pr-4 text-sm text-haze">
                     {r.batch ? `${r.batch.label} · ${r.batch.branch}` : "—"}
                     {r.batch && (
-                      <span className="block text-[0.8125rem] text-dust">{r.batch.yearLabel}</span>
+                      <span className="block text-sm text-dust">{r.batch.yearLabel}</span>
                     )}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-[0.8125rem] text-haze">
+                  <td className="py-3 pr-4 font-mono text-sm text-haze">
                     {r.profile?.github ? (
                       <a
                         href={`https://github.com/${r.profile.github}`}
@@ -339,7 +396,7 @@ export default function AdminMentorship({
                       mentorLabel(names, r.enrollment.mentor_2)
                     )}
                   </td>
-                  <td className="whitespace-nowrap py-3 pr-4 font-mono text-[0.8125rem] text-haze">
+                  <td className="whitespace-nowrap py-3 pr-4 font-mono text-sm text-haze">
                     {fmtDate(r.enrollment.created_at)}
                   </td>
                 </tr>
@@ -356,7 +413,56 @@ export default function AdminMentorship({
             </tbody>
           </table>
         </div>
+
+        {/* A PAGE AT A TIME, and the numbers say which. Search, sort and the mentor filter
+            act on what is loaded — at 1,500 enrolments loading everything to filter it
+            would be 3,000 reads to answer a question about 25 rows. */}
+        {!enrollments && (enrolMore || stats.total > rows.length) && (
+          <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 border-t border-seam pt-5">
+            {enrolMore && (
+              <button
+                type="button"
+                onClick={() => onLoadEnrolPage(enrolCursor)}
+                disabled={enrolPaging}
+                className="btn btn-secondary btn-compact disabled:opacity-60"
+              >
+                {enrolPaging ? "Loading…" : "Load 25 more"}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onLoadAll}
+              disabled={scanning}
+              className="tap font-mono text-label uppercase tracking-wider text-haze underline decoration-seam underline-offset-4 transition-colors hover:text-ink disabled:opacity-60"
+            >
+              {scanning ? "Loading everyone…" : `Load all ${stats.total}`}
+            </button>
+            <p className="text-xs text-dust">
+              Filters cover the {rows.length} loaded so far.
+            </p>
+          </div>
+        )}
       </div>
+      ) : (
+        <div className="card rounded-panel bg-raise p-6">
+          <h3 className="label">Who has enrolled</h3>
+          <p className="measure mt-3 text-sm leading-relaxed text-haze">
+            {stats.total === 0
+              ? "Nobody has enrolled yet."
+              : `${stats.total} student${stats.total === 1 ? "" : "s"} enrolled. The counts and charts on this page did not need any of their records; the list does, so it loads a page at a time.`}
+          </p>
+          {stats.total > 0 && (
+            <button
+              type="button"
+              onClick={() => onLoadEnrolPage(null)}
+              disabled={enrolPaging}
+              className="btn btn-secondary mt-5 disabled:opacity-60"
+            >
+              {enrolPaging ? "Loading…" : "Load the interest list"}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ------------------------------------------------------------- statistics */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -378,7 +484,11 @@ export default function AdminMentorship({
           title="Enrolled, by batch"
           rows={stats.batches}
           total={stats.total}
-          empty="Nobody has enrolled yet."
+          empty={
+            enrollments
+              ? "Nobody has enrolled yet."
+              : "Needs the interest list — batch is read from each address rather than stored, so it cannot be counted in the database."
+          }
           footnote="Read from each student's college address. 'Unknown' is an address that does not follow the usual pattern."
         />
         <div className="card rounded-panel bg-raise p-6">
@@ -395,13 +505,13 @@ export default function AdminMentorship({
                 <li key={m.id} className="text-sm text-ink">
                   {m.name}
                   {!m.active && (
-                    <span className="ml-2 font-mono text-[0.8125rem] text-dust">hidden</span>
+                    <span className="ml-2 font-mono text-sm text-dust">hidden</span>
                   )}
                 </li>
               ))}
             </ul>
           )}
-          <p className="mt-4 text-[0.8125rem] leading-relaxed text-dust">
+          <p className="mt-4 text-sm leading-relaxed text-dust">
             Named rather than drawn as an empty bar, because a bar at zero is a row that
             disappears. A hidden mentor with nobody is expected; a visible one is worth a
             look at their description.
@@ -409,7 +519,7 @@ export default function AdminMentorship({
         </div>
       </div>
 
-      <p className="text-[0.9375rem] leading-relaxed text-dust">
+      <p className="text-sm leading-relaxed text-dust">
         Percentages are of students enrolled, and a student holds two preferences — so the
         two demand charts add up past 100%. Nothing on this page is an allocation:
         preferences are what students asked for, and pairing them is still a decision

@@ -12,8 +12,13 @@
 // already recorded against them still renders their name. Deleting is only offered for a
 // mentor NOBODY HAS PICKED, because Firestore rules cannot express "no document in another
 // collection references this one" — that needs a query, and rules cannot query. So the
-// guard is here, where the enrollments are already in memory, and the button is replaced
-// by the reason rather than disabled with no explanation. Getting it wrong is cosmetic —
+// guard is here in the client, and the button is replaced by the reason rather than
+// disabled with no explanation.
+//
+// THE GUARD IS A COUNT, NOT A LIST, and that distinction is what made it affordable. It
+// used to be answered by reading every enrollment in the club and tallying; it is now two
+// aggregate queries per mentor, billed on the size of the answer rather than the size of
+// the collection. Same guard, and it costs the same at ten members as at ten thousand. Getting it wrong is cosmetic —
 // the interest list would show a truncated id where a name should be — but it is exactly
 // the kind of cosmetic wrong that nobody can explain six months later.
 //
@@ -22,17 +27,10 @@
 // asks for the thing that actually helps — what they work on and what they are useful
 // for — because "Priya is great" helps nobody choose between two people.
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { field, labelOf } from "@/components/admin/ui";
 import { PROGRAMS } from "@/content/join";
-import {
-  deleteMentor,
-  pickCounts,
-  saveMentor,
-  type Enrollment,
-  type Mentor,
-  type MentorInput,
-} from "@/lib/mentorship";
+import { deleteMentor, saveMentor, type Mentor, type MentorInput } from "@/lib/mentorship";
 
 /** A blank mentor, for the add form. `gsoc` because that is the cohort the club runs;
  *  the select is there so a second programme needs no code change. */
@@ -119,7 +117,7 @@ function Editor({
         />
         {/* A live count, because 600 characters is not a length anybody can eyeball and
             the rules reject the 601st with a permission error that reads like a fault. */}
-        <p className="mt-1.5 text-right font-mono text-[0.8125rem] text-dust">
+        <p className="mt-1.5 text-right font-mono text-sm text-dust">
           {v.description.length}/600
         </p>
       </div>
@@ -205,21 +203,23 @@ function Editor({
 
 export default function AdminMentors({
   mentors,
-  enrollments,
+  demand,
   onChanged,
 }: {
   mentors: Mentor[] | null;
-  enrollments: Enrollment[] | null;
-  /** Re-reads both collections in the parent, so every panel sees the same data after a
-   *  write rather than each keeping its own idea of the list. */
+  /** Picks per mentor, COUNTED ON THE SERVER by countDemand rather than tallied from
+   *  every enrollment. This panel only ever needed the numbers — how many chose each
+   *  mentor, and whether anybody chose them at all — and reading five hundred documents
+   *  to learn "3" was the single most expensive thing on the page. */
+  demand: Map<string, { first: number; second: number; total: number }>;
+  /** Re-reads the counts in the parent, so every panel sees the same data after a write
+   *  rather than each keeping its own idea of the list. */
   onChanged: () => void;
 }) {
   /** "new" while adding, a mentor id while editing that one, null when neither. */
   const [editing, setEditing] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  const counts = useMemo(() => pickCounts(enrollments ?? []), [enrollments]);
 
   async function save(input: MentorInput, id?: string) {
     setSaving(true);
@@ -273,7 +273,7 @@ export default function AdminMentors({
       </div>
 
       {error && (
-        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ember" role="alert">
+        <p className="mt-4 text-sm leading-relaxed text-ember" role="alert">
           {error}
         </p>
       )}
@@ -294,14 +294,14 @@ export default function AdminMentors({
           // An empty state that says what happens next, not just that the list is empty.
           // Until there is one mentor, every member's dashboard shows "enrolment opens
           // when the organisers add them" — which is a sentence somebody has to act on.
-          <p className="rounded-tile border border-dashed border-seam p-5 text-[0.9375rem] leading-relaxed text-dust">
+          <p className="rounded-tile border border-dashed border-seam p-5 text-sm leading-relaxed text-dust">
             No mentors yet. Until you add one, the mentorship card on every member&apos;s
             dashboard says enrolment has not opened.
           </p>
         )}
 
         {(mentors ?? []).map((m) => {
-          const c = counts.get(m.id) ?? { first: 0, second: 0, total: 0 };
+          const c = demand.get(m.id) ?? { first: 0, second: 0, total: 0 };
           const picked = c.total > 0;
 
           if (editing === m.id) {
@@ -334,29 +334,29 @@ export default function AdminMentors({
                   <p className="font-semibold text-ink">
                     {m.name}
                     {m.org && (
-                      <span className="ml-2 font-mono text-[0.8125rem] font-normal text-dust">
+                      <span className="ml-2 font-mono text-sm font-normal text-dust">
                         {m.org}
                       </span>
                     )}
                     {!m.active && (
-                      <span className="ml-2 rounded-md border border-seam px-2 py-0.5 font-mono text-[0.6875rem] uppercase tracking-wider text-dust">
+                      <span className="ml-2 rounded-inline border border-seam px-2 py-0.5 font-mono text-label uppercase tracking-wider text-dust">
                         hidden
                       </span>
                     )}
                   </p>
-                  <p className="mt-1 font-mono text-[0.8125rem] text-dust">
+                  <p className="mt-1 font-mono text-sm text-dust">
                     {labelOf(PROGRAMS, m.programme)}
                   </p>
                 </div>
                 {/* The demand, inline, so the list doubles as the answer to "who is
                     oversubscribed" without scrolling to the charts. */}
-                <p className="shrink-0 font-mono text-[0.8125rem] text-haze">
+                <p className="shrink-0 font-mono text-sm text-haze">
                   1st: <span className="text-ink">{c.first}</span> · 2nd:{" "}
                   <span className="text-ink">{c.second}</span>
                 </p>
               </div>
 
-              <p className="mt-3 text-[0.9375rem] leading-relaxed text-haze">{m.description}</p>
+              <p className="mt-3 text-sm leading-relaxed text-haze">{m.description}</p>
 
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-seam pt-4">
                 <button
@@ -390,7 +390,7 @@ export default function AdminMentors({
                     do instead. A greyed-out Delete with no explanation is the organiser
                     reloading the page to see whether it comes back. */}
                 {picked ? (
-                  <p className="text-[0.8125rem] text-dust">
+                  <p className="text-sm text-dust">
                     {c.total} student{c.total === 1 ? "" : "s"} picked this mentor — hide
                     instead of deleting.
                   </p>
